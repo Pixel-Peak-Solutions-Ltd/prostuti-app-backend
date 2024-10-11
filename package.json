@@ -1,0 +1,52 @@
+{
+    "name": "prostuti-app-backend",
+    "version": "1.0.0",
+    "organization": "Pixel Peak Solutions Ltd",
+    "description": "Backend server for the Prostuti application, built with TypeScript, Express, and MongoDB. This project provides a robust API structure with Zod validation, error handling, and follows best practices for a scalable Node.js backend",
+    "main": "./server.ts",
+    "scripts": {
+        "build": "tsc",
+        "start": "node ./dist/server.js",
+        "dev": "ts-node-dev --respawn --transpile-only ./src/server.ts",
+        "lint": "eslint src --ignore-path .eslintignore --ext .ts",
+        "lint:fix": "npx eslint src --fix",
+        "prettier": "prettier --ignore-path .gitignore --write \"./src/**/*.+(js|ts|json)\"",
+        "prettier:fix": "npx prettier --write src"
+    },
+    "keywords": [
+        "TypeScript",
+        "Express",
+        "ExpressJS",
+        "express.js",
+        "mongoose",
+        "Zod",
+        "Validator",
+        "starter",
+        "boilerplate"
+    ],
+    "author": "Pixel Peak",
+    "license": "ISC",
+    "dependencies": {
+        "cookie-parser": "^1.4.6",
+        "cors": "^2.8.5",
+        "dotenv": "^16.4.5",
+        "express": "^4.19.2",
+        "http-status-codes": "^2.3.0",
+        "mongoose": "^8.3.2",
+        "validator": "^13.11.0",
+        "zod": "^3.23.4"
+    },
+    "devDependencies": {
+        "@types/cookie-parser": "^1.4.7",
+        "@types/cors": "^2.8.17",
+        "@types/express": "^5.0.0",
+        "@types/validator": "^13.11.9",
+        "@typescript-eslint/eslint-plugin": "^7.7.1",
+        "@typescript-eslint/parser": "^7.18.0",
+        "eslint": "^8.57.1",
+        "eslint-config-prettier": "^9.1.0",
+        "prettier": "^3.2.5",
+        "ts-node-dev": "^2.0.0",
+        "typescript": "^5.4.5"
+    }
+}
