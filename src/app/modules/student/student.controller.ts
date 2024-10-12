@@ -1,10 +1,10 @@
 import { StatusCodes } from 'http-status-codes';
 import catchAsync from '../../utils/catchAsync';
 import sendSuccessResponse from '../../utils/sendSuccessResponse';
-import { studentServices } from './student.service';
+import { studentService } from './student.service';
 
 const createStudents = catchAsync(async (req, res) => {
-    const result = await studentServices.createStudent();
+    const result = await studentService.createStudent();
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
@@ -14,7 +14,7 @@ const createStudents = catchAsync(async (req, res) => {
 });
 
 const getAllStudents = catchAsync(async (req, res) => {
-    const result = await studentServices.getAllStudents();
+    const result = await studentService.getAllStudents();
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
@@ -24,7 +24,7 @@ const getAllStudents = catchAsync(async (req, res) => {
 });
 
 const getStudentByID = catchAsync(async (req, res) => {
-    const result = await studentServices.getStudentByID();
+    const result = await studentService.getStudentByID();
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
@@ -34,7 +34,7 @@ const getStudentByID = catchAsync(async (req, res) => {
 });
 
 const updateStudent = catchAsync(async (req, res) => {
-    const result = await studentServices.updateStudent();
+    const result = await studentService.updateStudent();
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
@@ -44,7 +44,7 @@ const updateStudent = catchAsync(async (req, res) => {
 });
 
 const deleteUserByID = catchAsync(async (req, res) => {
-    const result = await studentServices.deleteUserByID();
+    const result = await studentService.deleteUserByID();
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
@@ -53,7 +53,7 @@ const deleteUserByID = catchAsync(async (req, res) => {
     });
 });
 
-export const studentControllers = {
+export const studentController = {
     createStudents,
     getAllStudents,
     getStudentByID,

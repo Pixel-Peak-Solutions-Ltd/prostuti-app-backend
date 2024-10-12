@@ -10,7 +10,7 @@ const globalErrorHandler: ErrorRequestHandler = (error, req, res, next) => {
     let errorResponse: IErrorResponse = {
         statusCode: error.statusCode || 500,
         message: error.message || 'Something went wrong',
-        errorSources: [{ path: '', message: 'Something wend wrong' }],
+        errorSources: [{ path: '', message: 'Something went wrong' }],
     };
 
     // Handle all kinds of error

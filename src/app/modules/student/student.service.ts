@@ -18,7 +18,7 @@ const deleteUserByID = async () => {
     return 'deleteUserByID service';
 };
 
-export const studentServices = {
+export const studentService = {
     createStudent,
     getAllStudents,
     getStudentByID,

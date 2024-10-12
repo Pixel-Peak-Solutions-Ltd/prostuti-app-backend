@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import { studentRoutes } from '../modules/student/student.route';
+import { studentRoute } from '../modules/student/student.route';
 
 const globalRoute = Router();
 
-const routes = [{ path: '/student', route: studentRoutes }];
+const routes = [{ path: '/student', route: studentRoute }];
 
 routes.forEach((route) => globalRoute.use(route.path, route.route));
 
