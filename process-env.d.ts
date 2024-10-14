@@ -5,5 +5,6 @@ declare namespace NodeJS {
         DATABASE_URL: string;
         JWT_ACCESS_SECRET: string;
         JWT_ACCESS_EXPIRES_IN: string;
+        BCRYPT_SALT: number;
     };
 }
