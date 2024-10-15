@@ -1,44 +1,30 @@
 import { Schema, model } from 'mongoose';
 import { IStudent } from './student.interface';
-import { Gender } from './student.constant';
-import validator from 'validator';
 
+// Student Schema
 const studentSchema = new Schema<IStudent>(
     {
-        name: {
+        userId: {
+            type: Schema.Types.ObjectId,
+            required: [true, 'userId is required'],
+            ref: 'User',
+        },
+        studentId: {
             type: String,
-            required: [true, 'ID is required'],
+            required: [true, 'studentId is required'],
             unique: true,
         },
-        gender: {
+        studentName: {
             type: String,
-            enum: {
-                values: Gender,
-                message: '{VALUE} is not valid',
-            },
-            required: [true, 'Gender is required'],
         },
-        email: {
+        studentPhone: {
             type: String,
-            required: [true, 'Email is required'],
             unique: true,
-            validate: {
-                validator: function (value: string) {
-                    return validator.isEmail(value);
-                },
-                message: '{VALUE} is not valid email',
-            },
-        },
-        contactNo: {
-            type: String,
-            required: [true, 'Contact number is required'],
         },
     },
     {
         timestamps: true,
-        toJSON: {
-            virtuals: true,
-        },
+        versionKey: false,
     },
 );
 

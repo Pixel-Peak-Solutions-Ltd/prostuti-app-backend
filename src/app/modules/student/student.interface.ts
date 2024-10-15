@@ -1,9 +1,9 @@
-export type TGender = 'male' | 'female' | 'others';
+import { Types } from 'mongoose';
 
 export interface IStudent {
-    name: string;
-    gender: TGender;
-    dateOfBirth?: string;
-    email: string;
-    contactNo: string;
+    userId: Types.ObjectId;
+    studentId: string;
+    studentName: string;
+    studentPhone: string;
+    studentProfileImageURL: string;
 }

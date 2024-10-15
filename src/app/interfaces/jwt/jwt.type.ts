@@ -7,6 +7,7 @@ export type TJWTDecodedUser = {
 };
 
 export type TJWTPayload = {
-    email: string;
+    userId?: string;
+    email?: string;
     role: TUserRole;
 };

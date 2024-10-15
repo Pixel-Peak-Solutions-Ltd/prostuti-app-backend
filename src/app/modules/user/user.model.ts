@@ -1,10 +1,11 @@
 import { Schema, model } from 'mongoose';
 import bcrypt from 'bcrypt';
-import { IUserModel, TUser } from './user.interface';
+import { IUserModel, IUser } from './user.interface';
 import { USER_ROLE, USER_STATUS } from './user.constant';
 import config from '../../config';
 
-const userSchema = new Schema<TUser, IUserModel>(
+// User Schema
+const userSchema = new Schema<IUser, IUserModel>(
     {
         id: {
             type: String,
@@ -15,32 +16,75 @@ const userSchema = new Schema<TUser, IUserModel>(
             type: String,
             required: [true, 'Password is required'],
             select: 0,
+            minlength: [8, 'Password must be at least 8 characters long'],
+            maxlength: [20, 'Password must not exceed 20 characters'],
         },
         phone: {
             type: String,
             unique: true,
+            sparse: true,
+            required: function () {
+                return this.role === USER_ROLE.student;
+            },
+            validate: [
+                {
+                    validator: function (phone: string) {
+                        if (this.role === USER_ROLE.student && !phone) {
+                            return false;
+                        }
+                        return true;
+                    },
+                    message: 'Phone number is required for students',
+                },
+                {
+                    validator: function (phone: string) {
+                        return /^(\+?880|0)1[3456789]\d{8}$/.test(phone);
+                    },
+                    message: 'Invalid Bangladeshi phone number',
+                },
+            ],
         },
         email: {
             type: String,
             unique: true,
+            sparse: true,
+            required: function () {
+                return (
+                    this.role === USER_ROLE.teacher ||
+                    this.role === USER_ROLE.admin
+                );
+            },
+            validate: [
+                {
+                    validator: function (email: string) {
+                        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+                    },
+                    message: 'Invalid email format',
+                },
+            ],
         },
         passwordChangedAt: { type: Date },
         isDeleted: { type: Boolean, default: false },
         status: {
             type: String,
-            enum: { values: Object.values(USER_STATUS) },
+            enum: {
+                values: Object.values(USER_STATUS),
+                message: '{VALUE} is not a valid status',
+            },
             default: 'active',
         },
         role: {
             type: String,
-            enum: { values: Object.values(USER_ROLE) },
+            enum: {
+                values: Object.values(USER_ROLE),
+                message: '{VALUE} is not a valid role',
+            },
+            required: [true, 'Role is required'],
         },
     },
     {
         timestamps: true,
-        toJSON: {
-            virtuals: true,
-        },
+        versionKey: false,
     },
 );
 
@@ -72,4 +116,4 @@ userSchema.statics.isJWTIssuedBeforePasswordChanged = function (
 };
 
 // Create Model
-export const User = model<TUser, IUserModel>('User', userSchema);
+export const User = model<IUser, IUserModel>('User', userSchema);

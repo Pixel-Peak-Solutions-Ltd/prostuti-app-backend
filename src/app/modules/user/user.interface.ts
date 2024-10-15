@@ -6,7 +6,7 @@ import { USER_ROLE, USER_STATUS } from './user.constant';
 export type TUserRole = keyof typeof USER_ROLE;
 export type TUserStatus = keyof typeof USER_STATUS;
 
-export interface TUser {
+export interface IUser {
     id: string;
     password: string;
     phone: string;
@@ -17,7 +17,7 @@ export interface TUser {
     role: TUserRole;
 }
 
-export interface IUserModel extends Model<TUser> {
+export interface IUserModel extends Model<IUser> {
     isPasswordMatched(
         passwordFromReq: string,
         passwordInDB: string,

@@ -4,28 +4,22 @@ import catchAsync from '../../utils/catchAsync';
 import sendSuccessResponse from '../../utils/sendSuccessResponse';
 import { userService } from './user.service';
 
-const createStudent = catchAsync(async (req, res) => {
-    const result = await userService.createStudent();
-
-    sendSuccessResponse(res, {
-        statusCode: StatusCodes.OK,
-        message: 'Student is created successfully',
-        data: result,
-    });
-});
-
 const createTeacher = catchAsync(async (req, res) => {
-    const result = await userService.createTeacher();
+    const { email, password } = req.body;
+
+    const result = await userService.createTeacher(email, password);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
-        message: 'Faculty is created successfully',
+        message: 'Teacher is created successfully',
         data: result,
     });
 });
 
 const createAdmin = catchAsync(async (req, res) => {
-    const result = await userService.createAdmin();
+    const { email, password } = req.body;
+
+    const result = await userService.createAdmin(email, password);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
@@ -35,7 +29,6 @@ const createAdmin = catchAsync(async (req, res) => {
 });
 
 export const userController = {
-    createStudent,
     createTeacher,
     createAdmin,
 };
