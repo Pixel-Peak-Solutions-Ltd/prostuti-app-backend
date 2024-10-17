@@ -4,9 +4,14 @@ import sendSuccessResponse from '../../utils/sendSuccessResponse';
 import { authService } from './auth.service';
 
 const registerStudent = catchAsync(async (req, res) => {
-    const { phone, password } = req.body;
+    const { name, email, phone, password } = req.body;
 
-    const result = await authService.registerStudent(phone, password);
+    const result = await authService.registerStudent(
+        name,
+        email,
+        phone,
+        password,
+    );
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,

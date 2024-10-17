@@ -6,8 +6,8 @@ declare namespace NodeJS {
         JWT_ACCESS_SECRET: string;
         JWT_ACCESS_EXPIRES_IN: string;
         BCRYPT_SALT: number;
-        TWILIO_ACCOUNT_SID: string;
-        TWILIO_AUTH_TOKEN: string;
-        TWILIO_SERVICE_SID: string;
+        ALPHA_SMS_API_KEY: string;
+        ALPHA_SMS_ENDPOINT: string;
+        OTP_EXPIRATION_TIME: number;
     };
 }

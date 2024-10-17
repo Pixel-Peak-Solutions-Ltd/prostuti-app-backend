@@ -1,5 +1,6 @@
 import { Schema, model } from 'mongoose';
 import { IAdmin } from './admin.interface';
+import { formatPhoneNumber } from '../../utils/formatPhoneNumber';
 
 const adminSchema = new Schema<IAdmin>(
     {
@@ -58,6 +59,14 @@ const adminSchema = new Schema<IAdmin>(
         versionKey: false,
     },
 );
+
+// Pre-save middleware to format the phone number
+adminSchema.pre('save', function (next) {
+    if (this.adminPhone && this.isModified('adminPhone')) {
+        this.adminPhone = formatPhoneNumber(this.adminPhone);
+    }
+    next();
+});
 
 // Create and export the model
 export const Admin = model<IAdmin>('Admin', adminSchema);

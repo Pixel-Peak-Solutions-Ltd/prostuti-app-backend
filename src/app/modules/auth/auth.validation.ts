@@ -3,6 +3,18 @@ import { z } from 'zod';
 const registerStudentValidationSchema = z.object({
     body: z
         .object({
+            name: z
+                .string()
+                .trim()
+                .min(2, 'Student name must be at least 2 characters')
+                .max(20, 'Student name cannot be more than 20 characters'),
+            email: z
+                .string({
+                    required_error: 'Email is required',
+                    invalid_type_error: 'Email must be a string',
+                })
+                .email('Invalid email format')
+                .optional(),
             phone: z
                 .string({
                     required_error: 'Phone number is required',

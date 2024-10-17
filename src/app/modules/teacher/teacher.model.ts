@@ -1,5 +1,6 @@
 import { Schema, model } from 'mongoose';
 import { ITeacher } from './teacher.interface';
+import { formatPhoneNumber } from '../../utils/formatPhoneNumber';
 
 const teacherSchema = new Schema<ITeacher>(
     {
@@ -59,5 +60,12 @@ const teacherSchema = new Schema<ITeacher>(
     },
 );
 
+// Pre-save middleware to format the phone number
+teacherSchema.pre('save', function (next) {
+    if (this.teacherPhone && this.isModified('teacherPhone')) {
+        this.teacherPhone = formatPhoneNumber(this.teacherPhone);
+    }
+    next();
+});
 // Create and export the model
 export const Teacher = model<ITeacher>('Teacher', teacherSchema);

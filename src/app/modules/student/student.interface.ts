@@ -5,5 +5,6 @@ export interface IStudent {
     studentId: string;
     studentName: string;
     studentPhone: string;
+    studentEmail: string;
     studentProfileImageURL: string;
 }

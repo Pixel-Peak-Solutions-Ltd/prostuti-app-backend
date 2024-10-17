@@ -4,6 +4,10 @@ export type TPhoneVerificationType = keyof typeof PHONE_VERIFICATION_TYPE;
 
 export interface IPhoneVerification {
     phoneNumber: string;
+    otpCode: string;
     verified: boolean;
     phoneVerificationType: TPhoneVerificationType;
+    expireAt: Date;
+    createdAt: Date;
+    updatedAt: Date;
 }

@@ -9,20 +9,41 @@ import { ILoginStudent } from './auth.interface';
 import { USER_STATUS } from '../user/user.constant';
 import config from '../../config';
 import { jwtHelpers } from '../../helpers/jwtHelpers/jwtHelpers';
+import { formatPhoneNumber } from '../../utils/formatPhoneNumber';
+import { PhoneVerification } from '../phoneVerification/phoneVerification.model';
+import { PHONE_VERIFICATION_TYPE } from '../phoneVerification/phoneVerification.constant';
 
 // Register Student
-const registerStudent = async (phone: string, password: string) => {
-    // We have to check if the phone number is verified from twillo
-
+const registerStudent = async (
+    name: string,
+    email: string,
+    phone: string,
+    password: string,
+) => {
     const session = await mongoose.startSession();
 
     try {
         session.startTransaction();
 
+        // Check if the phone number is verified
+        const verifiedPhone = await PhoneVerification.findOne({
+            phoneNumber: formatPhoneNumber(phone),
+            phoneVerificationType: PHONE_VERIFICATION_TYPE.ACCOUNT_CREATION,
+            verified: true,
+        });
+
+        if (!verifiedPhone) {
+            throw new AppError(
+                StatusCodes.BAD_REQUEST,
+                'Phone number is not verified',
+            );
+        }
+
         const user: Partial<IUser> = {
             id: `SID${Date.now()}${Math.random().toString(36).slice(2, 7)}`,
             password,
             phone,
+            email,
             role: 'student',
         };
 
@@ -38,6 +59,8 @@ const registerStudent = async (phone: string, password: string) => {
         const student = {
             userId: newUser[0]._id,
             studentId: newUser[0].id,
+            studentName: name,
+            studentEmail: email,
             studentPhone: newUser[0].phone,
         };
 
@@ -67,7 +90,7 @@ const loginUser = async (payload: ILoginStudent) => {
     const { email, phone, password } = payload;
 
     const user = await User.findOne({
-        ...(email ? { email } : { phone }),
+        ...(email ? { email } : { phone: formatPhoneNumber(phone) }),
     }).select('+password');
 
     // Check if the user exist in database

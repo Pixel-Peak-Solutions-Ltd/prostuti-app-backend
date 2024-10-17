@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import { IUserModel, IUser } from './user.interface';
 import { USER_ROLE, USER_STATUS } from './user.constant';
 import config from '../../config';
+import { formatPhoneNumber } from '../../utils/formatPhoneNumber';
 
 // User Schema
 const userSchema = new Schema<IUser, IUserModel>(
@@ -47,13 +48,7 @@ const userSchema = new Schema<IUser, IUserModel>(
         email: {
             type: String,
             unique: true,
-            sparse: true,
-            required: function () {
-                return (
-                    this.role === USER_ROLE.teacher ||
-                    this.role === USER_ROLE.admin
-                );
-            },
+            required: true,
             validate: [
                 {
                     validator: function (email: string) {
@@ -88,12 +83,19 @@ const userSchema = new Schema<IUser, IUserModel>(
     },
 );
 
-// Hash password while saving to database
+// Hash password and add +88 to number if needed while saving to database
 userSchema.pre('save', async function (next) {
-    this.password = await bcrypt.hash(
-        this.password,
-        Number(config.bcrypt_salt),
-    );
+    if (this.password && this.isModified('password')) {
+        this.password = await bcrypt.hash(
+            this.password,
+            Number(config.bcrypt_salt),
+        );
+    }
+
+    if (this.phone && this.isModified('phone')) {
+        this.phone = formatPhoneNumber(this.phone);
+    }
+
     next();
 });
 

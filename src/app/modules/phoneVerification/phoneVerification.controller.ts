@@ -4,10 +4,12 @@ import sendSuccessResponse from '../../utils/sendSuccessResponse';
 import { phonVerificationService } from './phoneVerification.service';
 
 const sendVerificationCode = catchAsync(async (req, res) => {
-    const { phoneNumber } = req.body;
+    const { phoneNumber, phoneVerificationType } = req.body;
 
-    const result =
-        await phonVerificationService.sendVerificationCode(phoneNumber);
+    const result = await phonVerificationService.sendVerificationCode(
+        phoneNumber,
+        phoneVerificationType,
+    );
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
@@ -17,11 +19,12 @@ const sendVerificationCode = catchAsync(async (req, res) => {
 });
 
 const verifyPhoneNumber = catchAsync(async (req, res) => {
-    const { phoneNumber, code } = req.body;
+    const { phoneNumber, code, phoneVerificationType } = req.body;
 
     const result = await phonVerificationService.verifyPhoneNumber(
         phoneNumber,
         code,
+        phoneVerificationType,
     );
 
     sendSuccessResponse(res, {
