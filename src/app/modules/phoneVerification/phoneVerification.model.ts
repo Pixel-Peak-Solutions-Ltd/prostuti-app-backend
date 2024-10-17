@@ -26,6 +26,9 @@ const phoneVerificationSchema = new Schema<IPhoneVerification>(
             },
             required: [true, 'phoneVerificationType is required'],
         },
+        verifiedAt: {
+            type: Date,
+        },
 
         expireAt: {
             type: Date,
@@ -54,6 +57,23 @@ phoneVerificationSchema.index(
     {
         expireAfterSeconds: 0,
         partialFilterExpression: { verified: false },
+    },
+);
+
+// Pre-save middleware to set `verifiedAt` when the document is verified
+phoneVerificationSchema.pre('save', function (next) {
+    if (this.isModified('verified') && this.verified) {
+        this.verifiedAt = new Date();
+    }
+    next();
+});
+
+// Create a TTL index on `verifiedAt` to delete verified documents after 5 minutes
+phoneVerificationSchema.index(
+    { verifiedAt: 1 },
+    {
+        expireAfterSeconds: process.env.VERIFIED_PHONE_DOC_EXPIRATION,
+        partialFilterExpression: { verified: true },
     },
 );
 

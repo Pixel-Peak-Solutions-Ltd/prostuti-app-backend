@@ -7,6 +7,7 @@ export interface IPhoneVerification {
     otpCode: string;
     verified: boolean;
     phoneVerificationType: TPhoneVerificationType;
+    verifiedAt: Date;
     expireAt: Date;
     createdAt: Date;
     updatedAt: Date;

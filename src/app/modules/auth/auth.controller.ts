@@ -31,7 +31,21 @@ const loginUser = catchAsync(async (req, res) => {
     });
 });
 
+// Get refresh token
+const refreshToken = catchAsync(async (req, res) => {
+    const { refreshToken } = req.body;
+
+    const result = await authService.refreshToken(refreshToken);
+
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'Access token is retrieved successfully!',
+        data: result,
+    });
+});
+
 export const authController = {
     registerStudent,
     loginUser,
+    refreshToken,
 };

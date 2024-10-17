@@ -8,9 +8,16 @@ export default {
     port: process.env.PORT,
     database_url: process.env.DATABASE_URL,
     bcrypt_salt: process.env.BCRYPT_SALT,
-    jwt_access_secret: process.env.JWT_ACCESS_SECRET,
-    jwt_access_expired_in: process.env.JWT_ACCESS_EXPIRES_IN,
+    jwt_access_token_secret: process.env.JWT_ACCESS_TOKEN_SECRET,
+    jwt_refresh_token_secret: process.env.JWT_REFRESH_TOKEN_SECRET,
+    jwt_access_token_expired_in: process.env.JWT_ACCESS_TOKEN_EXPIRES_IN,
+    jwt_refresh_token_expired_in: process.env.JWT_REFRESH_TOKEN_EXPIRES_IN,
+    jwt_student_access_token_expires_in:
+        process.env.JWT_STUDENT_ACCESS_TOKEN_EXPIRES_IN,
+    jwt_student_refresh_token_expires_in:
+        process.env.JWT_STUDENT_REFRESH_TOKEN_EXPIRES_IN,
     alpha_sms_api_key: process.env.ALPHA_SMS_API_KEY,
     alpha_sms_endpoint: process.env.ALPHA_SMS_ENDPOINT,
     otp_Expiration_Time: process.env.OTP_EXPIRATION_TIME,
+    verified_phone_doc_expiration: process.env.VERIFIED_PHONE_DOC_EXPIRATION,
 };

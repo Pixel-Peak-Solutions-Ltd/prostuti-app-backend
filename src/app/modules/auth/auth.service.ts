@@ -6,7 +6,7 @@ import AppError from '../../classes/errorClasses/AppError';
 import { StatusCodes } from 'http-status-codes';
 import { Student } from '../student/student.model';
 import { ILoginStudent } from './auth.interface';
-import { USER_STATUS } from '../user/user.constant';
+import { USER_ROLE, USER_STATUS } from '../user/user.constant';
 import config from '../../config';
 import { jwtHelpers } from '../../helpers/jwtHelpers/jwtHelpers';
 import { formatPhoneNumber } from '../../utils/formatPhoneNumber';
@@ -114,11 +114,100 @@ const loginUser = async (payload: ILoginStudent) => {
     }
 
     // Access Granted: Send Access Token
+    if (user.role === USER_ROLE.student) {
+        const jwtPayload = { userId: user.id, role: user.role };
+        const accessToken = jwtHelpers.createToken(
+            jwtPayload,
+            config.jwt_access_token_secret,
+            config.jwt_student_access_token_expires_in,
+        );
+
+        const refreshToken = jwtHelpers.createToken(
+            jwtPayload,
+            config.jwt_refresh_token_secret,
+            config.jwt_student_refresh_token_expires_in,
+        );
+
+        return {
+            accessToken,
+            refreshToken,
+        };
+    }
+
     const jwtPayload = { userId: user.id, role: user.role };
     const accessToken = jwtHelpers.createToken(
         jwtPayload,
-        config.jwt_access_secret as string,
-        config.jwt_access_expired_in as string,
+        config.jwt_access_token_secret,
+        config.jwt_access_token_expired_in,
+    );
+
+    const refreshToken = jwtHelpers.createToken(
+        jwtPayload,
+        config.jwt_refresh_token_secret,
+        config.jwt_refresh_token_expired_in,
+    );
+
+    return {
+        accessToken,
+        refreshToken,
+    };
+};
+
+// Get refresh token
+const refreshToken = async (token: string) => {
+    // Check if the given token is valid
+    const decoded = jwtHelpers.verifyToken(
+        token,
+        config.jwt_refresh_token_secret,
+    );
+
+    const { userId, iat } = decoded;
+
+    // Check if the user is exist
+    const user = await User.findOne({ id: userId });
+    if (!user) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'User not found!');
+    }
+
+    // Check if the user is already deleted
+    if (user?.isDeleted) {
+        throw new AppError(StatusCodes.FORBIDDEN, 'User is deleted!');
+    }
+
+    // Check if the user is blocked
+    if (user?.status === 'blocked') {
+        throw new AppError(StatusCodes.FORBIDDEN, 'User is blocked!');
+    }
+
+    if (
+        user.passwordChangedAt &&
+        User.isJWTIssuedBeforePasswordChanged(
+            user.passwordChangedAt,
+            iat as number,
+        )
+    ) {
+        throw new AppError(StatusCodes.UNAUTHORIZED, 'You are not authorized!');
+    }
+
+    // Access Granted: Send Access Token
+    if (user.role === USER_ROLE.student) {
+        const jwtPayload = { userId: user.id, role: user.role };
+        const accessToken = jwtHelpers.createToken(
+            jwtPayload,
+            config.jwt_access_token_secret,
+            config.jwt_student_access_token_expires_in,
+        );
+
+        return {
+            accessToken,
+        };
+    }
+
+    const jwtPayload = { userId: user.id, role: user.role };
+    const accessToken = jwtHelpers.createToken(
+        jwtPayload,
+        config.jwt_access_token_secret,
+        config.jwt_access_token_expired_in,
     );
 
     return {
@@ -129,4 +218,5 @@ const loginUser = async (payload: ILoginStudent) => {
 export const authService = {
     registerStudent,
     loginUser,
+    refreshToken,
 };
