@@ -1,46 +1,64 @@
 import { Schema, model } from 'mongoose';
 import { IStudent } from './student.interface';
-import { Gender } from './student.constant';
-import validator from 'validator';
+import { formatPhoneNumber } from '../../utils/formatPhoneNumber';
 
+// Student Schema
 const studentSchema = new Schema<IStudent>(
     {
-        name: {
+        userId: {
+            type: Schema.Types.ObjectId,
+            required: [true, 'userId is required'],
+            ref: 'User',
+        },
+        studentId: {
             type: String,
-            required: [true, 'ID is required'],
+            required: [true, 'studentId is required'],
             unique: true,
         },
-        gender: {
+        studentName: {
             type: String,
-            enum: {
-                values: Gender,
-                message: '{VALUE} is not valid',
-            },
-            required: [true, 'Gender is required'],
+            trim: true,
+            maxlength: [20, 'Student name cannot be more than 20 characters'],
         },
-        email: {
+        studentPhone: {
             type: String,
-            required: [true, 'Email is required'],
-            unique: true,
-            validate: {
-                validator: function (value: string) {
-                    return validator.isEmail(value);
+            validate: [
+                {
+                    validator: function (phone: string) {
+                        return /^(\+?880|0)1[3456789]\d{8}$/.test(phone);
+                    },
+                    message: 'Invalid Bangladeshi phone number',
                 },
-                message: '{VALUE} is not valid email',
-            },
+            ],
         },
-        contactNo: {
+        studentEmail: {
             type: String,
-            required: [true, 'Contact number is required'],
+            trim: true,
+            lowercase: true,
+            validate: {
+                validator: function (v: string) {
+                    return /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(
+                        v,
+                    );
+                },
+                message: (props) =>
+                    `${props.value} is not a valid email address!`,
+            },
         },
     },
     {
         timestamps: true,
-        toJSON: {
-            virtuals: true,
-        },
+        versionKey: false,
     },
 );
+
+// Pre-save middleware to format the phone number
+studentSchema.pre('save', function (next) {
+    if (this.studentPhone && this.isModified('studentPhone')) {
+        this.studentPhone = formatPhoneNumber(this.studentPhone);
+    }
+    next();
+});
 
 // Create a Model
 export const Student = model<IStudent>('Student', studentSchema);
