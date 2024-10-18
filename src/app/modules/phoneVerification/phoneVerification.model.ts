@@ -48,6 +48,10 @@ phoneVerificationSchema.pre('save', function (next) {
     if (this.phoneNumber && this.isModified('phoneNumber')) {
         this.phoneNumber = formatPhoneNumber(this.phoneNumber);
     }
+
+    if (this.isModified('verified') && this.verified) {
+        this.verifiedAt = new Date();
+    }
     next();
 });
 
@@ -60,19 +64,12 @@ phoneVerificationSchema.index(
     },
 );
 
-// Pre-save middleware to set `verifiedAt` when the document is verified
-phoneVerificationSchema.pre('save', function (next) {
-    if (this.isModified('verified') && this.verified) {
-        this.verifiedAt = new Date();
-    }
-    next();
-});
-
 // Create a TTL index on `verifiedAt` to delete verified documents after 5 minutes
 phoneVerificationSchema.index(
     { verifiedAt: 1 },
     {
-        expireAfterSeconds: process.env.VERIFIED_PHONE_DOC_EXPIRATION,
+        expireAfterSeconds:
+            Number(process.env.VERIFIED_PHONE_DOC_EXPIRATION) || 300,
         partialFilterExpression: { verified: true },
     },
 );

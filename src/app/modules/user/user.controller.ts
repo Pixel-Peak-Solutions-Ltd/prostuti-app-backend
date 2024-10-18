@@ -1,10 +1,10 @@
+import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import catchAsync from '../../utils/catchAsync';
-
 import sendSuccessResponse from '../../utils/sendSuccessResponse';
 import { userService } from './user.service';
 
-const createTeacher = catchAsync(async (req, res) => {
+const createTeacher = catchAsync(async (req: Request, res: Response) => {
     const { email, password } = req.body;
 
     const result = await userService.createTeacher(email, password);
@@ -16,7 +16,7 @@ const createTeacher = catchAsync(async (req, res) => {
     });
 });
 
-const createAdmin = catchAsync(async (req, res) => {
+const createAdmin = catchAsync(async (req: Request, res: Response) => {
     const { email, password } = req.body;
 
     const result = await userService.createAdmin(email, password);

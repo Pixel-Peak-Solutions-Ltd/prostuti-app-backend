@@ -72,7 +72,7 @@ const userSchema = new Schema<IUser, IUserModel>(
             type: String,
             enum: {
                 values: Object.values(USER_ROLE),
-                message: '{VALUE} is not a valid role',
+                message: `{VALUE} is not a valid role.Type must be anything from this: ${Object.values(USER_ROLE)}`,
             },
             required: [true, 'Role is required'],
         },

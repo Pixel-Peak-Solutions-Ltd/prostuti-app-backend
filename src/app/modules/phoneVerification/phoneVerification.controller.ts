@@ -1,9 +1,10 @@
+import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import catchAsync from '../../utils/catchAsync';
 import sendSuccessResponse from '../../utils/sendSuccessResponse';
 import { phonVerificationService } from './phoneVerification.service';
 
-const sendVerificationCode = catchAsync(async (req, res) => {
+const sendVerificationCode = catchAsync(async (req: Request, res: Response) => {
     const { phoneNumber, phoneVerificationType } = req.body;
 
     const result = await phonVerificationService.sendVerificationCode(
@@ -18,7 +19,7 @@ const sendVerificationCode = catchAsync(async (req, res) => {
     });
 });
 
-const verifyPhoneNumber = catchAsync(async (req, res) => {
+const verifyPhoneNumber = catchAsync(async (req: Request, res: Response) => {
     const { phoneNumber, code, phoneVerificationType } = req.body;
 
     const result = await phonVerificationService.verifyPhoneNumber(

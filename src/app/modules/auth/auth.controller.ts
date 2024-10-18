@@ -2,8 +2,9 @@ import { StatusCodes } from 'http-status-codes';
 import catchAsync from '../../utils/catchAsync';
 import sendSuccessResponse from '../../utils/sendSuccessResponse';
 import { authService } from './auth.service';
+import { Request, Response } from 'express';
 
-const registerStudent = catchAsync(async (req, res) => {
+const registerStudent = catchAsync(async (req: Request, res: Response) => {
     const { name, email, phone, password } = req.body;
 
     const result = await authService.registerStudent(
@@ -21,7 +22,7 @@ const registerStudent = catchAsync(async (req, res) => {
 });
 
 // Login User (student, teacher and admin)
-const loginUser = catchAsync(async (req, res) => {
+const loginUser = catchAsync(async (req: Request, res: Response) => {
     const result = await authService.loginUser(req.body);
 
     sendSuccessResponse(res, {
@@ -32,7 +33,7 @@ const loginUser = catchAsync(async (req, res) => {
 });
 
 // Get refresh token
-const refreshToken = catchAsync(async (req, res) => {
+const refreshToken = catchAsync(async (req: Request, res: Response) => {
     const { refreshToken } = req.body;
 
     const result = await authService.refreshToken(refreshToken);

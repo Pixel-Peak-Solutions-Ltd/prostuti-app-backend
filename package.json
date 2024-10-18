@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "organization": "Pixel Peak Solutions Ltd",
     "description": "Backend server for the Prostuti application, built with TypeScript, Express, and MongoDB. This project provides a robust API structure with Zod validation, error handling, and follows best practices for a scalable Node.js backend",
-    "main": "./server.ts",
+    "main": "server.js",
     "scripts": {
         "build": "tsc",
         "start": "node ./dist/server.js",
