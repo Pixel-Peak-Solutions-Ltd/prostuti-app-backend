@@ -13,6 +13,9 @@
         "prettier": "prettier --ignore-path .gitignore --write \"./src/**/*.+(js|ts|json)\"",
         "prettier:fix": "npx prettier --write src"
     },
+    "engines": {
+        "node": ">=14.0.0"
+    },
     "keywords": [
         "TypeScript",
         "Express",
