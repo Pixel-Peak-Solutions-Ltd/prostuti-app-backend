@@ -8,7 +8,7 @@ import { formatPhoneNumber } from '../../utils/formatPhoneNumber';
 // User Schema
 const userSchema = new Schema<IUser, IUserModel>(
     {
-        id: {
+        registeredId: {
             type: String,
             required: [true, 'ID is required'],
             unique: true,
@@ -72,7 +72,7 @@ const userSchema = new Schema<IUser, IUserModel>(
             type: String,
             enum: {
                 values: Object.values(USER_ROLE),
-                message: `{VALUE} is not a valid role.Type must be anything from this: ${Object.values(USER_ROLE)}`,
+                message: `Invalid phone role type. Allowed values are: ${Object.values(USER_ROLE).join(', ')}`,
             },
             required: [true, 'Role is required'],
         },

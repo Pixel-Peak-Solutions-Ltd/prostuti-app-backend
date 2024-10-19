@@ -12,9 +12,9 @@ const app: Application = express();
 app.set('trust proxy', 1);
 
 // Parser
-app.use(express.json());
 app.use(cors({ origin: ['*'], credentials: true }));
 app.use(cookieParser());
+app.use(express.json());
 
 // App route
 app.use('/api/v1', globalRoute);

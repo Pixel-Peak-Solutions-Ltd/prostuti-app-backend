@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import mongoose from 'mongoose';
+import bcrypt from 'bcrypt';
 import { IUser } from '../user/user.interface';
 import { User } from '../user/user.model';
 import AppError from '../../classes/errorClasses/AppError';
@@ -12,9 +13,11 @@ import { jwtHelpers } from '../../helpers/jwtHelpers/jwtHelpers';
 import { formatPhoneNumber } from '../../utils/formatPhoneNumber';
 import { PhoneVerification } from '../phoneVerification/phoneVerification.model';
 import { PHONE_VERIFICATION_TYPE } from '../phoneVerification/phoneVerification.constant';
+import { convertJWTExpireTimeToSeconds } from './auth.utils';
 
 // Register Student
 const registerStudent = async (
+    otpCode: string,
     name: string,
     email: string,
     phone: string,
@@ -30,21 +33,27 @@ const registerStudent = async (
             phoneNumber: formatPhoneNumber(phone),
             phoneVerificationType: PHONE_VERIFICATION_TYPE.ACCOUNT_CREATION,
             verified: true,
+            otpCode,
         });
 
         if (!verifiedPhone) {
-            throw new AppError(
-                StatusCodes.BAD_REQUEST,
-                'Phone number is not verified',
-            );
+            throw new AppError(StatusCodes.BAD_REQUEST, 'Invalid OTP');
         }
 
+        // Check if the phone number is verified
+        await PhoneVerification.findOneAndDelete({
+            phoneNumber: formatPhoneNumber(phone),
+            phoneVerificationType: PHONE_VERIFICATION_TYPE.ACCOUNT_CREATION,
+            verified: true,
+            otpCode,
+        });
+
         const user: Partial<IUser> = {
-            id: `SID${Date.now()}${Math.random().toString(36).slice(2, 7)}`,
+            registeredId: `SID${Date.now()}${Math.random().toString(36).slice(2, 7)}`,
             password,
             phone,
             email,
-            role: 'student',
+            role: USER_ROLE.student,
         };
 
         // Crate a user to User model (Transaction 1)
@@ -57,11 +66,11 @@ const registerStudent = async (
         // Create a student to Student model (Transaction 2)
 
         const student = {
-            userId: newUser[0]._id,
-            studentId: newUser[0].id,
-            studentName: name,
-            studentEmail: email,
-            studentPhone: newUser[0].phone,
+            user_id: newUser[0]._id,
+            studentId: newUser[0].registeredId,
+            name: name,
+            email: newUser[0].email,
+            phone: newUser[0].phone,
         };
 
         const newStudent = await Student.create([student], { session });
@@ -114,8 +123,18 @@ const loginUser = async (payload: ILoginStudent) => {
     }
 
     // Access Granted: Send Access Token
+
+    // For student
     if (user.role === USER_ROLE.student) {
-        const jwtPayload = { userId: user.id, role: user.role };
+        const jwtPayload = { registeredId: user.registeredId, role: user.role };
+
+        const accessTokenExpiresIn = convertJWTExpireTimeToSeconds(
+            config.jwt_student_access_token_expires_in,
+        );
+        const refreshTokenExpiresIn = convertJWTExpireTimeToSeconds(
+            config.jwt_student_refresh_token_expires_in,
+        );
+
         const accessToken = jwtHelpers.createToken(
             jwtPayload,
             config.jwt_access_token_secret,
@@ -130,43 +149,60 @@ const loginUser = async (payload: ILoginStudent) => {
 
         return {
             accessToken,
+            accessTokenExpiresIn,
             refreshToken,
+            refreshTokenExpiresIn,
+            isStudent: true,
         };
     }
+    // For teacher and admin
+    else {
+        const jwtPayload = { registeredId: user.registeredId, role: user.role };
+        const refreshTokenExpiresIn = convertJWTExpireTimeToSeconds(
+            config.jwt_refresh_token_expired_in,
+        );
 
-    const jwtPayload = { userId: user.id, role: user.role };
-    const accessToken = jwtHelpers.createToken(
-        jwtPayload,
-        config.jwt_access_token_secret,
-        config.jwt_access_token_expired_in,
-    );
+        const accessToken = jwtHelpers.createToken(
+            jwtPayload,
+            config.jwt_access_token_secret,
+            config.jwt_access_token_expired_in,
+        );
 
-    const refreshToken = jwtHelpers.createToken(
-        jwtPayload,
-        config.jwt_refresh_token_secret,
-        config.jwt_refresh_token_expired_in,
-    );
+        const refreshToken = jwtHelpers.createToken(
+            jwtPayload,
+            config.jwt_refresh_token_secret,
+            config.jwt_refresh_token_expired_in,
+        );
 
-    return {
-        accessToken,
-        refreshToken,
-    };
+        return {
+            accessToken,
+            refreshToken,
+            refreshTokenExpiresIn,
+            isStudent: false,
+        };
+    }
 };
 
-// Get refresh token
-const refreshToken = async (token: string) => {
+// Get refresh and access token for student
+const getStudentRefreshToken = async (token: string) => {
     // Check if the given token is valid
     const decoded = jwtHelpers.verifyToken(
         token,
         config.jwt_refresh_token_secret,
     );
 
-    const { userId, iat } = decoded;
+    const { registeredId, iat } = decoded;
 
     // Check if the user is exist
-    const user = await User.findOne({ id: userId });
+    const user = await User.findOne({ registeredId });
+
     if (!user) {
         throw new AppError(StatusCodes.NOT_FOUND, 'User not found!');
+    }
+
+    // Check the role
+    if (user.role !== USER_ROLE.student) {
+        throw new AppError(StatusCodes.UNAUTHORIZED, 'You are not authorized!');
     }
 
     // Check if the user is already deleted
@@ -175,10 +211,11 @@ const refreshToken = async (token: string) => {
     }
 
     // Check if the user is blocked
-    if (user?.status === 'blocked') {
+    if (user?.status === USER_STATUS.blocked) {
         throw new AppError(StatusCodes.FORBIDDEN, 'User is blocked!');
     }
 
+    // Is JWT issued before password changed
     if (
         user.passwordChangedAt &&
         User.isJWTIssuedBeforePasswordChanged(
@@ -189,25 +226,88 @@ const refreshToken = async (token: string) => {
         throw new AppError(StatusCodes.UNAUTHORIZED, 'You are not authorized!');
     }
 
-    // Access Granted: Send Access Token
-    if (user.role === USER_ROLE.student) {
-        const jwtPayload = { userId: user.id, role: user.role };
-        const accessToken = jwtHelpers.createToken(
-            jwtPayload,
-            config.jwt_access_token_secret,
-            config.jwt_student_access_token_expires_in,
-        );
+    const jwtPayload = { registeredId: user.registeredId, role: user.role };
 
-        return {
-            accessToken,
-        };
-    }
+    const accessTokenExpiresIn = convertJWTExpireTimeToSeconds(
+        config.jwt_student_access_token_expires_in,
+    );
+    const refreshTokenExpiresIn = convertJWTExpireTimeToSeconds(
+        config.jwt_student_refresh_token_expires_in,
+    );
 
-    const jwtPayload = { userId: user.id, role: user.role };
     const accessToken = jwtHelpers.createToken(
         jwtPayload,
         config.jwt_access_token_secret,
-        config.jwt_access_token_expired_in,
+        config.jwt_student_access_token_expires_in,
+    );
+
+    const refreshToken = jwtHelpers.createToken(
+        jwtPayload,
+        config.jwt_refresh_token_secret,
+        config.jwt_student_refresh_token_expires_in,
+    );
+
+    return {
+        accessToken,
+        accessTokenExpiresIn,
+        refreshToken,
+        refreshTokenExpiresIn,
+    };
+};
+
+// Get refresh token for teacher admin
+const getTeacherAdminRefreshToken = async (token: string) => {
+    // Check if the given token is valid
+    const decoded = jwtHelpers.verifyToken(
+        token,
+        config.jwt_refresh_token_secret,
+    );
+
+    const { registeredId, role, iat } = decoded;
+
+    // Check if the user is exist
+    const user = await User.findOne({ registeredId });
+
+    if (!user) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'User not found!');
+    }
+
+    // Check the role
+    if (user.role !== role) {
+        throw new AppError(StatusCodes.UNAUTHORIZED, 'You are not authorized!');
+    }
+    // Check the role
+    if (user.role === USER_ROLE.student) {
+        throw new AppError(StatusCodes.UNAUTHORIZED, 'You are not authorized!');
+    }
+
+    // Check if the user is already deleted
+    if (user?.isDeleted) {
+        throw new AppError(StatusCodes.FORBIDDEN, 'User is deleted!');
+    }
+
+    // Check if the user is blocked
+    if (user?.status === USER_STATUS.blocked) {
+        throw new AppError(StatusCodes.FORBIDDEN, 'User is blocked!');
+    }
+
+    // Is JWT issued before password changed
+    if (
+        user.passwordChangedAt &&
+        User.isJWTIssuedBeforePasswordChanged(
+            user.passwordChangedAt,
+            iat as number,
+        )
+    ) {
+        throw new AppError(StatusCodes.UNAUTHORIZED, 'You are not authorized!');
+    }
+
+    // Create access token for teacher admin
+    const jwtPayload = { registeredId: user.registeredId, role: user.role };
+    const accessToken = jwtHelpers.createToken(
+        jwtPayload,
+        config.jwt_access_token_secret,
+        config.jwt_student_access_token_expires_in,
     );
 
     return {
@@ -215,8 +315,95 @@ const refreshToken = async (token: string) => {
     };
 };
 
+// Forget student password and Reset password
+const resetStudentPassword = async (
+    otpCode: string,
+    phone: string,
+    newPassword: string,
+) => {
+    const session = await mongoose.startSession();
+
+    try {
+        session.startTransaction();
+
+        // Check if the phone number is verified
+        const verifiedPhone = await PhoneVerification.findOne({
+            phoneNumber: formatPhoneNumber(phone),
+            phoneVerificationType: PHONE_VERIFICATION_TYPE.PASSWORD_RESET,
+            verified: true,
+            otpCode,
+        });
+
+        if (!verifiedPhone) {
+            throw new AppError(
+                StatusCodes.BAD_REQUEST,
+                'Phone number is not verified',
+            );
+        }
+
+        // Delete the verified number
+        await PhoneVerification.findOneAndDelete({
+            phoneNumber: formatPhoneNumber(phone),
+            phoneVerificationType: PHONE_VERIFICATION_TYPE.PASSWORD_RESET,
+            verified: true,
+            otpCode,
+        });
+        // Check if the user is exist
+        const user = await User.findOne({ phone: formatPhoneNumber(phone) });
+
+        if (!user) {
+            throw new AppError(StatusCodes.NOT_FOUND, 'User not found!');
+        }
+
+        // Check the role
+        if (user.role !== USER_ROLE.student) {
+            throw new AppError(
+                StatusCodes.UNAUTHORIZED,
+                'You are not authorized!',
+            );
+        }
+
+        // Check if the user is already deleted
+        if (user?.isDeleted) {
+            throw new AppError(StatusCodes.FORBIDDEN, 'User is deleted!');
+        }
+
+        // Check if the user is blocked
+        if (user?.status === USER_STATUS.blocked) {
+            throw new AppError(StatusCodes.FORBIDDEN, 'User is blocked!');
+        }
+
+        // Update The password
+        const newHashedPassword = await bcrypt.hash(
+            newPassword,
+            Number(config.bcrypt_salt),
+        );
+
+        await User.findOneAndUpdate(
+            {
+                phone: user.phone,
+                role: user.role,
+            },
+            {
+                password: newHashedPassword,
+            },
+        );
+
+        await session.commitTransaction();
+        session.endSession();
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        throw error;
+    }
+
+    return null;
+};
+
 export const authService = {
     registerStudent,
     loginUser,
-    refreshToken,
+    getStudentRefreshToken,
+    getTeacherAdminRefreshToken,
+    resetStudentPassword,
 };

@@ -20,11 +20,11 @@ const sendVerificationCode = catchAsync(async (req: Request, res: Response) => {
 });
 
 const verifyPhoneNumber = catchAsync(async (req: Request, res: Response) => {
-    const { phoneNumber, code, phoneVerificationType } = req.body;
+    const { phoneNumber, otpCode, phoneVerificationType } = req.body;
 
     const result = await phonVerificationService.verifyPhoneNumber(
         phoneNumber,
-        code,
+        otpCode,
         phoneVerificationType,
     );
 

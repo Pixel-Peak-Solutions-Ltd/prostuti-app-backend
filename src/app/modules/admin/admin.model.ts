@@ -4,7 +4,7 @@ import { formatPhoneNumber } from '../../utils/formatPhoneNumber';
 
 const adminSchema = new Schema<IAdmin>(
     {
-        userId: {
+        user_id: {
             type: Schema.Types.ObjectId,
             required: [true, 'userId is required'],
             ref: 'User',
@@ -14,7 +14,7 @@ const adminSchema = new Schema<IAdmin>(
             required: [true, 'teacherId is required'],
             unique: true,
         },
-        adminName: {
+        name: {
             type: String,
             trim: true,
             minlength: [2, 'teacherName must be at least 2 characters long'],
@@ -23,7 +23,7 @@ const adminSchema = new Schema<IAdmin>(
                 'teacherName cannot be more than 100 characters long',
             ],
         },
-        adminPhone: {
+        phone: {
             type: String,
             trim: true,
             validate: {
@@ -34,7 +34,7 @@ const adminSchema = new Schema<IAdmin>(
                     `${props.value} is not a valid phone number!`,
             },
         },
-        adminEmail: {
+        email: {
             type: String,
             required: [true, 'teacherEmail is required'],
             trim: true,
@@ -49,7 +49,7 @@ const adminSchema = new Schema<IAdmin>(
                     `${props.value} is not a valid email address!`,
             },
         },
-        adminProfileImageURL: {
+        profileImageURL: {
             type: String,
             trim: true,
         },
@@ -62,8 +62,8 @@ const adminSchema = new Schema<IAdmin>(
 
 // Pre-save middleware to format the phone number
 adminSchema.pre('save', function (next) {
-    if (this.adminPhone && this.isModified('adminPhone')) {
-        this.adminPhone = formatPhoneNumber(this.adminPhone);
+    if (this.phone && this.isModified('phone')) {
+        this.phone = formatPhoneNumber(this.phone);
     }
     next();
 });

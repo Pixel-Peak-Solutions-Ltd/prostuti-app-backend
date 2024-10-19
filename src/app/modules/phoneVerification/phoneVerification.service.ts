@@ -35,7 +35,7 @@ const sendVerificationCode = async (
 
 const verifyPhoneNumber = async (
     phoneNumber: string,
-    code: string,
+    otpCode: string,
     phoneVerificationType: TPhoneVerificationType,
 ): Promise<{ verified: boolean }> => {
     const formattedPhoneNumber = formatPhoneNumber(phoneNumber);
@@ -53,7 +53,7 @@ const verifyPhoneNumber = async (
         );
     }
 
-    if (verification.otpCode !== code) {
+    if (verification.otpCode !== otpCode) {
         throw new AppError(400, 'Invalid verification code');
     }
 

@@ -1,14 +1,14 @@
 import { TUserRole } from '../../modules/user/user.interface';
 
 export type TJWTDecodedUser = {
-    userId?: string;
+    registeredId: string;
     email: string;
     role: TUserRole;
     iat: number;
 };
 
 export type TJWTPayload = {
-    userId?: string;
+    registeredId: string;
     email?: string;
     role: TUserRole;
 };
