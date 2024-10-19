@@ -4,9 +4,9 @@ import { formatPhoneNumber } from '../../utils/formatPhoneNumber';
 
 const teacherSchema = new Schema<ITeacher>(
     {
-        userId: {
+        user_id: {
             type: Schema.Types.ObjectId,
-            required: [true, 'userId is required'],
+            required: [true, 'user_id is required'],
             ref: 'User',
         },
         teacherId: {
@@ -14,7 +14,7 @@ const teacherSchema = new Schema<ITeacher>(
             required: [true, 'teacherId is required'],
             unique: true,
         },
-        teacherName: {
+        name: {
             type: String,
             trim: true,
             minlength: [2, 'teacherName must be at least 2 characters long'],
@@ -23,7 +23,7 @@ const teacherSchema = new Schema<ITeacher>(
                 'teacherName cannot be more than 100 characters long',
             ],
         },
-        teacherPhone: {
+        phone: {
             type: String,
             trim: true,
             validate: {
@@ -34,7 +34,7 @@ const teacherSchema = new Schema<ITeacher>(
                     `${props.value} is not a valid phone number!`,
             },
         },
-        teacherEmail: {
+        email: {
             type: String,
             required: [true, 'teacherEmail is required'],
             trim: true,
@@ -49,7 +49,7 @@ const teacherSchema = new Schema<ITeacher>(
                     `${props.value} is not a valid email address!`,
             },
         },
-        teacherProfileImageURL: {
+        profileImageURL: {
             type: String,
             trim: true,
         },
@@ -62,8 +62,8 @@ const teacherSchema = new Schema<ITeacher>(
 
 // Pre-save middleware to format the phone number
 teacherSchema.pre('save', function (next) {
-    if (this.teacherPhone && this.isModified('teacherPhone')) {
-        this.teacherPhone = formatPhoneNumber(this.teacherPhone);
+    if (this.phone && this.isModified('phone')) {
+        this.phone = formatPhoneNumber(this.phone);
     }
     next();
 });

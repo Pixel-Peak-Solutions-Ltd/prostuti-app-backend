@@ -1,10 +1,10 @@
 import { Types } from 'mongoose';
 
 export interface IStudent {
-    userId: Types.ObjectId;
+    user_id: Types.ObjectId;
     studentId: string;
-    studentName: string;
-    studentPhone: string;
-    studentEmail: string;
-    studentProfileImageURL: string;
+    name: string;
+    phone: string;
+    email: string;
+    profileImageURL: string;
 }

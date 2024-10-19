@@ -15,7 +15,7 @@ const createTeacher = async (email: string, password: string) => {
         session.startTransaction();
 
         const user: Partial<IUser> = {
-            id: `TID${Date.now()}${Math.random().toString(36).slice(2, 7)}`,
+            registeredId: `TID${Date.now()}${Math.random().toString(36).slice(2, 7)}`,
             email,
             password,
             role: 'teacher',
@@ -30,9 +30,9 @@ const createTeacher = async (email: string, password: string) => {
 
         // Create a teacher to Teacher model (Transaction 2)
         const teacher = {
-            userId: newUser[0]._id,
-            teacherId: newUser[0].id,
-            teacherEmail: newUser[0].email,
+            user_id: newUser[0]._id,
+            teacherId: newUser[0].registeredId,
+            email: newUser[0].email,
         };
 
         const newTeacher = await Teacher.create([teacher], { session });
@@ -64,7 +64,7 @@ const createAdmin = async (email: string, password: string) => {
         session.startTransaction();
 
         const user: Partial<IUser> = {
-            id: `AID${Date.now()}${Math.random().toString(36).slice(2, 7)}`,
+            registeredId: `AID${Date.now()}${Math.random().toString(36).slice(2, 7)}`,
             email,
             password,
             role: 'admin',
@@ -79,9 +79,9 @@ const createAdmin = async (email: string, password: string) => {
 
         // Create a teacher to Teacher model (Transaction 2)
         const admin = {
-            userId: newUser[0]._id,
-            adminId: newUser[0].id,
-            adminEmail: newUser[0].email,
+            user_id: newUser[0]._id,
+            adminId: newUser[0].registeredId,
+            email: newUser[0].email,
         };
 
         const newAdmin = await Admin.create([admin], { session });

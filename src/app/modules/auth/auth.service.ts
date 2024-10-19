@@ -37,10 +37,7 @@ const registerStudent = async (
         });
 
         if (!verifiedPhone) {
-            throw new AppError(
-                StatusCodes.BAD_REQUEST,
-                'Phone number is not verified',
-            );
+            throw new AppError(StatusCodes.BAD_REQUEST, 'Invalid OTP');
         }
 
         // Check if the phone number is verified
@@ -52,11 +49,11 @@ const registerStudent = async (
         });
 
         const user: Partial<IUser> = {
-            id: `SID${Date.now()}${Math.random().toString(36).slice(2, 7)}`,
+            registeredId: `SID${Date.now()}${Math.random().toString(36).slice(2, 7)}`,
             password,
             phone,
             email,
-            role: 'student',
+            role: USER_ROLE.student,
         };
 
         // Crate a user to User model (Transaction 1)
@@ -69,11 +66,11 @@ const registerStudent = async (
         // Create a student to Student model (Transaction 2)
 
         const student = {
-            userId: newUser[0]._id,
-            studentId: newUser[0].id,
-            studentName: name,
-            studentEmail: email,
-            studentPhone: newUser[0].phone,
+            user_id: newUser[0]._id,
+            studentId: newUser[0].registeredId,
+            name: name,
+            email: newUser[0].email,
+            phone: newUser[0].phone,
         };
 
         const newStudent = await Student.create([student], { session });
@@ -129,7 +126,7 @@ const loginUser = async (payload: ILoginStudent) => {
 
     // For student
     if (user.role === USER_ROLE.student) {
-        const jwtPayload = { userId: user.id, role: user.role };
+        const jwtPayload = { registeredId: user.registeredId, role: user.role };
 
         const accessTokenExpiresIn = convertJWTExpireTimeToSeconds(
             config.jwt_student_access_token_expires_in,
@@ -160,7 +157,7 @@ const loginUser = async (payload: ILoginStudent) => {
     }
     // For teacher and admin
     else {
-        const jwtPayload = { userId: user.id, role: user.role };
+        const jwtPayload = { registeredId: user.registeredId, role: user.role };
         const refreshTokenExpiresIn = convertJWTExpireTimeToSeconds(
             config.jwt_refresh_token_expired_in,
         );
@@ -194,10 +191,10 @@ const getStudentRefreshToken = async (token: string) => {
         config.jwt_refresh_token_secret,
     );
 
-    const { userId, iat } = decoded;
+    const { registeredId, iat } = decoded;
 
     // Check if the user is exist
-    const user = await User.findOne({ id: userId });
+    const user = await User.findOne({ registeredId });
 
     if (!user) {
         throw new AppError(StatusCodes.NOT_FOUND, 'User not found!');
@@ -229,7 +226,7 @@ const getStudentRefreshToken = async (token: string) => {
         throw new AppError(StatusCodes.UNAUTHORIZED, 'You are not authorized!');
     }
 
-    const jwtPayload = { userId: user.id, role: user.role };
+    const jwtPayload = { registeredId: user.registeredId, role: user.role };
 
     const accessTokenExpiresIn = convertJWTExpireTimeToSeconds(
         config.jwt_student_access_token_expires_in,
@@ -266,10 +263,10 @@ const getTeacherAdminRefreshToken = async (token: string) => {
         config.jwt_refresh_token_secret,
     );
 
-    const { userId, role, iat } = decoded;
+    const { registeredId, role, iat } = decoded;
 
     // Check if the user is exist
-    const user = await User.findOne({ id: userId });
+    const user = await User.findOne({ registeredId });
 
     if (!user) {
         throw new AppError(StatusCodes.NOT_FOUND, 'User not found!');
@@ -306,7 +303,7 @@ const getTeacherAdminRefreshToken = async (token: string) => {
     }
 
     // Create access token for teacher admin
-    const jwtPayload = { userId: user.id, role: user.role };
+    const jwtPayload = { registeredId: user.registeredId, role: user.role };
     const accessToken = jwtHelpers.createToken(
         jwtPayload,
         config.jwt_access_token_secret,

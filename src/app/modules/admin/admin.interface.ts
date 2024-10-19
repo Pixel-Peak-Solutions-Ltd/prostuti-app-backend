@@ -1,10 +1,10 @@
 import { Types } from 'mongoose';
 
 export interface IAdmin {
-    userId: Types.ObjectId;
+    user_id: Types.ObjectId;
     adminId: string;
-    adminName: string;
-    adminPhone: string;
-    adminEmail: string;
-    adminProfileImageURL: string;
+    name: string;
+    phone: string;
+    email: string;
+    profileImageURL: string;
 }

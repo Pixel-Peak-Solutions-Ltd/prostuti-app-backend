@@ -26,10 +26,10 @@ const auth = (...requiredRoles: TUserRole[]) => {
                 config.jwt_access_token_secret,
             );
 
-            const { userId, role, iat } = decoded;
+            const { registeredId, role, iat } = decoded;
 
             // *#####################################
-            const user = await User.findOne({ id: userId });
+            const user = await User.findOne({ registeredId });
 
             // // Check if the user exist in database
             if (!user) {

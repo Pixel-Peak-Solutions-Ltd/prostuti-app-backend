@@ -5,9 +5,9 @@ import { formatPhoneNumber } from '../../utils/formatPhoneNumber';
 // Student Schema
 const studentSchema = new Schema<IStudent>(
     {
-        userId: {
+        user_id: {
             type: Schema.Types.ObjectId,
-            required: [true, 'userId is required'],
+            required: [true, 'user_id is required'],
             ref: 'User',
         },
         studentId: {
@@ -15,12 +15,12 @@ const studentSchema = new Schema<IStudent>(
             required: [true, 'studentId is required'],
             unique: true,
         },
-        studentName: {
+        name: {
             type: String,
             trim: true,
             maxlength: [20, 'Student name cannot be more than 20 characters'],
         },
-        studentPhone: {
+        phone: {
             type: String,
             validate: [
                 {
@@ -31,7 +31,7 @@ const studentSchema = new Schema<IStudent>(
                 },
             ],
         },
-        studentEmail: {
+        email: {
             type: String,
             trim: true,
             lowercase: true,
@@ -54,8 +54,8 @@ const studentSchema = new Schema<IStudent>(
 
 // Pre-save middleware to format the phone number
 studentSchema.pre('save', function (next) {
-    if (this.studentPhone && this.isModified('studentPhone')) {
-        this.studentPhone = formatPhoneNumber(this.studentPhone);
+    if (this.phone && this.isModified('phone')) {
+        this.phone = formatPhoneNumber(this.phone);
     }
     next();
 });

@@ -7,7 +7,7 @@ export type TUserRole = keyof typeof USER_ROLE;
 export type TUserStatus = keyof typeof USER_STATUS;
 
 export interface IUser {
-    id: string;
+    registeredId: string;
     password: string;
     phone: string;
     email: string;
