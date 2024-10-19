@@ -75,7 +75,15 @@ const loginUserSchema = z.object({
     }),
 });
 
-const refreshTokenValidationSchema = z.object({
+const studentRefreshTokenValidationSchema = z.object({
+    body: z.object({
+        refreshToken: z.string({
+            required_error: 'Refresh token is required!',
+        }),
+    }),
+});
+
+const teacherAdminRefreshTokenValidationSchema = z.object({
     cookies: z.object({
         refreshToken: z.string({
             required_error: 'Refresh token is required!',
@@ -86,5 +94,6 @@ const refreshTokenValidationSchema = z.object({
 export const authValidator = {
     registerStudentValidationSchema,
     loginUserSchema,
-    refreshTokenValidationSchema,
+    studentRefreshTokenValidationSchema,
+    teacherAdminRefreshTokenValidationSchema,
 };

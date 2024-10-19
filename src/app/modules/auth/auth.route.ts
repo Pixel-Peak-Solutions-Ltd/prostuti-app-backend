@@ -18,8 +18,13 @@ router
     )
     .post(
         '/refresh-token',
-        validateRequest(authValidator.refreshTokenValidationSchema),
-        authController.refreshToken,
+        validateRequest(authValidator.teacherAdminRefreshTokenValidationSchema),
+        authController.getTeacherAdminRefreshToken,
+    )
+    .post(
+        '/student/refresh-token',
+        validateRequest(authValidator.studentRefreshTokenValidationSchema),
+        authController.getStudentRefreshToken,
     );
 
 export const authRoute = router;

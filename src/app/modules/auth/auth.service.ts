@@ -12,6 +12,7 @@ import { jwtHelpers } from '../../helpers/jwtHelpers/jwtHelpers';
 import { formatPhoneNumber } from '../../utils/formatPhoneNumber';
 import { PhoneVerification } from '../phoneVerification/phoneVerification.model';
 import { PHONE_VERIFICATION_TYPE } from '../phoneVerification/phoneVerification.constant';
+import { convertJWTExpireTimeToSeconds } from './auth.utils';
 
 // Register Student
 const registerStudent = async (
@@ -114,8 +115,18 @@ const loginUser = async (payload: ILoginStudent) => {
     }
 
     // Access Granted: Send Access Token
+
+    // For student
     if (user.role === USER_ROLE.student) {
         const jwtPayload = { userId: user.id, role: user.role };
+
+        const accessTokenExpiresIn = convertJWTExpireTimeToSeconds(
+            config.jwt_student_access_token_expires_in,
+        );
+        const refreshTokenExpiresIn = convertJWTExpireTimeToSeconds(
+            config.jwt_student_refresh_token_expires_in,
+        );
+
         const accessToken = jwtHelpers.createToken(
             jwtPayload,
             config.jwt_access_token_secret,
@@ -130,31 +141,42 @@ const loginUser = async (payload: ILoginStudent) => {
 
         return {
             accessToken,
+            accessTokenExpiresIn,
             refreshToken,
+            refreshTokenExpiresIn,
+            isStudent: true,
         };
     }
+    // For teacher and admin
+    else {
+        const jwtPayload = { userId: user.id, role: user.role };
+        const refreshTokenExpiresIn = convertJWTExpireTimeToSeconds(
+            config.jwt_refresh_token_expired_in,
+        );
 
-    const jwtPayload = { userId: user.id, role: user.role };
-    const accessToken = jwtHelpers.createToken(
-        jwtPayload,
-        config.jwt_access_token_secret,
-        config.jwt_access_token_expired_in,
-    );
+        const accessToken = jwtHelpers.createToken(
+            jwtPayload,
+            config.jwt_access_token_secret,
+            config.jwt_access_token_expired_in,
+        );
 
-    const refreshToken = jwtHelpers.createToken(
-        jwtPayload,
-        config.jwt_refresh_token_secret,
-        config.jwt_refresh_token_expired_in,
-    );
+        const refreshToken = jwtHelpers.createToken(
+            jwtPayload,
+            config.jwt_refresh_token_secret,
+            config.jwt_refresh_token_expired_in,
+        );
 
-    return {
-        accessToken,
-        refreshToken,
-    };
+        return {
+            accessToken,
+            refreshToken,
+            refreshTokenExpiresIn,
+            isStudent: false,
+        };
+    }
 };
 
-// Get refresh token
-const refreshToken = async (token: string) => {
+// Get refresh and access token for student
+const getStudentRefreshToken = async (token: string) => {
     // Check if the given token is valid
     const decoded = jwtHelpers.verifyToken(
         token,
@@ -165,8 +187,14 @@ const refreshToken = async (token: string) => {
 
     // Check if the user is exist
     const user = await User.findOne({ id: userId });
+
     if (!user) {
         throw new AppError(StatusCodes.NOT_FOUND, 'User not found!');
+    }
+
+    // Check the role
+    if (user.role !== USER_ROLE.student) {
+        throw new AppError(StatusCodes.UNAUTHORIZED, 'You are not authorized!');
     }
 
     // Check if the user is already deleted
@@ -175,10 +203,11 @@ const refreshToken = async (token: string) => {
     }
 
     // Check if the user is blocked
-    if (user?.status === 'blocked') {
+    if (user?.status === USER_STATUS.blocked) {
         throw new AppError(StatusCodes.FORBIDDEN, 'User is blocked!');
     }
 
+    // Is JWT issued before password changed
     if (
         user.passwordChangedAt &&
         User.isJWTIssuedBeforePasswordChanged(
@@ -189,25 +218,88 @@ const refreshToken = async (token: string) => {
         throw new AppError(StatusCodes.UNAUTHORIZED, 'You are not authorized!');
     }
 
-    // Access Granted: Send Access Token
-    if (user.role === USER_ROLE.student) {
-        const jwtPayload = { userId: user.id, role: user.role };
-        const accessToken = jwtHelpers.createToken(
-            jwtPayload,
-            config.jwt_access_token_secret,
-            config.jwt_student_access_token_expires_in,
-        );
+    const jwtPayload = { userId: user.id, role: user.role };
 
-        return {
-            accessToken,
-        };
+    const accessTokenExpiresIn = convertJWTExpireTimeToSeconds(
+        config.jwt_student_access_token_expires_in,
+    );
+    const refreshTokenExpiresIn = convertJWTExpireTimeToSeconds(
+        config.jwt_student_refresh_token_expires_in,
+    );
+
+    const accessToken = jwtHelpers.createToken(
+        jwtPayload,
+        config.jwt_access_token_secret,
+        config.jwt_student_access_token_expires_in,
+    );
+
+    const refreshToken = jwtHelpers.createToken(
+        jwtPayload,
+        config.jwt_refresh_token_secret,
+        config.jwt_student_refresh_token_expires_in,
+    );
+
+    return {
+        accessToken,
+        accessTokenExpiresIn,
+        refreshToken,
+        refreshTokenExpiresIn,
+    };
+};
+
+// Get refresh token for teacher admin
+const getTeacherAdminRefreshToken = async (token: string) => {
+    // Check if the given token is valid
+    const decoded = jwtHelpers.verifyToken(
+        token,
+        config.jwt_refresh_token_secret,
+    );
+
+    const { userId, role, iat } = decoded;
+
+    // Check if the user is exist
+    const user = await User.findOne({ id: userId });
+
+    if (!user) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'User not found!');
     }
 
+    // Check the role
+    if (user.role !== role) {
+        throw new AppError(StatusCodes.UNAUTHORIZED, 'You are not authorized!');
+    }
+    // Check the role
+    if (user.role === USER_ROLE.student) {
+        throw new AppError(StatusCodes.UNAUTHORIZED, 'You are not authorized!');
+    }
+
+    // Check if the user is already deleted
+    if (user?.isDeleted) {
+        throw new AppError(StatusCodes.FORBIDDEN, 'User is deleted!');
+    }
+
+    // Check if the user is blocked
+    if (user?.status === USER_STATUS.blocked) {
+        throw new AppError(StatusCodes.FORBIDDEN, 'User is blocked!');
+    }
+
+    // Is JWT issued before password changed
+    if (
+        user.passwordChangedAt &&
+        User.isJWTIssuedBeforePasswordChanged(
+            user.passwordChangedAt,
+            iat as number,
+        )
+    ) {
+        throw new AppError(StatusCodes.UNAUTHORIZED, 'You are not authorized!');
+    }
+
+    // Create access token for teacher admin
     const jwtPayload = { userId: user.id, role: user.role };
     const accessToken = jwtHelpers.createToken(
         jwtPayload,
         config.jwt_access_token_secret,
-        config.jwt_access_token_expired_in,
+        config.jwt_student_access_token_expires_in,
     );
 
     return {
@@ -218,5 +310,6 @@ const refreshToken = async (token: string) => {
 export const authService = {
     registerStudent,
     loginUser,
-    refreshToken,
+    getStudentRefreshToken,
+    getTeacherAdminRefreshToken,
 };

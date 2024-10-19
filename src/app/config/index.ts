@@ -20,4 +20,6 @@ export default {
     alpha_sms_endpoint: process.env.ALPHA_SMS_ENDPOINT,
     otp_Expiration_Time: process.env.OTP_EXPIRATION_TIME,
     verified_phone_doc_expiration: process.env.VERIFIED_PHONE_DOC_EXPIRATION,
+    refresh_token_default_cookie_age:
+        process.env.REFRESH_TOKEN_DEFAULT_COOKIE_AGE,
 };

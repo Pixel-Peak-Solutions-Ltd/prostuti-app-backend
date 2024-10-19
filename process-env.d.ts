@@ -14,5 +14,6 @@ declare namespace NodeJS {
         ALPHA_SMS_ENDPOINT: string;
         OTP_EXPIRATION_TIME: number;
         VERIFIED_PHONE_DOC_EXPIRATION: number;
+        REFRESH_TOKEN_DEFAULT_COOKIE_AGE: number;
     };
 }
