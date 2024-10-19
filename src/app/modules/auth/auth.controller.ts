@@ -6,9 +6,10 @@ import { Request, Response } from 'express';
 import config from '../../config';
 
 const registerStudent = catchAsync(async (req: Request, res: Response) => {
-    const { name, email, phone, password } = req.body;
+    const { otpCode, name, email, phone, password } = req.body;
 
     const result = await authService.registerStudent(
+        otpCode,
         name,
         email,
         phone,
@@ -101,9 +102,27 @@ const getTeacherAdminRefreshToken = catchAsync(
     },
 );
 
+// Get refresh token for teacher admin
+const resetStudentPassword = catchAsync(async (req: Request, res: Response) => {
+    const { otpCode, phone, newPassword } = req.body;
+
+    const result = await authService.resetStudentPassword(
+        otpCode,
+        phone,
+        newPassword,
+    );
+
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'Password reset successfully',
+        data: result,
+    });
+});
+
 export const authController = {
     registerStudent,
     loginUser,
     getStudentRefreshToken,
     getTeacherAdminRefreshToken,
+    resetStudentPassword,
 };

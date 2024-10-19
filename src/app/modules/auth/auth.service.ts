@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import mongoose from 'mongoose';
+import bcrypt from 'bcrypt';
 import { IUser } from '../user/user.interface';
 import { User } from '../user/user.model';
 import AppError from '../../classes/errorClasses/AppError';
@@ -16,6 +17,7 @@ import { convertJWTExpireTimeToSeconds } from './auth.utils';
 
 // Register Student
 const registerStudent = async (
+    otpCode: string,
     name: string,
     email: string,
     phone: string,
@@ -31,6 +33,7 @@ const registerStudent = async (
             phoneNumber: formatPhoneNumber(phone),
             phoneVerificationType: PHONE_VERIFICATION_TYPE.ACCOUNT_CREATION,
             verified: true,
+            otpCode,
         });
 
         if (!verifiedPhone) {
@@ -39,6 +42,14 @@ const registerStudent = async (
                 'Phone number is not verified',
             );
         }
+
+        // Check if the phone number is verified
+        await PhoneVerification.findOneAndDelete({
+            phoneNumber: formatPhoneNumber(phone),
+            phoneVerificationType: PHONE_VERIFICATION_TYPE.ACCOUNT_CREATION,
+            verified: true,
+            otpCode,
+        });
 
         const user: Partial<IUser> = {
             id: `SID${Date.now()}${Math.random().toString(36).slice(2, 7)}`,
@@ -307,9 +318,95 @@ const getTeacherAdminRefreshToken = async (token: string) => {
     };
 };
 
+// Forget student password and Reset password
+const resetStudentPassword = async (
+    otpCode: string,
+    phone: string,
+    newPassword: string,
+) => {
+    const session = await mongoose.startSession();
+
+    try {
+        session.startTransaction();
+
+        // Check if the phone number is verified
+        const verifiedPhone = await PhoneVerification.findOne({
+            phoneNumber: formatPhoneNumber(phone),
+            phoneVerificationType: PHONE_VERIFICATION_TYPE.PASSWORD_RESET,
+            verified: true,
+            otpCode,
+        });
+
+        if (!verifiedPhone) {
+            throw new AppError(
+                StatusCodes.BAD_REQUEST,
+                'Phone number is not verified',
+            );
+        }
+
+        // Delete the verified number
+        await PhoneVerification.findOneAndDelete({
+            phoneNumber: formatPhoneNumber(phone),
+            phoneVerificationType: PHONE_VERIFICATION_TYPE.PASSWORD_RESET,
+            verified: true,
+            otpCode,
+        });
+        // Check if the user is exist
+        const user = await User.findOne({ phone: formatPhoneNumber(phone) });
+
+        if (!user) {
+            throw new AppError(StatusCodes.NOT_FOUND, 'User not found!');
+        }
+
+        // Check the role
+        if (user.role !== USER_ROLE.student) {
+            throw new AppError(
+                StatusCodes.UNAUTHORIZED,
+                'You are not authorized!',
+            );
+        }
+
+        // Check if the user is already deleted
+        if (user?.isDeleted) {
+            throw new AppError(StatusCodes.FORBIDDEN, 'User is deleted!');
+        }
+
+        // Check if the user is blocked
+        if (user?.status === USER_STATUS.blocked) {
+            throw new AppError(StatusCodes.FORBIDDEN, 'User is blocked!');
+        }
+
+        // Update The password
+        const newHashedPassword = await bcrypt.hash(
+            newPassword,
+            Number(config.bcrypt_salt),
+        );
+
+        await User.findOneAndUpdate(
+            {
+                phone: user.phone,
+                role: user.role,
+            },
+            {
+                password: newHashedPassword,
+            },
+        );
+
+        await session.commitTransaction();
+        session.endSession();
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        throw error;
+    }
+
+    return null;
+};
+
 export const authService = {
     registerStudent,
     loginUser,
     getStudentRefreshToken,
     getTeacherAdminRefreshToken,
+    resetStudentPassword,
 };

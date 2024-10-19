@@ -25,6 +25,11 @@ router
         '/student/refresh-token',
         validateRequest(authValidator.studentRefreshTokenValidationSchema),
         authController.getStudentRefreshToken,
+    )
+    .post(
+        '/student/reset-password',
+        validateRequest(authValidator.studentResetPasswordValidationSchema),
+        authController.resetStudentPassword,
     );
 
 export const authRoute = router;
