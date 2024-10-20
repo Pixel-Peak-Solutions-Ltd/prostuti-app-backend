@@ -56,6 +56,10 @@ const registerStudentValidationSchema = z.object({
 
 const loginUserSchema = z.object({
     body: z.object({
+        rememberMe: z
+            .string()
+            .regex(/^[1-9]\d*d$/, "Must be a non-zero number followed by 'd'")
+            .optional(),
         phone: z
             .string({
                 required_error: 'Phone number is required',

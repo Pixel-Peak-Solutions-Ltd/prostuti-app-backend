@@ -5,6 +5,7 @@ export type TJWTDecodedUser = {
     email: string;
     role: TUserRole;
     iat: number;
+    exp: number;
 };
 
 export type TJWTPayload = {
