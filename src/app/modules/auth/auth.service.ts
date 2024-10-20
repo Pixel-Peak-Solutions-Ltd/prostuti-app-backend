@@ -96,7 +96,7 @@ const registerStudent = async (
 
 // Login User (student, teacher and admin)
 const loginUser = async (payload: ILoginStudent) => {
-    const { email, phone, password } = payload;
+    const { rememberMe, email, phone, password } = payload;
 
     const user = await User.findOne({
         ...(email ? { email } : { phone: formatPhoneNumber(phone) }),
@@ -132,7 +132,9 @@ const loginUser = async (payload: ILoginStudent) => {
             config.jwt_student_access_token_expires_in,
         );
         const refreshTokenExpiresIn = convertJWTExpireTimeToSeconds(
-            config.jwt_student_refresh_token_expires_in,
+            rememberMe
+                ? rememberMe
+                : config.jwt_student_refresh_token_expires_in,
         );
 
         const accessToken = jwtHelpers.createToken(
@@ -144,7 +146,9 @@ const loginUser = async (payload: ILoginStudent) => {
         const refreshToken = jwtHelpers.createToken(
             jwtPayload,
             config.jwt_refresh_token_secret,
-            config.jwt_student_refresh_token_expires_in,
+            rememberMe
+                ? rememberMe
+                : config.jwt_student_refresh_token_expires_in,
         );
 
         return {
@@ -165,13 +169,13 @@ const loginUser = async (payload: ILoginStudent) => {
         const accessToken = jwtHelpers.createToken(
             jwtPayload,
             config.jwt_access_token_secret,
-            config.jwt_access_token_expired_in,
+            rememberMe ? rememberMe : config.jwt_access_token_expired_in,
         );
 
         const refreshToken = jwtHelpers.createToken(
             jwtPayload,
             config.jwt_refresh_token_secret,
-            config.jwt_refresh_token_expired_in,
+            rememberMe ? rememberMe : config.jwt_refresh_token_expired_in,
         );
 
         return {
@@ -191,7 +195,7 @@ const getStudentRefreshToken = async (token: string) => {
         config.jwt_refresh_token_secret,
     );
 
-    const { registeredId, iat } = decoded;
+    const { registeredId, iat, exp } = decoded;
 
     // Check if the user is exist
     const user = await User.findOne({ registeredId });
@@ -231,9 +235,6 @@ const getStudentRefreshToken = async (token: string) => {
     const accessTokenExpiresIn = convertJWTExpireTimeToSeconds(
         config.jwt_student_access_token_expires_in,
     );
-    const refreshTokenExpiresIn = convertJWTExpireTimeToSeconds(
-        config.jwt_student_refresh_token_expires_in,
-    );
 
     const accessToken = jwtHelpers.createToken(
         jwtPayload,
@@ -241,18 +242,31 @@ const getStudentRefreshToken = async (token: string) => {
         config.jwt_student_access_token_expires_in,
     );
 
-    const refreshToken = jwtHelpers.createToken(
-        jwtPayload,
-        config.jwt_refresh_token_secret,
+    // Check if the decoded refresh token's expiration matches the default refresh token expiration
+    const defaultRefreshTokenExpiresIn = convertJWTExpireTimeToSeconds(
         config.jwt_student_refresh_token_expires_in,
     );
+    const tokenExpiresIn = exp - iat;
 
-    return {
-        accessToken,
-        accessTokenExpiresIn,
-        refreshToken,
-        refreshTokenExpiresIn,
-    };
+    if (tokenExpiresIn === defaultRefreshTokenExpiresIn) {
+        const refreshToken = jwtHelpers.createToken(
+            jwtPayload,
+            config.jwt_refresh_token_secret,
+            config.jwt_student_refresh_token_expires_in,
+        );
+
+        return {
+            accessToken,
+            accessTokenExpiresIn,
+            refreshToken,
+            refreshTokenExpiresIn: defaultRefreshTokenExpiresIn,
+        };
+    } else {
+        return {
+            accessToken,
+            accessTokenExpiresIn,
+        };
+    }
 };
 
 // Get refresh token for teacher admin
