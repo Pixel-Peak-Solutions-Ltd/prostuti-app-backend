@@ -1,6 +1,8 @@
 import AppError from '../../classes/errorClasses/AppError';
 import config from '../../config';
 import { formatPhoneNumber } from '../../utils/formatPhoneNumber';
+import { User } from '../user/user.model';
+import { PHONE_VERIFICATION_TYPE } from './phoneVerification.constant';
 import { TPhoneVerificationType } from './phoneVerification.interface';
 import { PhoneVerification } from './phoneVerification.model';
 import { generateOTP, normalizePhoneNumber } from './phoneVerification.utils';
@@ -10,6 +12,18 @@ const sendVerificationCode = async (
     phoneVerificationType: TPhoneVerificationType,
 ) => {
     const normalizedPhoneNumber = normalizePhoneNumber(phoneNumber);
+
+    // Check if the phone number exists in the database for PASSWORD_RESET
+    if (phoneVerificationType === PHONE_VERIFICATION_TYPE.PASSWORD_RESET) {
+        const userExists = await User.exists({
+            phone: formatPhoneNumber(phoneNumber),
+        });
+
+        if (!userExists) {
+            throw new AppError(404, 'User not found with this phone number');
+        }
+    }
+
     const otpCode = generateOTP();
     const apiKey = process.env.ALPHA_SMS_API_KEY;
     const message = `Your Prostuti verification code is: ${otpCode}`;
