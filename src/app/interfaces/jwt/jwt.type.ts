@@ -1,7 +1,8 @@
 import { TUserRole } from '../../modules/user/user.interface';
+import { Types } from 'mongoose';
 
 export type TJWTDecodedUser = {
-    registeredId: string;
+    userId: string;
     email: string;
     role: TUserRole;
     iat: number;
@@ -9,7 +10,7 @@ export type TJWTDecodedUser = {
 };
 
 export type TJWTPayload = {
-    registeredId: string;
+    userId: Types.ObjectId;
     email?: string;
     role: TUserRole;
 };

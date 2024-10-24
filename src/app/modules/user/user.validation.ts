@@ -15,7 +15,11 @@ const createTeacherAdminValidationSchema = z.object({
                 invalid_type_error: 'Password must be a string',
             })
             .min(8, 'Password must be at least 8 characters long')
-            .max(20, 'Password must not exceed 20 characters'),
+            .max(20, 'Password must not exceed 20 characters')
+            .regex(
+                /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?])(?=.*[a-zA-Z0-9!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/,
+                'Password must contain at least one uppercase letter, one number, and one special character',
+            ),
     }),
 });
 
