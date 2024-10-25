@@ -3,8 +3,8 @@ import { Response } from 'express';
 interface IMeta {
     page: number;
     limit: number;
-    total: number;
-    totalPage: number;
+    count: number;
+    // totalPage: number;
 }
 
 interface IResponse<T> {
