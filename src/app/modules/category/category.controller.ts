@@ -3,7 +3,10 @@ import { StatusCodes } from 'http-status-codes';
 import catchAsync from '../../utils/catchAsync';
 import sendSuccessResponse from '../../utils/sendSuccessResponse';
 import { CategoryService } from './categroy.service';
-
+import pick from '../../helpers/pick';
+import { paginationFields } from '../../constant';
+import { categoryFilterableFields } from './category.constant';
+import { TJWTDecodedUser } from '../../interfaces/jwt/jwt.type';
 
 const createCategory = catchAsync(async (req: Request, res: Response) => {
     const result = await CategoryService.createCategory();
@@ -16,17 +19,27 @@ const createCategory = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllCategories = catchAsync(async (req: Request, res: Response) => {
-    const result = await CategoryService.getAllCategories();
+    const filters = pick(req.query, categoryFilterableFields);
+    const paginationOptions = pick(req.query, paginationFields);
+    const result = await CategoryService.getAllCategories(
+        filters,
+        paginationOptions,
+        req.user as TJWTDecodedUser,
+    );
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
         message: 'Categories are retrieved successfully',
-        data: result,
+        data: result.data,
+        meta: result.meta,
     });
 });
 
 const getCategoryByID = catchAsync(async (req: Request, res: Response) => {
-    const result = await CategoryService.getCategoryByID();
+    const result = await CategoryService.getCategoryByID(
+        req.params.id,
+        req.user as TJWTDecodedUser,
+    );
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,

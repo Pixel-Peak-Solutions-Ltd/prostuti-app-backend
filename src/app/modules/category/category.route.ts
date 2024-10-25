@@ -1,13 +1,14 @@
 import express from 'express';
 import { CategoryController } from './category.controller';
+import auth from '../../middlewares/auth';
 
 
 const router = express.Router();
 
 router
     .post('/', CategoryController.createCategory)
-    .get('/', CategoryController.getAllCategories)
-    .get('/:id', CategoryController.getCategoryByID)
+    .get('/',auth(), CategoryController.getAllCategories)
+    .get('/:id',auth(), CategoryController.getCategoryByID)
     .delete('/:id', CategoryController.deleteCategoryByID)
     .patch('/:id', CategoryController.updateCategory);
 
