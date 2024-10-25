@@ -109,8 +109,25 @@ const updateCategory = async () => {
     return 'updateCategory service';
 };
 
-const deleteCategoryByID = async () => {
-    return 'deleteCategoryByID service';
+const deleteCategoryByID = async (
+    id: string,
+    userInfo: TJWTDecodedUser,
+): Promise<any> => {
+    const checkUser = await User.findById(userInfo.registeredId);
+    if (!checkUser) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'User is not found');
+    }
+    // Check if the user is already deleted
+    if (checkUser.isDeleted) {
+        throw new AppError(StatusCodes.FORBIDDEN, 'User is deleted');
+    }
+    // Check if the user is blocked
+    if (checkUser.status === USER_STATUS.blocked) {
+        throw new AppError(StatusCodes.FORBIDDEN, 'User is blocked');
+    }
+
+    const data = await Category.findByIdAndDelete(id);
+    return data;
 };
 
 export const CategoryService = {

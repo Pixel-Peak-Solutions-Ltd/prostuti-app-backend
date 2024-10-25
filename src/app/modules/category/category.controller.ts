@@ -59,12 +59,13 @@ const updateCategory = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteCategoryByID = catchAsync(async (req: Request, res: Response) => {
-    const result = await CategoryService.deleteCategoryByID();
+    const result = await CategoryService.deleteCategoryByID(req.params.id,
+        req.user as TJWTDecodedUser,);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
         message: 'Category is deleted successfully',
-        data: result,
+        data: result._id,
     });
 });
 

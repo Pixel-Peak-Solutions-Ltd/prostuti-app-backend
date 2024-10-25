@@ -9,7 +9,7 @@ router
     .post('/', CategoryController.createCategory)
     .get('/',auth(), CategoryController.getAllCategories)
     .get('/:id',auth(), CategoryController.getCategoryByID)
-    .delete('/:id', CategoryController.deleteCategoryByID)
+    .delete('/:id',auth(), CategoryController.deleteCategoryByID)
     .patch('/:id', CategoryController.updateCategory);
 
 export const categoryRoute = router;
