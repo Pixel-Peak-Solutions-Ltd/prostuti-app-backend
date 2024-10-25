@@ -1,0 +1,119 @@
+import { z } from 'zod';
+import { categoryDivision, categoryType } from './category.constant';
+
+const createCategory = z.object({
+    body: z
+        .object({
+            type: z.enum([...categoryType] as [string, ...string[]], {
+                required_error: 'Category type is required.',
+            }),
+            division: z
+                .enum([...categoryDivision] as [string, ...string[]])
+                .optional(),
+            subject: z
+                .string({
+                    required_error: 'Subject is required',
+                })
+                .min(1, 'Subject cannot be an empty string'),
+            chapter: z
+                .string()
+                .min(1, 'Chapter cannot be an empty string')
+                .optional(),
+            universityType: z
+                .string()
+                .min(1, 'University Type cannot be an empty string')
+                .optional(),
+            universityName: z
+                .string()
+                .min(1, 'University name cannot be an empty string')
+                .optional(),
+            unit: z
+                .string()
+                .min(1, 'Unit cannot be an empty string')
+                .optional(),
+        })
+        .strict()
+        .refine(
+            (data) => {
+                if (data.type === 'Academic') {
+                    return data.division && data.subject;
+                }
+                return true;
+            },
+            {
+                message: 'Division and Subject are required for Academic type.',
+                path: ['division', 'subject'],
+            },
+        )
+        .refine(
+            (data) => {
+                if (data.type === 'Admission') {
+                    return (
+                        data.universityType &&
+                        data.universityName &&
+                        data.subject
+                    );
+                }
+                return true;
+            },
+            {
+                message:
+                    'University Type, University Name, and Subject are required for Admission type.',
+                path: ['universityType', 'universityName', 'subject'],
+            },
+        )
+        .refine(
+            (data) => {
+                if (data.type === 'Job') {
+                    return data.subject;
+                }
+                return true;
+            },
+            {
+                message: 'Subject is required for Job type.',
+                path: ['subject'],
+            },
+        ),
+});
+
+
+const updateCategory = z.object({
+    body: z
+        .object({
+            type: z.enum([...categoryType] as [string, ...string[]], {
+                required_error: 'Category type is required.',
+            }).optional(),
+            division: z
+                .enum([...categoryDivision] as [string, ...string[]])
+                .optional(),
+            subject: z
+                .string({
+                    required_error: 'Subject is required',
+                })
+                .min(1, 'Subject cannot be an empty string').optional(),
+            chapter: z
+                .string()
+                .min(1, 'Chapter cannot be an empty string')
+                .optional(),
+            universityType: z
+                .string()
+                .min(1, 'University Type cannot be an empty string')
+                .optional(),
+            universityName: z
+                .string()
+                .min(1, 'University name cannot be an empty string')
+                .optional(),
+            unit: z
+                .string()
+                .min(1, 'Unit cannot be an empty string')
+                .optional(),
+        })
+        .strict()
+        
+});
+
+
+export const CategoryValidation = {
+    createCategory,
+    updateCategory
+};

@@ -3,15 +3,57 @@ import AppError from '../../classes/errorClasses/AppError';
 import { IPaginationOptions } from '../../interfaces/common';
 import { TJWTDecodedUser } from '../../interfaces/jwt/jwt.type';
 import { User } from '../user/user.model';
-import { ICategoryFilters } from './category.interface';
+import { ICategory, ICategoryFilters } from './category.interface';
 import { USER_STATUS } from '../user/user.constant';
 import { calculatePagination } from '../../helpers/pagenationHelper';
-import { categorySearchableFields } from './category.constant';
+import { categorySearchableFields, categoryType } from './category.constant';
 import { SortOrder } from 'mongoose';
 import { Category } from './category.model';
 
-const createCategory = async () => {
-    return 'createCategory service';
+const createCategory = async (
+    userInfo: TJWTDecodedUser,
+    payload: Partial<ICategory>,
+): Promise<any> => {
+    //check user
+    const checkUser = await User.findById(userInfo.registeredId);
+    if (!checkUser) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'User is not found');
+    }
+    // Check if the user is already deleted
+    if (checkUser.isDeleted) {
+        throw new AppError(StatusCodes.FORBIDDEN, 'User is deleted');
+    }
+    // Check if the user is blocked
+    if (checkUser.status === USER_STATUS.blocked) {
+        throw new AppError(StatusCodes.FORBIDDEN, 'User is blocked');
+    }
+
+    let newCategory: Partial<ICategory>;
+
+    if (payload.type === 'Academic') {
+        newCategory = {
+            type: payload.type,
+            division: payload.division,
+            subject: payload.subject,
+            ...(payload.chapter && { chapter: payload.chapter }),
+        };
+    } else if (payload.type === 'Admission') {
+        newCategory = {
+            type: payload.type,
+            universityType: payload.universityType,
+            universityName: payload.universityName,
+            ...(payload.unit && { unit: payload.unit }),
+            subject: payload.subject,
+        };
+    } else {
+        newCategory = {
+            type: payload.type,
+            subject: payload.subject,
+        };
+    }
+
+    const data = await Category.create(newCategory);
+    return data;
 };
 
 const getAllCategories = async (
@@ -105,8 +147,55 @@ const getCategoryByID = async (
     return data;
 };
 
-const updateCategory = async () => {
-    return 'updateCategory service';
+const updateCategory = async (
+    id: string,
+    userInfo: TJWTDecodedUser,
+    payload: Partial<ICategory>,
+): Promise<any> => {
+    const {
+        type,
+        division,
+        subject,
+        chapter,
+        universityType,
+        universityName,
+        unit,
+    } = payload;
+
+    //check user
+    const checkUser = await User.findById(userInfo.registeredId);
+    if (!checkUser) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'User is not found');
+    }
+    // Check if the user is already deleted
+    if (checkUser.isDeleted) {
+        throw new AppError(StatusCodes.FORBIDDEN, 'User is deleted');
+    }
+    // Check if the user is blocked
+    if (checkUser.status === USER_STATUS.blocked) {
+        throw new AppError(StatusCodes.FORBIDDEN, 'User is blocked');
+    }
+
+    // Check if the category exists
+    const category = await Category.findById(id);
+    if (!category) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Category not found.');
+    }
+
+    // Prepare the update data
+    const updateData: Partial<ICategory> = {};
+    if (type) updateData.type = type;
+    if (division) updateData.division = division;
+    if (subject) updateData.subject = subject;
+    if (chapter) updateData.chapter = chapter;
+    if (universityType) updateData.universityType = universityType;
+    if (universityName) updateData.universityName = universityName;
+    if (unit) updateData.unit = unit;
+
+    const updatedCategory = await Category.findByIdAndUpdate(id, updateData, {
+        new: true,
+    });
+    return updatedCategory;
 };
 
 const deleteCategoryByID = async (

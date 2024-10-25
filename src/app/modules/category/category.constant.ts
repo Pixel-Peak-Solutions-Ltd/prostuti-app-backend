@@ -1,16 +1,16 @@
 export type CategoryType = 'Academic' | 'Admission' | 'Job';
-export type CategoryClass = '9' | '10' | '11' | '12';
-export type CategoryDivision = 'Science' | 'Commerce';
+// export type CategoryClass = '9' | '10' | '11' | '12';
+export type CategoryDivision = 'Science' | 'Commerce' |'Common'
 
 export const categoryType: CategoryType[] = ['Academic', 'Admission', 'Job'];
-export const categoryClass: CategoryClass[] = ['9', '10', '11', '12'];
-export const categoryDivision: CategoryDivision[] = ['Science', 'Commerce'];
+// export const categoryClass: CategoryClass[] = ['9', '10', '11', '12'];
+export const categoryDivision: CategoryDivision[] = ['Science', 'Commerce','Common'];
 
 //filter
 export const categoryFilterableFields = [
     'searchTerm',
     'type',
-    'class',
+    // 'class',
     'division',
     'subject',
     'universityType',
@@ -21,7 +21,7 @@ export const categoryFilterableFields = [
 //searchTerm
 export const categorySearchableFields = [
     'type',
-    'class',
+    // 'class',
     'division',
     'subject',
     'universityType',

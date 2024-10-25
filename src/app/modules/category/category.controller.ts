@@ -9,7 +9,10 @@ import { categoryFilterableFields } from './category.constant';
 import { TJWTDecodedUser } from '../../interfaces/jwt/jwt.type';
 
 const createCategory = catchAsync(async (req: Request, res: Response) => {
-    const result = await CategoryService.createCategory();
+    const result = await CategoryService.createCategory(
+        req.user as TJWTDecodedUser,
+        req.body,
+    );
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
@@ -49,7 +52,11 @@ const getCategoryByID = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateCategory = catchAsync(async (req: Request, res: Response) => {
-    const result = await CategoryService.updateCategory();
+    const result = await CategoryService.updateCategory(
+        req.params.id,
+        req.user as TJWTDecodedUser,
+        req.body,
+    );
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
@@ -59,8 +66,10 @@ const updateCategory = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteCategoryByID = catchAsync(async (req: Request, res: Response) => {
-    const result = await CategoryService.deleteCategoryByID(req.params.id,
-        req.user as TJWTDecodedUser,);
+    const result = await CategoryService.deleteCategoryByID(
+        req.params.id,
+        req.user as TJWTDecodedUser,
+    );
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
