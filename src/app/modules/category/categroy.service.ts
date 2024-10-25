@@ -15,7 +15,7 @@ const createCategory = async (
     payload: Partial<ICategory>,
 ): Promise<any> => {
     //check user
-    const checkUser = await User.findById(userInfo.registeredId);
+    const checkUser = await User.findById(userInfo.userId);
     if (!checkUser) {
         throw new AppError(StatusCodes.NOT_FOUND, 'User is not found');
     }
@@ -63,7 +63,7 @@ const getAllCategories = async (
 ): Promise<{ meta: any; data: any[] }> => {
     const { searchTerm, ...filtersData } = filters;
 
-    const checkUser = await User.findById(userInfo.registeredId);
+    const checkUser = await User.findById(userInfo.userId);
     if (!checkUser) {
         throw new AppError(StatusCodes.NOT_FOUND, 'User is not found');
     }
@@ -130,7 +130,7 @@ const getCategoryByID = async (
     id: string,
     userInfo: TJWTDecodedUser,
 ): Promise<any> => {
-    const checkUser = await User.findById(userInfo.registeredId);
+    const checkUser = await User.findById(userInfo.userId);
     if (!checkUser) {
         throw new AppError(StatusCodes.NOT_FOUND, 'User is not found');
     }
@@ -163,7 +163,7 @@ const updateCategory = async (
     } = payload;
 
     //check user
-    const checkUser = await User.findById(userInfo.registeredId);
+    const checkUser = await User.findById(userInfo.userId);
     if (!checkUser) {
         throw new AppError(StatusCodes.NOT_FOUND, 'User is not found');
     }
@@ -202,7 +202,7 @@ const deleteCategoryByID = async (
     id: string,
     userInfo: TJWTDecodedUser,
 ): Promise<any> => {
-    const checkUser = await User.findById(userInfo.registeredId);
+    const checkUser = await User.findById(userInfo.userId);
     if (!checkUser) {
         throw new AppError(StatusCodes.NOT_FOUND, 'User is not found');
     }
