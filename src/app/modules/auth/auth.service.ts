@@ -126,7 +126,7 @@ const loginUser = async (payload: ILoginStudent) => {
 
     // For student
     if (user.role === USER_ROLE.student) {
-        const jwtPayload = { registeredId: user.registeredId, role: user.role };
+        const jwtPayload = { userId: user._id, role: user.role };
 
         const accessTokenExpiresIn = convertJWTExpireTimeToSeconds(
             config.jwt_student_access_token_expires_in,
@@ -161,7 +161,7 @@ const loginUser = async (payload: ILoginStudent) => {
     }
     // For teacher and admin
     else {
-        const jwtPayload = { registeredId: user.registeredId, role: user.role };
+        const jwtPayload = { userId: user._id, role: user.role };
         const refreshTokenExpiresIn = convertJWTExpireTimeToSeconds(
             config.jwt_refresh_token_expired_in,
         );
@@ -195,10 +195,10 @@ const getStudentRefreshToken = async (token: string) => {
         config.jwt_refresh_token_secret,
     );
 
-    const { registeredId, iat, exp } = decoded;
+    const { userId, iat, exp } = decoded;
 
     // Check if the user is exist
-    const user = await User.findOne({ registeredId });
+    const user = await User.findById(userId);
 
     if (!user) {
         throw new AppError(StatusCodes.NOT_FOUND, 'User not found!');
@@ -230,7 +230,7 @@ const getStudentRefreshToken = async (token: string) => {
         throw new AppError(StatusCodes.UNAUTHORIZED, 'You are not authorized!');
     }
 
-    const jwtPayload = { registeredId: user.registeredId, role: user.role };
+    const jwtPayload = { userId: user._id, role: user.role };
 
     const accessTokenExpiresIn = convertJWTExpireTimeToSeconds(
         config.jwt_student_access_token_expires_in,
@@ -277,10 +277,10 @@ const getTeacherAdminRefreshToken = async (token: string) => {
         config.jwt_refresh_token_secret,
     );
 
-    const { registeredId, role, iat } = decoded;
+    const { userId, role, iat } = decoded;
 
     // Check if the user is exist
-    const user = await User.findOne({ registeredId });
+    const user = await User.findById(userId);
 
     if (!user) {
         throw new AppError(StatusCodes.NOT_FOUND, 'User not found!');
@@ -317,7 +317,7 @@ const getTeacherAdminRefreshToken = async (token: string) => {
     }
 
     // Create access token for teacher admin
-    const jwtPayload = { registeredId: user.registeredId, role: user.role };
+    const jwtPayload = { userId: user._id, role: user.role };
     const accessToken = jwtHelpers.createToken(
         jwtPayload,
         config.jwt_access_token_secret,

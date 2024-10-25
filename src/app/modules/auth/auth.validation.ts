@@ -42,11 +42,20 @@ const registerStudentValidationSchema = z.object({
                     invalid_type_error: 'Password must be a string',
                 })
                 .min(8, 'Password must be at least 8 characters long')
-                .max(20, 'Password must not exceed 20 characters'),
-            confirmPassword: z.string({
-                required_error: 'Confirm password is required',
-                invalid_type_error: 'Confirm password must be a string',
-            }),
+                .max(20, 'Password must not exceed 20 characters')
+                .regex(
+                    /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?])(?=.*[a-zA-Z0-9!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/,
+                    'Password must contain at least one uppercase letter, one number, and one special character',
+                ),
+            confirmPassword: z
+                .string({
+                    required_error: 'Confirm password is required',
+                    invalid_type_error: 'Confirm password must be a string',
+                })
+                .regex(
+                    /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?])(?=.*[a-zA-Z0-9!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/,
+                    'Password must contain at least one uppercase letter, one number, and one special character',
+                ),
         })
         .refine((data) => data.password === data.confirmPassword, {
             message: "Passwords don't match",
@@ -133,11 +142,20 @@ const studentResetPasswordValidationSchema = z.object({
                     invalid_type_error: 'Password must be a string',
                 })
                 .min(8, 'Password must be at least 8 characters long')
-                .max(20, 'Password must not exceed 20 characters'),
-            confirmNewPassword: z.string({
-                required_error: 'Confirm password is required',
-                invalid_type_error: 'Confirm password must be a string',
-            }),
+                .max(20, 'Password must not exceed 20 characters')
+                .regex(
+                    /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?])(?=.*[a-zA-Z0-9!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/,
+                    'Password must contain at least one uppercase letter, one number, and one special character',
+                ),
+            confirmNewPassword: z
+                .string({
+                    required_error: 'Confirm password is required',
+                    invalid_type_error: 'Confirm password must be a string',
+                })
+                .regex(
+                    /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?])(?=.*[a-zA-Z0-9!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/,
+                    'Password must contain at least one uppercase letter, one number, and one special character',
+                ),
         })
         .refine((data) => data.newPassword === data.confirmNewPassword, {
             message: "Passwords don't match",
