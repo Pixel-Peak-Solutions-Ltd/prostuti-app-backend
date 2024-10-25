@@ -1,5 +1,5 @@
 import { Schema, model } from 'mongoose';
-import { categoryDivision, categoryType } from './category.constant';
+import { categoryDivision, categoryType, categoryUniversityType } from './category.constant';
 import { CategoryModel, ICategory } from './category.interface';
 
 const CategorySchema = new Schema<ICategory, CategoryModel>(
@@ -15,7 +15,7 @@ const CategorySchema = new Schema<ICategory, CategoryModel>(
         },
         subject: {
             type: String,
-            unique: true,
+            // unique: true,
             required: [true, 'Subject is required.'],
         },
         chapter: {
@@ -23,6 +23,7 @@ const CategorySchema = new Schema<ICategory, CategoryModel>(
         },
         universityType: {
             type: String,
+            enum: categoryUniversityType,
         },
         universityName: {
             type: String,

@@ -1,5 +1,5 @@
 import { Model } from 'mongoose';
-import { CategoryDivision, CategoryType } from './category.constant';
+import { CategoryDivision, CategoryType, CategoryUniversityType } from './category.constant';
 
 export type ICategory = {
     type: CategoryType;
@@ -7,7 +7,7 @@ export type ICategory = {
     division?: CategoryDivision;
     subject: string;
     chapter?: string;
-    universityType?: string;
+    universityType?: CategoryUniversityType;
     universityName?: string;
     unit?: string;
 };

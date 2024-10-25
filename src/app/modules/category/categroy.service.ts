@@ -15,18 +15,18 @@ const createCategory = async (
     payload: Partial<ICategory>,
 ): Promise<any> => {
     //check user
-    const checkUser = await User.findById(userInfo.userId);
-    if (!checkUser) {
-        throw new AppError(StatusCodes.NOT_FOUND, 'User is not found');
-    }
-    // Check if the user is already deleted
-    if (checkUser.isDeleted) {
-        throw new AppError(StatusCodes.FORBIDDEN, 'User is deleted');
-    }
-    // Check if the user is blocked
-    if (checkUser.status === USER_STATUS.blocked) {
-        throw new AppError(StatusCodes.FORBIDDEN, 'User is blocked');
-    }
+    // const checkUser = await User.findById(userInfo.userId);
+    // if (!checkUser) {
+    //     throw new AppError(StatusCodes.NOT_FOUND, 'User is not found');
+    // }
+    // // Check if the user is already deleted
+    // if (checkUser.isDeleted) {
+    //     throw new AppError(StatusCodes.FORBIDDEN, 'User is deleted');
+    // }
+    // // Check if the user is blocked
+    // if (checkUser.status === USER_STATUS.blocked) {
+    //     throw new AppError(StatusCodes.FORBIDDEN, 'User is blocked');
+    // }
 
     let newCategory: Partial<ICategory>;
 
@@ -63,18 +63,18 @@ const getAllCategories = async (
 ): Promise<{ meta: any; data: any[] }> => {
     const { searchTerm, ...filtersData } = filters;
 
-    const checkUser = await User.findById(userInfo.userId);
-    if (!checkUser) {
-        throw new AppError(StatusCodes.NOT_FOUND, 'User is not found');
-    }
-    // Check if the user is already deleted
-    if (checkUser.isDeleted) {
-        throw new AppError(StatusCodes.FORBIDDEN, 'User is deleted');
-    }
-    // Check if the user is blocked
-    if (checkUser.status === USER_STATUS.blocked) {
-        throw new AppError(StatusCodes.FORBIDDEN, 'User is blocked');
-    }
+    // const checkUser = await User.findById(userInfo.userId);
+    // if (!checkUser) {
+    //     throw new AppError(StatusCodes.NOT_FOUND, 'User is not found');
+    // }
+    // // Check if the user is already deleted
+    // if (checkUser.isDeleted) {
+    //     throw new AppError(StatusCodes.FORBIDDEN, 'User is deleted');
+    // }
+    // // Check if the user is blocked
+    // if (checkUser.status === USER_STATUS.blocked) {
+    //     throw new AppError(StatusCodes.FORBIDDEN, 'User is blocked');
+    // }
 
     const { page, limit, skip, sortBy, sortOrder } =
         calculatePagination(paginationOptions);
@@ -130,20 +130,25 @@ const getCategoryByID = async (
     id: string,
     userInfo: TJWTDecodedUser,
 ): Promise<any> => {
-    const checkUser = await User.findById(userInfo.userId);
-    if (!checkUser) {
-        throw new AppError(StatusCodes.NOT_FOUND, 'User is not found');
-    }
-    // Check if the user is already deleted
-    if (checkUser.isDeleted) {
-        throw new AppError(StatusCodes.FORBIDDEN, 'User is deleted');
-    }
-    // Check if the user is blocked
-    if (checkUser.status === USER_STATUS.blocked) {
-        throw new AppError(StatusCodes.FORBIDDEN, 'User is blocked');
-    }
+    // const checkUser = await User.findById(userInfo.userId);
+    // if (!checkUser) {
+    //     throw new AppError(StatusCodes.NOT_FOUND, 'User is not found');
+    // }
+    // // Check if the user is already deleted
+    // if (checkUser.isDeleted) {
+    //     throw new AppError(StatusCodes.FORBIDDEN, 'User is deleted');
+    // }
+    // // Check if the user is blocked
+    // if (checkUser.status === USER_STATUS.blocked) {
+    //     throw new AppError(StatusCodes.FORBIDDEN, 'User is blocked');
+    // }
 
     const data = await Category.findById(id);
+    if (!data) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Category not found.');
+    }
+
+
     return data;
 };
 
@@ -163,18 +168,18 @@ const updateCategory = async (
     } = payload;
 
     //check user
-    const checkUser = await User.findById(userInfo.userId);
-    if (!checkUser) {
-        throw new AppError(StatusCodes.NOT_FOUND, 'User is not found');
-    }
-    // Check if the user is already deleted
-    if (checkUser.isDeleted) {
-        throw new AppError(StatusCodes.FORBIDDEN, 'User is deleted');
-    }
-    // Check if the user is blocked
-    if (checkUser.status === USER_STATUS.blocked) {
-        throw new AppError(StatusCodes.FORBIDDEN, 'User is blocked');
-    }
+    // const checkUser = await User.findById(userInfo.userId);
+    // if (!checkUser) {
+    //     throw new AppError(StatusCodes.NOT_FOUND, 'User is not found');
+    // }
+    // // Check if the user is already deleted
+    // if (checkUser.isDeleted) {
+    //     throw new AppError(StatusCodes.FORBIDDEN, 'User is deleted');
+    // }
+    // // Check if the user is blocked
+    // if (checkUser.status === USER_STATUS.blocked) {
+    //     throw new AppError(StatusCodes.FORBIDDEN, 'User is blocked');
+    // }
 
     // Check if the category exists
     const category = await Category.findById(id);
@@ -202,20 +207,24 @@ const deleteCategoryByID = async (
     id: string,
     userInfo: TJWTDecodedUser,
 ): Promise<any> => {
-    const checkUser = await User.findById(userInfo.userId);
-    if (!checkUser) {
-        throw new AppError(StatusCodes.NOT_FOUND, 'User is not found');
-    }
-    // Check if the user is already deleted
-    if (checkUser.isDeleted) {
-        throw new AppError(StatusCodes.FORBIDDEN, 'User is deleted');
-    }
-    // Check if the user is blocked
-    if (checkUser.status === USER_STATUS.blocked) {
-        throw new AppError(StatusCodes.FORBIDDEN, 'User is blocked');
-    }
+    // const checkUser = await User.findById(userInfo.userId);
+    // if (!checkUser) {
+    //     throw new AppError(StatusCodes.NOT_FOUND, 'User is not found');
+    // }
+    // // Check if the user is already deleted
+    // if (checkUser.isDeleted) {
+    //     throw new AppError(StatusCodes.FORBIDDEN, 'User is deleted');
+    // }
+    // // Check if the user is blocked
+    // if (checkUser.status === USER_STATUS.blocked) {
+    //     throw new AppError(StatusCodes.FORBIDDEN, 'User is blocked');
+    // }
 
     const data = await Category.findByIdAndDelete(id);
+    if (!data) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Category not found.');
+    }
+
     return data;
 };
 

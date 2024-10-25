@@ -1,5 +1,9 @@
 import { z } from 'zod';
-import { categoryDivision, categoryType } from './category.constant';
+import {
+    categoryDivision,
+    categoryType,
+    categoryUniversityType,
+} from './category.constant';
 
 const createCategory = z.object({
     body: z
@@ -20,8 +24,7 @@ const createCategory = z.object({
                 .min(1, 'Chapter cannot be an empty string')
                 .optional(),
             universityType: z
-                .string()
-                .min(1, 'University Type cannot be an empty string')
+                .enum([...categoryUniversityType] as [string, ...string[]])
                 .optional(),
             universityName: z
                 .string()
@@ -76,13 +79,14 @@ const createCategory = z.object({
         ),
 });
 
-
 const updateCategory = z.object({
     body: z
         .object({
-            type: z.enum([...categoryType] as [string, ...string[]], {
-                required_error: 'Category type is required.',
-            }).optional(),
+            type: z
+                .enum([...categoryType] as [string, ...string[]], {
+                    required_error: 'Category type is required.',
+                })
+                .optional(),
             division: z
                 .enum([...categoryDivision] as [string, ...string[]])
                 .optional(),
@@ -90,14 +94,14 @@ const updateCategory = z.object({
                 .string({
                     required_error: 'Subject is required',
                 })
-                .min(1, 'Subject cannot be an empty string').optional(),
+                .min(1, 'Subject cannot be an empty string')
+                .optional(),
             chapter: z
                 .string()
                 .min(1, 'Chapter cannot be an empty string')
                 .optional(),
             universityType: z
-                .string()
-                .min(1, 'University Type cannot be an empty string')
+                .enum([...categoryUniversityType] as [string, ...string[]])
                 .optional(),
             universityName: z
                 .string()
@@ -108,12 +112,10 @@ const updateCategory = z.object({
                 .min(1, 'Unit cannot be an empty string')
                 .optional(),
         })
-        .strict()
-        
+        .strict(),
 });
-
 
 export const CategoryValidation = {
     createCategory,
-    updateCategory
+    updateCategory,
 };
