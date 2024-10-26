@@ -9,7 +9,7 @@ const router = express.Router();
 router
     .post(
         '/',
-        auth(),
+        auth("admin"),
         validateRequest(CategoryValidation.createCategory),
         CategoryController.createCategory,
     )
@@ -30,10 +30,10 @@ router
     .get('/subject', auth(), CategoryController.getAllCategoriesSubject)
     .get('/chapter', auth(), CategoryController.getAllCategoriesChapter)
     .get('/:id', auth(), CategoryController.getCategoryByID)
-    .delete('/:id', auth(), CategoryController.deleteCategoryByID)
+    .delete('/:id', auth("admin"), CategoryController.deleteCategoryByID)
     .patch(
         '/:id',
-        auth(),
+        auth("admin"),
         validateRequest(CategoryValidation.updateCategory),
         CategoryController.updateCategory,
     );
