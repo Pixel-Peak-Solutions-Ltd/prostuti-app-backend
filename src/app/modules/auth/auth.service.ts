@@ -37,10 +37,13 @@ const registerStudent = async (
         });
 
         if (!verifiedPhone) {
-            throw new AppError(StatusCodes.BAD_REQUEST, 'Invalid OTP');
+            throw new AppError(
+                StatusCodes.BAD_REQUEST,
+                'Invalid OTP or phone number',
+            );
         }
 
-        // Check if the phone number is verified
+        // Delete verified phone number
         await PhoneVerification.findOneAndDelete({
             phoneNumber: formatPhoneNumber(phone),
             phoneVerificationType: PHONE_VERIFICATION_TYPE.ACCOUNT_CREATION,
@@ -119,7 +122,7 @@ const loginUser = async (payload: ILoginStudent) => {
 
     // Check Password is correct
     if (!(await User.isPasswordMatched(password, user.password))) {
-        throw new AppError(StatusCodes.FORBIDDEN, 'Invalid password!');
+        throw new AppError(StatusCodes.FORBIDDEN, 'Invalid password');
     }
 
     // Access Granted: Send Access Token
@@ -351,7 +354,7 @@ const resetStudentPassword = async (
         if (!verifiedPhone) {
             throw new AppError(
                 StatusCodes.BAD_REQUEST,
-                'Phone number is not verified',
+                'Invalid OTP or phone number',
             );
         }
 
