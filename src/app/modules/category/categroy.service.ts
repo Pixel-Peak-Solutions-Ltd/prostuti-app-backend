@@ -126,6 +126,376 @@ const getAllCategories = async (
     };
 };
 
+const getAllCategoriesType = async (
+    filters: ICategoryFilters,
+    paginationOptions: IPaginationOptions,
+    userInfo: TJWTDecodedUser,
+): Promise<{ meta: any; data: any[] }> => {
+    const { searchTerm, ...filtersData } = filters;
+
+    const { sortBy, sortOrder } = calculatePagination(paginationOptions);
+
+    const andConditions = [];
+
+    // searching data
+    if (searchTerm) {
+        andConditions.push({
+            $or: [
+                {
+                    ['type']: {
+                        $regex: searchTerm,
+                        $options: 'i',
+                    },
+                },
+            ],
+        });
+    }
+
+    // filtering data
+    if (Object.keys(filtersData).length) {
+        andConditions.push({
+            $and: Object.entries(filtersData).map(([field, value]) => ({
+                [field]: value,
+            })),
+        });
+    }
+    const sortConditions: { [key: string]: SortOrder } = {};
+
+    if (sortBy && sortOrder) {
+        sortConditions[sortBy] = sortOrder;
+    }
+
+    const whereConditions =
+        andConditions.length > 0 ? { $and: andConditions } : {};
+
+    const result = await Category.distinct('type', whereConditions).sort(
+        sortConditions,
+    );
+    return {
+        meta: {
+            count: result.length,
+        },
+        data: result,
+    };
+};
+
+const getAllCategoriesDivision = async (
+    filters: ICategoryFilters,
+    paginationOptions: IPaginationOptions,
+    userInfo: TJWTDecodedUser,
+): Promise<{ meta: any; data: any[] }> => {
+    const { searchTerm, ...filtersData } = filters;
+
+    const { sortBy, sortOrder } = calculatePagination(paginationOptions);
+
+    const andConditions = [];
+
+    // searching data
+    if (searchTerm) {
+        andConditions.push({
+            $or: [
+                {
+                    ['division']: {
+                        $regex: searchTerm,
+                        $options: 'i',
+                    },
+                },
+            ],
+        });
+    }
+
+    // filtering data
+    if (Object.keys(filtersData).length) {
+        andConditions.push({
+            $and: Object.entries(filtersData).map(([field, value]) => ({
+                [field]: value,
+            })),
+        });
+    }
+    const sortConditions: { [key: string]: SortOrder } = {};
+
+    if (sortBy && sortOrder) {
+        sortConditions[sortBy] = sortOrder;
+    }
+
+    const whereConditions =
+        andConditions.length > 0 ? { $and: andConditions } : {};
+
+    const result = await Category.distinct('division', whereConditions).sort(
+        sortConditions,
+    );
+    return {
+        meta: {
+            count: result.length,
+        },
+        data: result,
+    };
+};
+const getAllCategoriesUniversityType = async (
+    filters: ICategoryFilters,
+    paginationOptions: IPaginationOptions,
+    userInfo: TJWTDecodedUser,
+): Promise<{ meta: any; data: any[] }> => {
+    const { searchTerm, ...filtersData } = filters;
+
+    const { sortBy, sortOrder } = calculatePagination(paginationOptions);
+
+    const andConditions = [];
+
+    // searching data
+    if (searchTerm) {
+        andConditions.push({
+            $or: [
+                {
+                    ['universityType']: {
+                        $regex: searchTerm,
+                        $options: 'i',
+                    },
+                },
+            ],
+        });
+    }
+
+    // filtering data
+    if (Object.keys(filtersData).length) {
+        andConditions.push({
+            $and: Object.entries(filtersData).map(([field, value]) => ({
+                [field]: value,
+            })),
+        });
+    }
+    const sortConditions: { [key: string]: SortOrder } = {};
+
+    if (sortBy && sortOrder) {
+        sortConditions[sortBy] = sortOrder;
+    }
+
+    const whereConditions =
+        andConditions.length > 0 ? { $and: andConditions } : {};
+
+    const result = await Category.distinct(
+        'universityType',
+        whereConditions,
+    ).sort(sortConditions);
+    return {
+        meta: {
+            count: result.length,
+        },
+        data: result,
+    };
+};
+const getAllCategoriesUniversityName = async (
+    filters: ICategoryFilters,
+    paginationOptions: IPaginationOptions,
+    userInfo: TJWTDecodedUser,
+): Promise<{ meta: any; data: any[] }> => {
+    const { searchTerm, ...filtersData } = filters;
+
+    const { sortBy, sortOrder } = calculatePagination(paginationOptions);
+
+    const andConditions = [];
+
+    // searching data
+    if (searchTerm) {
+        andConditions.push({
+            $or: [
+                {
+                    ['universityName']: {
+                        $regex: searchTerm,
+                        $options: 'i',
+                    },
+                },
+            ],
+        });
+    }
+
+    // filtering data
+    if (Object.keys(filtersData).length) {
+        andConditions.push({
+            $and: Object.entries(filtersData).map(([field, value]) => ({
+                [field]: value,
+            })),
+        });
+    }
+    const sortConditions: { [key: string]: SortOrder } = {};
+
+    if (sortBy && sortOrder) {
+        sortConditions[sortBy] = sortOrder;
+    }
+
+    const whereConditions =
+        andConditions.length > 0 ? { $and: andConditions } : {};
+
+    const result = await Category.distinct(
+        'universityName',
+        whereConditions,
+    ).sort(sortConditions);
+    return {
+        meta: {
+            count: result.length,
+        },
+        data: result,
+    };
+};
+const getAllCategoriesUnit = async (
+    filters: ICategoryFilters,
+    paginationOptions: IPaginationOptions,
+    userInfo: TJWTDecodedUser,
+): Promise<{ meta: any; data: any[] }> => {
+    const { searchTerm, ...filtersData } = filters;
+
+    const { sortBy, sortOrder } = calculatePagination(paginationOptions);
+
+    const andConditions = [];
+
+    // searching data
+    if (searchTerm) {
+        andConditions.push({
+            $or: [
+                {
+                    ['unit']: {
+                        $regex: searchTerm,
+                        $options: 'i',
+                    },
+                },
+            ],
+        });
+    }
+
+    // filtering data
+    if (Object.keys(filtersData).length) {
+        andConditions.push({
+            $and: Object.entries(filtersData).map(([field, value]) => ({
+                [field]: value,
+            })),
+        });
+    }
+    const sortConditions: { [key: string]: SortOrder } = {};
+
+    if (sortBy && sortOrder) {
+        sortConditions[sortBy] = sortOrder;
+    }
+
+    const whereConditions =
+        andConditions.length > 0 ? { $and: andConditions } : {};
+
+    const result = await Category.distinct('unit', whereConditions).sort(
+        sortConditions,
+    );
+    return {
+        meta: {
+            count: result.length,
+        },
+        data: result,
+    };
+};
+
+const getAllCategoriesSubject = async (
+    filters: ICategoryFilters,
+    paginationOptions: IPaginationOptions,
+    userInfo: TJWTDecodedUser,
+): Promise<{ meta: any; data: any[] }> => {
+    const { searchTerm, ...filtersData } = filters;
+
+    const { sortBy, sortOrder } = calculatePagination(paginationOptions);
+
+    const andConditions = [];
+
+    // searching data
+    if (searchTerm) {
+        andConditions.push({
+            $or: [
+                {
+                    ['subject']: {
+                        $regex: searchTerm,
+                        $options: 'i',
+                    },
+                },
+            ],
+        });
+    }
+
+    // filtering data
+    if (Object.keys(filtersData).length) {
+        andConditions.push({
+            $and: Object.entries(filtersData).map(([field, value]) => ({
+                [field]: value,
+            })),
+        });
+    }
+    const sortConditions: { [key: string]: SortOrder } = {};
+
+    if (sortBy && sortOrder) {
+        sortConditions[sortBy] = sortOrder;
+    }
+
+    const whereConditions =
+        andConditions.length > 0 ? { $and: andConditions } : {};
+
+    const result = await Category.distinct('subject', whereConditions).sort(
+        sortConditions,
+    );
+    return {
+        meta: {
+            count: result.length,
+        },
+        data: result,
+    };
+};
+
+const getAllCategoriesChapter = async (
+    filters: ICategoryFilters,
+    paginationOptions: IPaginationOptions,
+    userInfo: TJWTDecodedUser,
+): Promise<{ meta: any; data: any[] }> => {
+    const { searchTerm, ...filtersData } = filters;
+
+    const { sortBy, sortOrder } = calculatePagination(paginationOptions);
+
+    const andConditions = [];
+
+    // searching data
+    if (searchTerm) {
+        andConditions.push({
+            $or: [
+                {
+                    ['chapter']: {
+                        $regex: searchTerm,
+                        $options: 'i',
+                    },
+                },
+            ],
+        });
+    }
+
+    // filtering data
+    if (Object.keys(filtersData).length) {
+        andConditions.push({
+            $and: Object.entries(filtersData).map(([field, value]) => ({
+                [field]: value,
+            })),
+        });
+    }
+    const sortConditions: { [key: string]: SortOrder } = {};
+
+    if (sortBy && sortOrder) {
+        sortConditions[sortBy] = sortOrder;
+    }
+
+    const whereConditions =
+        andConditions.length > 0 ? { $and: andConditions } : {};
+
+    const result = await Category.distinct('chapter', whereConditions).sort(
+        sortConditions,
+    );
+    return {
+        meta: {
+            count: result.length,
+        },
+        data: result,
+    };
+};
+
 const getCategoryByID = async (
     id: string,
     userInfo: TJWTDecodedUser,
@@ -147,7 +517,6 @@ const getCategoryByID = async (
     if (!data) {
         throw new AppError(StatusCodes.NOT_FOUND, 'Category not found.');
     }
-
 
     return data;
 };
@@ -231,6 +600,13 @@ const deleteCategoryByID = async (
 export const CategoryService = {
     createCategory,
     getAllCategories,
+    getAllCategoriesType,
+    getAllCategoriesDivision,
+    getAllCategoriesUniversityType,
+    getAllCategoriesUniversityName,
+    getAllCategoriesUnit,
+    getAllCategoriesSubject,
+    getAllCategoriesChapter,
     getCategoryByID,
     updateCategory,
     deleteCategoryByID,
