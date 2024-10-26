@@ -80,7 +80,7 @@ const auth = (...requiredRoles: TUserRole[]) => {
             }
 
             // Check if correct role base user accessing correct role base resources
-            if (requiredRoles && !requiredRoles.includes(role)) {
+            if (requiredRoles.length && !requiredRoles.includes(role)) {
                 throw new AppError(
                     StatusCodes.UNAUTHORIZED,
                     'You are not authorized to perform this action',
