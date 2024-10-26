@@ -1,12 +1,19 @@
 export type CategoryType = 'Academic' | 'Admission' | 'Job';
 // export type CategoryClass = '9' | '10' | '11' | '12';
-export type CategoryDivision = 'Science' | 'Commerce' |'Common'
-export type CategoryUniversityType = 'Private University' | 'Public University' 
+export type CategoryDivision = 'Science' | 'Commerce' | 'Common';
+export type CategoryUniversityType = 'Private University' | 'Public University';
 
 export const categoryType: CategoryType[] = ['Academic', 'Admission', 'Job'];
 // export const categoryClass: CategoryClass[] = ['9', '10', '11', '12'];
-export const categoryDivision: CategoryDivision[] = ['Science', 'Commerce','Common'];
-export const categoryUniversityType: CategoryUniversityType[] = ['Private University', 'Public University',];
+export const categoryDivision: CategoryDivision[] = [
+    'Science',
+    'Commerce',
+    'Common',
+];
+export const categoryUniversityType: CategoryUniversityType[] = [
+    'Private University',
+    'Public University',
+];
 
 //filter
 export const categoryFilterableFields = [
@@ -19,7 +26,34 @@ export const categoryFilterableFields = [
     'universityName',
     'unit',
 ];
-
+export const categoryTypeFilterableFields = ['searchTerm'];
+export const categoryDivisionFilterableFields = ['searchTerm', 'type'];
+export const categoryUniversityTypeFilterableFields = ['searchTerm', 'type'];
+export const categoryUniversityNameFilterableFields = [
+    'searchTerm',
+    'type',
+    'universityType',
+];
+export const categoryUnitFilterableFields = [
+    'searchTerm',
+    'type',
+    'universityType',
+    'universityName',
+];
+export const categorySubjectFilterableFields = [
+    'searchTerm',
+    'type',
+    'division',
+    'universityType',
+    'universityName',
+    'unit',
+];
+export const categoryChapterFilterableFields = [
+    'searchTerm',
+    'type',
+    'division',
+    'subject',
+];
 //searchTerm
 export const categorySearchableFields = [
     'type',

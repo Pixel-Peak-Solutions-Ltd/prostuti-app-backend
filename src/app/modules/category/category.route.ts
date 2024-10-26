@@ -14,6 +14,21 @@ router
         CategoryController.createCategory,
     )
     .get('/', auth(), CategoryController.getAllCategories)
+    .get('/type', auth(), CategoryController.getAllCategoriesType)
+    .get('/division', auth(), CategoryController.getAllCategoriesDivision)
+    .get(
+        '/university-type',
+        auth(),
+        CategoryController.getAllCategoriesUniversityType,
+    )
+    .get(
+        '/university-name',
+        auth(),
+        CategoryController.getAllCategoriesUniversityName,
+    )
+    .get('/unit', auth(), CategoryController.getAllCategoriesUnit)
+    .get('/subject', auth(), CategoryController.getAllCategoriesSubject)
+    .get('/chapter', auth(), CategoryController.getAllCategoriesChapter)
     .get('/:id', auth(), CategoryController.getCategoryByID)
     .delete('/:id', auth(), CategoryController.deleteCategoryByID)
     .patch(
