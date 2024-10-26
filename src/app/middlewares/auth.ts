@@ -10,13 +10,32 @@ import { User } from '../modules/user/user.model';
 const auth = (...requiredRoles: TUserRole[]) => {
     return catchAsync(
         async (req: Request, res: Response, next: NextFunction) => {
-            const token = req.headers.authorization;
+            const authHeader = req.headers.authorization;
+
+            // Check if the authorization header exists
+            if (!authHeader) {
+                throw new AppError(
+                    StatusCodes.UNAUTHORIZED,
+                    'You are not authorized',
+                );
+            }
+
+            // Split the auth header and verify Bearer token format
+            const [bearer, token] = authHeader.split(' ');
+
+            // Check if the token follows Bearer format
+            if (bearer !== 'Bearer' || !token) {
+                throw new AppError(
+                    StatusCodes.UNAUTHORIZED,
+                    'Invalid token format. Token must start with "Bearer "',
+                );
+            }
 
             // Check if the token send from client
             if (!token) {
                 throw new AppError(
                     StatusCodes.UNAUTHORIZED,
-                    'You are not authorize!',
+                    'You are not authorize',
                 );
             }
 
@@ -28,25 +47,25 @@ const auth = (...requiredRoles: TUserRole[]) => {
 
             const { userId, role, iat } = decoded;
 
-            // *#####################################
+            // #####################################
             const user = await User.findById(userId);
 
-            // // Check if the user exist in database
+            // Check if the user exist in database
             if (!user) {
                 throw new AppError(StatusCodes.NOT_FOUND, 'User is not found');
             }
 
-            // // Check if the user is already deleted
+            // Check if the user is already deleted
             if (user.isDeleted) {
                 throw new AppError(StatusCodes.FORBIDDEN, 'User is deleted');
             }
 
-            // // Check if the user is blocked
+            // Check if the user is blocked
             if (user.status === 'blocked') {
                 throw new AppError(StatusCodes.FORBIDDEN, 'User is blocked');
             }
 
-            // // Check if the password changed recently and token is older then token is invalid
+            // Check if the password changed recently and token is older then token is invalid
             if (
                 user.passwordChangedAt &&
                 User.isJWTIssuedBeforePasswordChanged(
@@ -56,7 +75,7 @@ const auth = (...requiredRoles: TUserRole[]) => {
             ) {
                 throw new AppError(
                     StatusCodes.UNAUTHORIZED,
-                    'You are not authorize!',
+                    'You are not authorize. Please login again',
                 );
             }
 
@@ -64,7 +83,7 @@ const auth = (...requiredRoles: TUserRole[]) => {
             if (requiredRoles && !requiredRoles.includes(role)) {
                 throw new AppError(
                     StatusCodes.UNAUTHORIZED,
-                    'You are not authorize!',
+                    'You are not authorized to perform this action',
                 );
             }
 
