@@ -9,31 +9,23 @@ const router = express.Router();
 router
     .post(
         '/',
-        auth("admin"),
+        auth('admin'),
         validateRequest(CategoryValidation.createCategory),
         CategoryController.createCategory,
     )
-    .get('/', auth(), CategoryController.getAllCategories)
-    .get('/type', auth(), CategoryController.getAllCategoriesType)
-    .get('/division', auth(), CategoryController.getAllCategoriesDivision)
-    .get(
-        '/university-type',
-        auth(),
-        CategoryController.getAllCategoriesUniversityType,
-    )
-    .get(
-        '/university-name',
-        auth(),
-        CategoryController.getAllCategoriesUniversityName,
-    )
-    .get('/unit', auth(), CategoryController.getAllCategoriesUnit)
-    .get('/subject', auth(), CategoryController.getAllCategoriesSubject)
-    .get('/chapter', auth(), CategoryController.getAllCategoriesChapter)
-    .get('/:id', auth(), CategoryController.getCategoryByID)
-    .delete('/:id', auth("admin"), CategoryController.deleteCategoryByID)
+    .get('/', CategoryController.getAllCategories)
+    .get('/type', CategoryController.getAllCategoriesType)
+    .get('/division', CategoryController.getAllCategoriesDivision)
+    .get('/university-type', CategoryController.getAllCategoriesUniversityType)
+    .get('/university-name', CategoryController.getAllCategoriesUniversityName)
+    .get('/unit', CategoryController.getAllCategoriesUnit)
+    .get('/subject', CategoryController.getAllCategoriesSubject)
+    .get('/chapter', CategoryController.getAllCategoriesChapter)
+    .get('/:id', CategoryController.getCategoryByID)
+    .delete('/:id', auth('admin'), CategoryController.deleteCategoryByID)
     .patch(
         '/:id',
-        auth("admin"),
+        auth('admin'),
         validateRequest(CategoryValidation.updateCategory),
         CategoryController.updateCategory,
     );
