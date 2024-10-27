@@ -6,12 +6,13 @@ import { Request, Response } from 'express';
 import config from '../../config';
 
 const registerStudent = catchAsync(async (req: Request, res: Response) => {
-    const { otpCode, name, email, phone, password } = req.body;
+    const { otpCode, name, email, categoryType, phone, password } = req.body;
 
     const result = await authService.registerStudent(
         otpCode,
         name,
         email,
+        categoryType,
         phone,
         password,
     );

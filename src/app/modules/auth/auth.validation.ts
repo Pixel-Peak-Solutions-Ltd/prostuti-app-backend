@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { categoryType } from '../category/category.constant';
 
 const registerStudentValidationSchema = z.object({
     body: z
@@ -17,6 +18,10 @@ const registerStudentValidationSchema = z.object({
                 .trim()
                 .min(2, 'Student name must be at least 2 characters')
                 .max(20, 'Student name cannot be more than 20 characters'),
+            categoryType: z.enum([...(categoryType as [string, ...string[]])], {
+                required_error: 'Category type is required',
+                invalid_type_error: `Invalid categoryType. Allowed values are: ${Object.values(categoryType).join(', ')}`,
+            }),
             email: z
                 .string({
                     required_error: 'Email is required',
