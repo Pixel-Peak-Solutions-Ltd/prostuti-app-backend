@@ -28,7 +28,20 @@ const createAdmin = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const profile = catchAsync(async (req, res) => {
+    const { userId, role } = req.user;
+
+    const result = await userService.profile(userId, role);
+
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'User profile is retrieved successfully',
+        data: result,
+    });
+});
+
 export const userController = {
     createTeacher,
     createAdmin,
+    profile,
 };

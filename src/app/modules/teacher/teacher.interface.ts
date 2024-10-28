@@ -7,4 +7,7 @@ export interface ITeacher {
     phone: string;
     email: string;
     profileImageURL: string;
+    joinedDate: string;
+    subject: string;
+    jobType: string;
 }
