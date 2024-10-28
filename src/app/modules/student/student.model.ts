@@ -1,6 +1,7 @@
 import { Schema, model } from 'mongoose';
 import { IStudent } from './student.interface';
 import { formatPhoneNumber } from '../../utils/formatPhoneNumber';
+import { categoryType } from '../category/category.constant';
 
 // Student Schema
 const studentSchema = new Schema<IStudent>(
@@ -19,6 +20,15 @@ const studentSchema = new Schema<IStudent>(
             type: String,
             trim: true,
             maxlength: [20, 'Student name cannot be more than 20 characters'],
+        },
+        categoryType: {
+            type: String,
+            enum: {
+                values: categoryType,
+                message:
+                    '{VALUE} is not a valid category type. Category type must be either Academic, Admission, or Job',
+            },
+            required: [true, 'Category type is required'],
         },
         phone: {
             type: String,

@@ -49,14 +49,15 @@ const userSchema = new Schema<IUser, IUserModel>(
             type: String,
             unique: true,
             required: true,
-            validate: [
-                {
-                    validator: function (email: string) {
-                        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-                    },
-                    message: 'Invalid email format',
+            validate: {
+                validator: function (v: string) {
+                    return /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(
+                        v,
+                    );
                 },
-            ],
+                message: (props) =>
+                    `${props.value} is not a valid email address!`,
+            },
         },
         passwordChangedAt: { type: Date },
         isDeleted: { type: Boolean, default: false },

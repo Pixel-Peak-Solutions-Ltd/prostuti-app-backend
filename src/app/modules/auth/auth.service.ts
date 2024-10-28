@@ -14,12 +14,14 @@ import { formatPhoneNumber } from '../../utils/formatPhoneNumber';
 import { PhoneVerification } from '../phoneVerification/phoneVerification.model';
 import { PHONE_VERIFICATION_TYPE } from '../phoneVerification/phoneVerification.constant';
 import { convertJWTExpireTimeToSeconds } from './auth.utils';
+import { CategoryType } from '../category/category.constant';
 
 // Register Student
 const registerStudent = async (
     otpCode: string,
     name: string,
     email: string,
+    categoryType: CategoryType,
     phone: string,
     password: string,
 ) => {
@@ -74,6 +76,7 @@ const registerStudent = async (
             name: name,
             email: newUser[0].email,
             phone: newUser[0].phone,
+            categoryType,
         };
 
         const newStudent = await Student.create([student], { session });
