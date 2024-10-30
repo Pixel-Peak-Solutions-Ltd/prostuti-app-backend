@@ -5,6 +5,8 @@ import globalErrorHandler from './app/middlewares/globalErrorHandler';
 import globalRoute from './app/routes';
 import healthCheck from './app/middlewares/healthCheck';
 import cookieParser from 'cookie-parser';
+import languageMiddleware from './app/middlewares/language';
+import i18n from './app/i18n';
 
 const app: Application = express();
 
@@ -26,6 +28,12 @@ app.use(express.json());
 
 // App route
 app.use('/api/v1', globalRoute);
+
+// Initialize i18n
+app.use(i18n.init);
+
+// Use language setting middleware
+app.use(languageMiddleware);
 
 // Server Health Check Route
 app.get('/', healthCheck);
