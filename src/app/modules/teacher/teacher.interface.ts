@@ -1,11 +1,11 @@
 import { Types } from 'mongoose';
 
-interface TImage {
-    url: string;
+export interface TImage {
     diskType: string;
     path: string;
     originalName: string;
     modifiedName: string;
+    fileId: string;
 }
 export interface ITeacher {
     user_id: Types.ObjectId;
@@ -13,9 +13,18 @@ export interface ITeacher {
     name: string;
     phone: string;
     email: string;
-    // profileImageURL: string;
     image?: TImage;
     joinedDate: string;
     subject: string;
     jobType: string;
 }
+
+// Define allowed update fields type
+export type TAllowedTeacherUpdates = Pick<
+    ITeacher,
+    'name' | 'phone' | 'subject' | 'jobType'
+>;
+
+export type TUpdatePayloadType = Partial<
+    TAllowedTeacherUpdates & { image?: TImage }
+>;

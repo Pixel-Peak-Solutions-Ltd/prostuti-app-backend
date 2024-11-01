@@ -1,7 +1,33 @@
 import { Schema, model } from 'mongoose';
-import { ITeacher } from './teacher.interface';
+import { ITeacher, TImage } from './teacher.interface';
 import { formatPhoneNumber } from '../../utils/formatPhoneNumber';
 import { categoryType } from '../category/category.constant';
+
+const imageSchema = new Schema<TImage>(
+    {
+        diskType: {
+            type: String,
+            required: [true, 'Image disk type is required'],
+        },
+        path: {
+            type: String,
+            required: [true, 'Image url is required'],
+        },
+        originalName: {
+            type: String,
+            required: [true, 'Image original name is required'],
+        },
+        modifiedName: {
+            type: String,
+            required: [true, 'Image modified name is required'],
+        },
+        fileId: {
+            type: String,
+            required: [true, 'File ID is required'],
+        },
+    },
+    { _id: false, versionKey: false },
+);
 
 const teacherSchema = new Schema<ITeacher>(
     {
@@ -51,24 +77,7 @@ const teacherSchema = new Schema<ITeacher>(
             },
         },
         image: {
-            url: String,
-            diskType: {
-                type: String,
-                // enum: [diskType],
-                required: [true, 'Image disk type is required'],
-            },
-            path: {
-                type: String,
-                required: [true, 'Image url is required'],
-            },
-            originalName: {
-                type: String,
-                required: [true, 'Image original name is required'],
-            },
-            modifiedName: {
-                type: String,
-                required: [true, 'Image modified name is required'],
-            },
+            type: imageSchema,
         },
         joinedDate: {
             type: String,

@@ -18,5 +18,6 @@ declare namespace NodeJS {
         BACKBLAZE_KEY_ID: string;
         BACKBLAZE_APP_KEY: string;
         BACKBLAZE_BUCKET_ID: string;
+        BACKBLAZE_TEACHER_BUCKET: string;
     };
 }
