@@ -5,14 +5,15 @@ import globalErrorHandler from './app/middlewares/globalErrorHandler';
 import globalRoute from './app/routes';
 import healthCheck from './app/middlewares/healthCheck';
 import cookieParser from 'cookie-parser';
+import bodyParser from 'body-parser';
 
 const app: Application = express();
-
 
 // cors options
 const corsOptions = {
     origin: 'http://localhost:5173', // Your frontend's URL
-    credentials: true, // Allow cookies and credentials to be sent
+    credentials: true,// Allow cookies and credentials to be sent
+    optionSuccessStatus: 200
 };
 
 // Trust proxy
@@ -23,6 +24,8 @@ app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 app.use(cookieParser());
 app.use(express.json());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 // App route
 app.use('/api/v1', globalRoute);

@@ -15,5 +15,8 @@ declare namespace NodeJS {
         OTP_EXPIRATION_TIME: number;
         VERIFIED_PHONE_DOC_EXPIRATION: number;
         REFRESH_TOKEN_DEFAULT_COOKIE_AGE: number;
+        BACKBLAZE_KEY_ID: string;
+        BACKBLAZE_APP_KEY: string;
+        BACKBLAZE_BUCKET_ID: string;
     };
 }

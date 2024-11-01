@@ -50,9 +50,25 @@ const teacherSchema = new Schema<ITeacher>(
                     `${props.value} is not a valid email address!`,
             },
         },
-        profileImageURL: {
-            type: String,
-            trim: true,
+        image: {
+            url: String,
+            diskType: {
+                type: String,
+                // enum: [diskType],
+                required: [true, 'Image disk type is required'],
+            },
+            path: {
+                type: String,
+                required: [true, 'Image url is required'],
+            },
+            originalName: {
+                type: String,
+                required: [true, 'Image original name is required'],
+            },
+            modifiedName: {
+                type: String,
+                required: [true, 'Image modified name is required'],
+            },
         },
         joinedDate: {
             type: String,
