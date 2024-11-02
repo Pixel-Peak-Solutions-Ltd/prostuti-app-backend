@@ -6,6 +6,9 @@ import AppError from '../../classes/errorClasses/AppError';
 import { StatusCodes } from 'http-status-codes';
 import { Teacher } from '../teacher/teacher.model';
 import { Admin } from '../admin/admin.model';
+import { formattedTeacherJoiningDate } from './user.utils';
+import { USER_ROLE } from './user.constant';
+import { Student } from '../student/student.model';
 
 // Create Teacher
 const createTeacher = async (email: string, password: string) => {
@@ -33,6 +36,7 @@ const createTeacher = async (email: string, password: string) => {
             user_id: newUser[0]._id,
             teacherId: newUser[0].registeredId,
             email: newUser[0].email,
+            joinedDate: formattedTeacherJoiningDate(),
         };
 
         const newTeacher = await Teacher.create([teacher], { session });
@@ -102,7 +106,27 @@ const createAdmin = async (email: string, password: string) => {
     return null;
 };
 
+// Get me
+const profile = async (userId: string, role: string) => {
+    let result = null;
+
+    if (role === USER_ROLE.student) {
+        result = await Student.findOne({ user_id: userId });
+    }
+
+    if (role === USER_ROLE.teacher) {
+        result = await Teacher.findOne({ user_id: userId });
+    }
+
+    if (role === USER_ROLE.admin) {
+        result = await Admin.findOne({ user_id: userId });
+    }
+
+    return result;
+};
+
 export const userService = {
     createTeacher,
     createAdmin,
+    profile,
 };
