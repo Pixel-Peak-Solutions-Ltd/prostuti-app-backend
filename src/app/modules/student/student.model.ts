@@ -25,8 +25,7 @@ const studentSchema = new Schema<IStudent>(
             type: String,
             enum: {
                 values: categoryType,
-                message:
-                    '{VALUE} is not a valid category type. Category type must be either Academic, Admission, or Job',
+                message: `{VALUE} is not a valid categoryType. Allowed values are: ${Object.values(categoryType).join(', ')}`,
             },
             required: [true, 'Category type is required'],
         },
