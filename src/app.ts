@@ -1,19 +1,19 @@
-import express, { Application } from 'express';
-import cors from 'cors';
-import notFound from './app/middlewares/notFound';
-import globalErrorHandler from './app/middlewares/globalErrorHandler';
-import globalRoute from './app/routes';
-import healthCheck from './app/middlewares/healthCheck';
-import cookieParser from 'cookie-parser';
 import bodyParser from 'body-parser';
+import cookieParser from 'cookie-parser';
+import cors from 'cors';
+import express, { Application } from 'express';
+import globalErrorHandler from './app/middlewares/globalErrorHandler';
+import healthCheck from './app/middlewares/healthCheck';
+import notFound from './app/middlewares/notFound';
+import globalRoute from './app/routes';
 
 const app: Application = express();
 
 // cors options
 const corsOptions = {
     origin: 'http://localhost:5173', // Your frontend's URL
-    credentials: true,// Allow cookies and credentials to be sent
-    optionSuccessStatus: 200
+    credentials: true, // Allow cookies and credentials to be sent
+    optionSuccessStatus: 200,
 };
 
 // Trust proxy

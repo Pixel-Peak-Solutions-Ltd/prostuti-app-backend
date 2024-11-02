@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /* eslint-disable no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { StatusCodes } from 'http-status-codes';
@@ -7,7 +8,7 @@ import { User } from '../user/user.model';
 import { ITeacher, TUpdatePayloadType } from './teacher.interface';
 import { Teacher } from './teacher.model';
 import { Express } from 'express';
-import { uploadToB2 } from '../../utils/backBlaze';
+import { deleteFromB2, uploadToB2 } from '../../utils/backBlaze';
 import config from '../../config';
 
 const updateTeacher = async (
@@ -40,19 +41,44 @@ const updateTeacher = async (
         ...(payload.jobType && { jobType: payload.jobType }),
     };
 
-    // Handle image upload if file exists
+    // Handle image update if file exists
     if (file) {
         try {
-            // Upload new image to B2
+            // First upload the new image
             const newImage = await uploadToB2(
                 file,
                 config.backblaze_teacher_bucket,
             );
+
+            // If upload successful, update the payload
             updatedPayload.image = newImage;
+
+            // Then try to delete the old image asynchronously
+            if (
+                existingTeacher.image?.fileId &&
+                existingTeacher.image!.modifiedName
+            ) {
+                // Use Promise.resolve to handle deletion asynchronously
+                Promise.resolve().then(() => {
+                    deleteFromB2(
+                        existingTeacher.image!.fileId,
+                        existingTeacher.image!.modifiedName,
+                    ).catch((error) => {
+                        // Log the error but don't affect the main operation
+                        console.error('Failed to delete old image:', error);
+                        // You might want to store failed deletions in a separate collection
+                        // for later cleanup
+                    });
+                });
+            }
         } catch (error) {
+            // Here we specifically catch upload errors
+            if (error instanceof AppError) {
+                throw error; // Rethrow AppError with custom message
+            }
             throw new AppError(
                 StatusCodes.INTERNAL_SERVER_ERROR,
-                'Error updating profile image',
+                'Failed to process image update',
             );
         }
     }

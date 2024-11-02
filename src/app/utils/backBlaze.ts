@@ -1,8 +1,11 @@
+/* eslint-disable no-console */
 import B2 from 'backblaze-b2';
 import fs from 'fs';
 import config from '../config';
 import { Express } from 'express';
 import { TImage } from '../modules/teacher/teacher.interface';
+import AppError from '../classes/errorClasses/AppError';
+import { StatusCodes } from 'http-status-codes';
 
 const b2 = new B2({
     applicationKeyId: config.backblaze_key_id,
@@ -54,6 +57,30 @@ export const uploadToB2 = async (
         if (fs.existsSync(file.path)) {
             fs.unlinkSync(file.path);
         }
-        throw error;
+        throw new AppError(
+            StatusCodes.INTERNAL_SERVER_ERROR,
+            'Failed to upload new image to storage',
+        );
+    }
+};
+
+// Function to delete file from B2
+export const deleteFromB2 = async (
+    fileId: string,
+    fileName: string,
+): Promise<void> => {
+    try {
+        // Authenticate with B2
+        await b2.authorize();
+
+        // Delete file using fileId
+        await b2.deleteFileVersion({
+            fileId: fileId,
+            fileName,
+        });
+    } catch (error) {
+        // Log the error but don't throw it
+        console.error('Error deleting file from B2:', error);
+        // We're not throwing here because we don't want to disrupt the main flow
     }
 };
