@@ -3,6 +3,10 @@ import { StatusCodes } from 'http-status-codes';
 import catchAsync from '../../utils/catchAsync';
 import sendSuccessResponse from '../../utils/sendSuccessResponse';
 import { QuestionService } from './question.service';
+import { QuestionFilterableFields } from './question.constant';
+import { paginationFields } from '../../constant';
+import pick from '../../helpers/pick';
+import { TJWTDecodedUser } from '../../interfaces/jwt/jwt.type';
 
 
 
@@ -16,12 +20,16 @@ const createQuestion = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
-const getAllCategories = catchAsync(async (req: Request, res: Response) => {
-    const result = await QuestionService.getAllCategories();
+const getAllQuestions = catchAsync(async (req: Request, res: Response) => {
+  const filters = pick(req.query, QuestionFilterableFields);
+  const paginationOptions = pick(req.query, paginationFields);
+    const result = await QuestionService.getAllQuestions( filters,
+        paginationOptions,
+        req.user as TJWTDecodedUser,);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
-        message: 'Categories are retrieved successfully',
+        message: 'Questions are retrieved successfully',
         data: result,
     });
 });
@@ -58,7 +66,7 @@ const deleteQuestionByID = catchAsync(async (req: Request, res: Response) => {
 
 export const QuestionController = {
     createQuestion,
-    getAllCategories,
+    getAllQuestions,
     getQuestionByID,
     updateQuestion,
     deleteQuestionByID,

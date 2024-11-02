@@ -10,7 +10,7 @@ const router = express.Router();
 
 router
     .post('/',auth("teacher"),validateRequest(QuestionValidation.createQuestion), QuestionController.createQuestion)
-    .get('/', QuestionController.getAllCategories)
+    .get('/',auth(), QuestionController.getAllQuestions)
     .get('/:id',auth(), QuestionController.getQuestionByID)
     .delete('/:id', QuestionController.deleteQuestionByID)
     .patch('/:id', QuestionController.updateQuestion);

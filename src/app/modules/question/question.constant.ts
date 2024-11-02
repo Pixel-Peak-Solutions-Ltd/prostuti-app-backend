@@ -7,14 +7,15 @@ export const QuestionTypes: QuestionType[] = ["MCQ","Written"];
 //filter
 export const QuestionFilterableFields = [
     'searchTerm',
-    'CategoryType',
-    'class',
+    'categoryType',
     'division',
     'subject',
+    'chapter',
     'universityType',
     'universityName',
     'unit',
-    'type'
+    'type',
+    "ownQuestion"
 ];
 
 //searchTerm

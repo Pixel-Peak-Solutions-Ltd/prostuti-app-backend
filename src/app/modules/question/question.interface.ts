@@ -22,11 +22,13 @@ export type IQuestion={
 export type IQuestionFilters = {
   searchTerm?: string;
   categoryType?: string;
-  class?: string;
   division?: string;
   subject?: string;
+  chapter?:string;
   universityType?: string;
   universityName?: string;
   unit?: string;
   type?:string,
+  ownQuestion?: string;
+
 };
