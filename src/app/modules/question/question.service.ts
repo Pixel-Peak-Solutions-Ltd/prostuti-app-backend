@@ -8,6 +8,7 @@ import { IPaginationOptions } from '../../interfaces/common';
 import { calculatePagination } from '../../helpers/pagenationHelper';
 import { QuestionSearchableFields } from './question.constant';
 import mongoose, { PipelineStage } from 'mongoose';
+import { User } from '../user/user.model';
 
 const createQuestion = async (
     userInfo: TJWTDecodedUser,
@@ -60,7 +61,9 @@ const getAllQuestions = async (
     }
 
     if (ownQuestion === 'true') {
-        andConditions.push({ createdBy: new mongoose.Types.ObjectId(userInfo.userId) });
+        andConditions.push({
+            createdBy: new mongoose.Types.ObjectId(userInfo.userId),
+        });
     }
     // filtering data
     if (Object.keys(filtersData).length) {
@@ -88,7 +91,7 @@ const getAllQuestions = async (
     const whereConditions =
         andConditions.length > 0 ? { $and: andConditions } : {};
 
-    const pipeline: PipelineStage[]=[
+    const pipeline: PipelineStage[] = [
         {
             $lookup: {
                 from: 'categories',
@@ -106,7 +109,7 @@ const getAllQuestions = async (
         {
             $skip: skip,
         },
-    ]
+    ];
     if (limit > 0) {
         pipeline.push({ $limit: limit });
     }
@@ -138,8 +141,25 @@ const updateQuestion = async () => {
     return 'updateQuestion service';
 };
 
-const deleteQuestionByID = async () => {
-    return 'deleteQuestionByID service';
+const deleteQuestionByID = async (
+    userInfo: TJWTDecodedUser,
+    id: string,
+): Promise<any> => {
+    const checkUser = await User.findById(userInfo.userId);
+    if (!checkUser) {
+        throw new AppError(StatusCodes.BAD_REQUEST, 'Something went wrong');
+    }
+
+    const checkQuestion = await Question.findById(id);
+    if (!checkQuestion) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Question not found.');
+    }
+
+    if (checkUser._id.toString() !== checkQuestion.createdBy.toString()) {
+        throw new AppError(StatusCodes.UNAUTHORIZED, 'You can not delete it');
+    }
+    const data = await Question.findByIdAndDelete(id);
+    return data;
 };
 
 export const QuestionService = {

@@ -55,7 +55,7 @@ const updateQuestion = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteQuestionByID = catchAsync(async (req: Request, res: Response) => {
-    const result = await QuestionService.deleteQuestionByID();
+    const result = await QuestionService.deleteQuestionByID(req.user,req.params.id);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,

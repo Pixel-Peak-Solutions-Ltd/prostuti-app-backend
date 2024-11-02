@@ -12,7 +12,7 @@ router
     .post('/',auth("teacher"),validateRequest(QuestionValidation.createQuestion), QuestionController.createQuestion)
     .get('/',auth(), QuestionController.getAllQuestions)
     .get('/:id',auth(), QuestionController.getQuestionByID)
-    .delete('/:id', QuestionController.deleteQuestionByID)
+    .delete('/:id',auth("teacher"), QuestionController.deleteQuestionByID)
     .patch('/:id', QuestionController.updateQuestion);
 
 export const QuestionRoute = router;
