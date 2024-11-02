@@ -4,7 +4,7 @@ import { QuestionType } from "./question.constant";
 
 export type IQuestion={
     type: QuestionType
-    categoryId:Types.ObjectId,
+    category_id:Types.ObjectId,
     title:string,
     description:string,
     options?:string[],

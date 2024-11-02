@@ -7,7 +7,7 @@ import { QuestionService } from './question.service';
 
 
 const createQuestion = catchAsync(async (req: Request, res: Response) => {
-    const result = await QuestionService.createQuestion();
+    const result = await QuestionService.createQuestion(req.user,req.body);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,

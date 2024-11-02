@@ -9,7 +9,7 @@ const QuestionSchema = new Schema<IQuestion, QuestionModel>(
             enum: QuestionTypes,
             required: [true, 'Type is required.'],
         },
-        categoryId: {
+        category_id: {
             type: Schema.Types.ObjectId,
             ref: 'Category',
             required: true,
@@ -24,6 +24,7 @@ const QuestionSchema = new Schema<IQuestion, QuestionModel>(
         },
         options: {
             type: [String],
+            default: undefined,
             validate: [
                 {
                     validator: function (this: IQuestion, options: string[]) {
