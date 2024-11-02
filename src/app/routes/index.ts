@@ -4,6 +4,7 @@ import { userRoute } from '../modules/user/user.route';
 import { authRoute } from '../modules/auth/auth.route';
 import { phonVerificationRoute } from '../modules/phoneVerification/phoneVerification.route';
 import { categoryRoute } from '../modules/category/category.route';
+import { QuestionRoute } from '../modules/question/question.route';
 
 const globalRoute = Router();
 
@@ -13,6 +14,7 @@ const routes = [
     { path: '/auth', route: authRoute },
     { path: '/phone-verification', route: phonVerificationRoute },
     { path: '/category', route: categoryRoute },
+    { path: '/question', route: QuestionRoute },
 ];
 
 routes.forEach((route) => globalRoute.use(route.path, route.route));
