@@ -38,8 +38,16 @@ const getAllCategories = async () => {
     return 'getAllCategories service';
 };
 
-const getQuestionByID = async () => {
-    return 'getQuestionByID service';
+const getQuestionByID = async (
+    
+    id:string
+): Promise<any>  => {
+    const data = await Question.findById(id).populate("category_id").populate("createdBy").populate("updatedBy")
+    if (!data) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Question not found');
+      }
+    return data
+    
 };
 
 const updateQuestion = async () => {

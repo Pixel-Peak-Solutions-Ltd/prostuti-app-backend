@@ -27,7 +27,7 @@ const getAllCategories = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getQuestionByID = catchAsync(async (req: Request, res: Response) => {
-    const result = await QuestionService.getQuestionByID();
+    const result = await QuestionService.getQuestionByID(req.params.id);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,

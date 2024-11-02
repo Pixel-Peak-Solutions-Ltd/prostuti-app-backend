@@ -56,12 +56,12 @@ const QuestionSchema = new Schema<IQuestion, QuestionModel>(
         },
         createdBy: {
             type: Schema.Types.ObjectId,
-            ref: 'Teacher',
+            ref: 'User',
             required: true,
         },
         updatedBy: {
             type: Schema.Types.ObjectId,
-            ref: 'Teacher',
+            ref: 'User',
             required: true,
             default: function () {
                 return this.createdBy;
