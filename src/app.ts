@@ -6,10 +6,8 @@ import globalErrorHandler from './app/middlewares/globalErrorHandler';
 import healthCheck from './app/middlewares/healthCheck';
 import notFound from './app/middlewares/notFound';
 import globalRoute from './app/routes';
-import cookieParser from 'cookie-parser';
 import languageMiddleware from './app/middlewares/language';
 import i18n from './app/i18n';
-
 
 const app: Application = express();
 

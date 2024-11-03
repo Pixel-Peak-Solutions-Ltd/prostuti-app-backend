@@ -2,6 +2,7 @@ import express from 'express';
 import validateRequest from '../../middlewares/validateRequest';
 import { authController } from './auth.controller';
 import { authValidator } from './auth.validation';
+import auth from '../../middlewares/auth';
 
 const router = express.Router();
 
@@ -30,6 +31,12 @@ router
         '/student/reset-password',
         validateRequest(authValidator.studentResetPasswordValidationSchema),
         authController.resetStudentPassword,
+    )
+    .post(
+        '/change-password',
+        auth(),
+        validateRequest(authValidator.changePasswordValidationSchema),
+        authController.changeUserPassword,
     );
 
 export const authRoute = router;

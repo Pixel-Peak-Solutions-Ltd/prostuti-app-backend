@@ -22,8 +22,9 @@ export default {
     verified_phone_doc_expiration: process.env.VERIFIED_PHONE_DOC_EXPIRATION,
     refresh_token_default_cookie_age:
         process.env.REFRESH_TOKEN_DEFAULT_COOKIE_AGE,
+    backblaze_application_key: process.env.BACKBLAZE_APPLICATION_KEY,
     backblaze_key_id: process.env.BACKBLAZE_KEY_ID,
-    backblaze_app_key: process.env.BACKBLAZE_APP_KEY,
-    backblaze_bucket_id: process.env.BACKBLAZE_BUCKET_ID,
-    backblaze_teacher_bucket: process.env.BACKBLAZE_TEACHER_BUCKET,
+    backblaze_all_users_bucket_id: process.env.BACKBLAZE_ALL_USERS_BUCKET_ID,
+    backblaze_all_users_bucket_name:
+        process.env.BACKBLAZE_ALL_USERS_BUCKET_NAME,
 };

@@ -168,10 +168,47 @@ const studentResetPasswordValidationSchema = z.object({
         }),
 });
 
+const changePasswordValidationSchema = z.object({
+    body: z
+        .object({
+            oldPassword: z.string({
+                required_error: 'oldPassword is required',
+                invalid_type_error: 'oldPassword must be a string',
+            }),
+            newPassword: z
+                .string({
+                    required_error: 'Password is required',
+                    invalid_type_error: 'Password must be a string',
+                })
+                .min(8, 'Password must be at least 8 characters long')
+                .max(20, 'Password must not exceed 20 characters')
+                .regex(
+                    /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?])(?=.*[a-zA-Z0-9!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/,
+                    'Password must contain at least one uppercase letter, one number, and one special character',
+                ),
+            confirmPassword: z
+                .string({
+                    required_error: 'confirmPassword is required',
+                    invalid_type_error: 'confirmPassword must be a string',
+                })
+                .min(8, 'confirmPassword must be at least 8 characters long')
+                .max(20, 'confirmPassword must not exceed 20 characters')
+                .regex(
+                    /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?])(?=.*[a-zA-Z0-9!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/,
+                    'confirmPassword must contain at least one uppercase letter, one number, and one special character',
+                ),
+        })
+        .refine((data) => data.newPassword === data.confirmPassword, {
+            message: "Passwords don't match",
+            path: ['confirmPassword'],
+        }),
+});
+
 export const authValidator = {
     registerStudentValidationSchema,
     loginUserSchema,
     studentRefreshTokenValidationSchema,
     teacherAdminRefreshTokenValidationSchema,
     studentResetPasswordValidationSchema,
+    changePasswordValidationSchema,
 };

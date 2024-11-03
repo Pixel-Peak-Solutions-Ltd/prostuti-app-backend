@@ -47,7 +47,9 @@ const updateTeacher = async (
             // First upload the new image
             const newImage = await uploadToB2(
                 file,
-                config.backblaze_teacher_bucket,
+                config.backblaze_all_users_bucket_name,
+                config.backblaze_all_users_bucket_id,
+                'profile',
             );
 
             // If upload successful, update the payload
@@ -63,9 +65,10 @@ const updateTeacher = async (
                     deleteFromB2(
                         existingTeacher.image!.fileId,
                         existingTeacher.image!.modifiedName,
+                        'profile',
                     ).catch((error) => {
                         // Log the error but don't affect the main operation
-                        console.error('Failed to delete old image:', error);
+                        console.error('Failed to delete old image');
                         // You might want to store failed deletions in a separate collection
                         // for later cleanup
                     });

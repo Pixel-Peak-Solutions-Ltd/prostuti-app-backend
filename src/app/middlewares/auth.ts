@@ -45,7 +45,7 @@ const auth = (...requiredRoles: TUserRole[]) => {
                 config.jwt_access_token_secret,
             );
 
-            const { userId, role, iat } = decoded;
+            const { userId, role } = decoded;
 
             // #####################################
             const user = await User.findById(userId);
@@ -66,18 +66,18 @@ const auth = (...requiredRoles: TUserRole[]) => {
             }
 
             // Check if the password changed recently and token is older then token is invalid
-            if (
-                user.passwordChangedAt &&
-                User.isJWTIssuedBeforePasswordChanged(
-                    user.passwordChangedAt,
-                    iat as number,
-                )
-            ) {
-                throw new AppError(
-                    StatusCodes.UNAUTHORIZED,
-                    'You are not authorize. Please login again',
-                );
-            }
+            // if (
+            //     user.passwordChangedAt &&
+            //     User.isJWTIssuedBeforePasswordChanged(
+            //         user.passwordChangedAt,
+            //         iat as number,
+            //     )
+            // ) {
+            //     throw new AppError(
+            //         StatusCodes.UNAUTHORIZED,
+            //         'You are not authorize. Please login again',
+            //     );
+            // }
 
             // Check if correct role base user accessing correct role base resources
             if (requiredRoles.length && !requiredRoles.includes(role)) {
