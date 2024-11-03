@@ -1,7 +1,33 @@
 import { Schema, model } from 'mongoose';
-import { IStudent } from './student.interface';
+import { IStudent, TImage } from './student.interface';
 import { formatPhoneNumber } from '../../utils/formatPhoneNumber';
 import { categoryType } from '../category/category.constant';
+
+const imageSchema = new Schema<TImage>(
+    {
+        diskType: {
+            type: String,
+            required: [true, 'Image disk type is required'],
+        },
+        path: {
+            type: String,
+            required: [true, 'Image url is required'],
+        },
+        originalName: {
+            type: String,
+            required: [true, 'Image original name is required'],
+        },
+        modifiedName: {
+            type: String,
+            required: [true, 'Image modified name is required'],
+        },
+        fileId: {
+            type: String,
+            required: [true, 'File ID is required'],
+        },
+    },
+    { _id: false, versionKey: false },
+);
 
 // Student Schema
 const studentSchema = new Schema<IStudent>(
@@ -53,6 +79,9 @@ const studentSchema = new Schema<IStudent>(
                 message: (props) =>
                     `${props.value} is not a valid email address!`,
             },
+        },
+        image: {
+            type: imageSchema,
         },
     },
     {

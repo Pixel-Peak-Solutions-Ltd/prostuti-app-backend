@@ -35,11 +35,18 @@ const getStudentByID = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateStudent = catchAsync(async (req: Request, res: Response) => {
-    const result = await studentService.updateStudent();
+    const { studentId } = req.params;
+
+    const result = await studentService.updateStudent(
+        studentId,
+        req.body,
+        req.user,
+        req.file,
+    );
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
-        message: 'Student is updated successfully',
+        message: 'Student profile updated successfully',
         data: result,
     });
 });

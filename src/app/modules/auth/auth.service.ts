@@ -15,6 +15,7 @@ import { PhoneVerification } from '../phoneVerification/phoneVerification.model'
 import { PHONE_VERIFICATION_TYPE } from '../phoneVerification/phoneVerification.constant';
 import { convertJWTExpireTimeToSeconds } from './auth.utils';
 import { CategoryType } from '../category/category.constant';
+import { TJWTDecodedUser } from '../../interfaces/jwt/jwt.type';
 
 // Register Student
 const registerStudent = async (
@@ -420,10 +421,60 @@ const resetStudentPassword = async (
     return null;
 };
 
+// Change password
+const changeUserPassword = async (
+    user: TJWTDecodedUser,
+    payload: { oldPassword: string; newPassword: string },
+) => {
+    const userData = await User.findById(user.userId).select('password');
+
+    // Check if the user exist in database
+    if (!userData) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'User is not found');
+    }
+
+    // Check if the user is already deleted
+    if (userData.isDeleted) {
+        throw new AppError(StatusCodes.FORBIDDEN, 'User is deleted');
+    }
+
+    // Check if the user is blocked
+    if (userData.status === USER_STATUS.blocked) {
+        throw new AppError(StatusCodes.FORBIDDEN, 'User is blocked');
+    }
+
+    // Check the old Password is correct
+    if (
+        !(await User.isPasswordMatched(payload.oldPassword, userData.password))
+    ) {
+        throw new AppError(StatusCodes.FORBIDDEN, 'Invalid old password');
+    }
+
+    // // Update the password
+    const newHashedPassword = await bcrypt.hash(
+        payload.newPassword,
+        Number(config.bcrypt_salt),
+    );
+
+    await User.findByIdAndUpdate(
+        {
+            _id: userData._id,
+            role: userData.role,
+        },
+        {
+            password: newHashedPassword,
+            passwordChangedAt: new Date(),
+        },
+    );
+
+    return null;
+};
+
 export const authService = {
     registerStudent,
     loginUser,
     getStudentRefreshToken,
     getTeacherAdminRefreshToken,
     resetStudentPassword,
+    changeUserPassword,
 };
