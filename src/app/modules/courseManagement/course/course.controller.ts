@@ -4,6 +4,7 @@ import catchAsync from '../../../utils/catchAsync';
 import sendSuccessResponse from '../../../utils/sendSuccessResponse';
 import { courseService } from './course.service';
 
+// Create Course
 const createCourse = catchAsync(async (req: Request, res: Response) => {
     const result = await courseService.createCourse(
         req.user,
@@ -29,7 +30,9 @@ const getAllCourses = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getCourseByID = catchAsync(async (req: Request, res: Response) => {
-    const result = await courseService.getCourseByID();
+    const { courseId } = req.params;
+
+    const result = await courseService.getCourseByID(courseId);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
@@ -38,8 +41,16 @@ const getCourseByID = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+// Update Course
 const updateCourse = catchAsync(async (req: Request, res: Response) => {
-    const result = await courseService.updateCourse();
+    const { courseId } = req.params;
+
+    const result = await courseService.updateCourse(
+        courseId,
+        req.body,
+        req.user,
+        req.file,
+    );
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
@@ -49,7 +60,9 @@ const updateCourse = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteCourseByID = catchAsync(async (req: Request, res: Response) => {
-    const result = await courseService.deleteCourseByID();
+    const { courseId } = req.params;
+
+    const result = await courseService.deleteCourseByID(courseId);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,

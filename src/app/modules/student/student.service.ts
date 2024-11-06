@@ -2,6 +2,7 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { StatusCodes } from 'http-status-codes';
+import fs from 'fs';
 import { TJWTDecodedUser } from '../../interfaces/jwt/jwt.type';
 import { User } from '../user/user.model';
 import { IStudent, TUpdatePayloadType } from './student.interface';
@@ -29,10 +30,23 @@ const updateStudent = async (
     user: TJWTDecodedUser,
     file: Express.Multer.File | undefined,
 ) => {
+    // Check if there are fields to update
+    if (Object.keys(payload).length === 0) {
+        // Delete local file after upload
+        if (file) fs.unlinkSync(file.path);
+        // Throw Error
+        throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            'No valid fields provided for update',
+        );
+    }
     // Check if the params teacherId match to database teacherId for this token
     const student = await User.findById(user.userId);
 
     if (student?.registeredId !== studentId) {
+        // Delete local file after upload
+        if (file) fs.unlinkSync(file.path);
+        // Throw Error
         throw new AppError(
             StatusCodes.UNAUTHORIZED,
             'Access denied. You are not authorized to update this profile',
@@ -42,6 +56,9 @@ const updateStudent = async (
     // Get existing teacher to check for old image
     const existingStudent = await Student.findOne({ studentId });
     if (!existingStudent) {
+        // Delete local file after upload
+        if (file) fs.unlinkSync(file.path);
+        // Throw Error
         throw new AppError(StatusCodes.NOT_FOUND, 'Student not found');
     }
 
@@ -87,28 +104,19 @@ const updateStudent = async (
         } catch (error) {
             // Here we specifically catch upload errors
             if (error instanceof AppError) {
+                // Delete local file after upload
+                fs.unlinkSync(file.path);
+                // Throw Error
                 throw error; // Rethrow AppError with custom message
             }
+            // Delete local file after upload
+            fs.unlinkSync(file.path);
+            // Throw Error
             throw new AppError(
                 StatusCodes.INTERNAL_SERVER_ERROR,
                 'Failed to process image update',
             );
         }
-    }
-
-    // Remove any undefined fields using type-safe approach
-    const filteredPayload: TUpdatePayloadType = Object.fromEntries(
-        Object.entries(updatedPayload).filter(
-            ([_, value]) => value !== undefined,
-        ),
-    ) as TUpdatePayloadType;
-
-    // Update the teacher only if there are fields to update
-    if (Object.keys(filteredPayload).length === 0) {
-        throw new AppError(
-            StatusCodes.BAD_REQUEST,
-            'No valid fields provided for update',
-        );
     }
 
     // Update the teacher
