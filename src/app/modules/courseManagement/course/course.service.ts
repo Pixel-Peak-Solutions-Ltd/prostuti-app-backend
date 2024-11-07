@@ -58,7 +58,6 @@ const getAllCourses = async () => {
 };
 
 const getCourseByID = async (courseId: string) => {
-    // Get all courses
     const courses = await Course.findById(courseId);
 
     return courses;
