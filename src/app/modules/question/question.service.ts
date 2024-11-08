@@ -1,40 +1,51 @@
 import { StatusCodes } from 'http-status-codes';
+import mongoose, { PipelineStage, Types } from 'mongoose';
 import AppError from '../../classes/errorClasses/AppError';
+import { calculatePagination } from '../../helpers/pagenationHelper';
+import { IPaginationOptions } from '../../interfaces/common';
 import { TJWTDecodedUser } from '../../interfaces/jwt/jwt.type';
 import { Category } from '../category/category.model';
+import { User } from '../user/user.model';
+import { QuestionSearchableFields } from './question.constant';
 import { IQuestion, IQuestionFilters } from './question.interface';
 import { Question } from './question.model';
-import { IPaginationOptions } from '../../interfaces/common';
-import { calculatePagination } from '../../helpers/pagenationHelper';
-import { QuestionSearchableFields } from './question.constant';
-import mongoose, { PipelineStage } from 'mongoose';
-import { User } from '../user/user.model';
 
 const createQuestion = async (
     userInfo: TJWTDecodedUser,
-    payload: Partial<IQuestion>,
+    payload: Partial<IQuestion>[],
 ): Promise<any> => {
-    const checkCategory = await Category.findById(payload.category_id);
-    if (!checkCategory) {
-        throw new AppError(StatusCodes.NOT_FOUND, 'Category not found');
+    if (!Array.isArray(payload) || payload.length === 0) {
+        throw new AppError(StatusCodes.BAD_REQUEST, 'No questions provided');
     }
 
-    let newQuestion: Partial<IQuestion> = {
-        type: payload.type,
-        title: payload.title,
-        description: payload.description,
-    };
+    const questionsToCreate = await Promise.all(
+        payload.map(async (question) => {
+            const checkCategory = await Category.findById(question.category_id);
+            if (!checkCategory) {
+                throw new AppError(
+                    StatusCodes.NOT_FOUND,
+                    `Category not found for category_id: ${question.category_id}`,
+                );
+            }
 
-    if (payload.type === 'MCQ') {
-        newQuestion.options = payload.options;
-        newQuestion.correctOption = payload.correctOption;
-    }
+            let newQuestion: Partial<IQuestion> = {
+                type: question.type,
+                title: question.title,
+                description: question.description,
+                category_id: checkCategory._id,
+                createdBy: new Types.ObjectId(userInfo.userId),
+            };
 
-    const data = await Question.create({
-        ...newQuestion,
-        category_id: checkCategory._id,
-        createdBy: userInfo.userId,
-    });
+            if (question.type === 'MCQ') {
+                newQuestion.options = question.options;
+                newQuestion.correctOption = question.correctOption;
+            }
+
+            return newQuestion;
+        }),
+    );
+
+    const data = await Question.insertMany(questionsToCreate);
 
     return data;
 };
