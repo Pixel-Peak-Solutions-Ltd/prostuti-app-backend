@@ -9,6 +9,7 @@ import { teacherRoute } from '../modules/teacher/teacher.route';
 import { favouriteQuestionRoute } from '../modules/favouriteQuestion/favouriteQuestion.route';
 import { courseRoute } from '../modules/courseManagement/course/course.route';
 import { recodedClassRoute } from '../modules/courseManagement/recodedClass/recodedClass.route';
+import { noticeRoute } from '../modules/courseManagement/notice/notice.route';
 
 const globalRoute = Router();
 
@@ -23,6 +24,7 @@ const routes = [
     { path: '/favourite', route: favouriteQuestionRoute },
     { path: '/course', route: courseRoute },
     { path: '/recoded-class', route: recodedClassRoute },
+    { path: '/notice', route: noticeRoute },
 ];
 
 routes.forEach((route) => globalRoute.use(route.path, route.route));
