@@ -25,7 +25,7 @@ const getAllQuestions = catchAsync(async (req: Request, res: Response) => {
   const paginationOptions = pick(req.query, paginationFields);
     const result = await QuestionService.getAllQuestions( filters,
         paginationOptions,
-        req.user as TJWTDecodedUser,);
+        req.user as TJWTDecodedUser);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
