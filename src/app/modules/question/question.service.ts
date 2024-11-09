@@ -80,7 +80,7 @@ const getAllQuestions = async (
     if (Object.keys(filtersData).length) {
         andConditions.push({
             $and: Object.entries(filtersData).map(([field, value]) => {
-                console.log(`Processing Field: ${field}, Value: ${value}`);
+                
                 if (field === 'type') {
                     return { [field]: value };
                 } else if (field === 'categoryType') {

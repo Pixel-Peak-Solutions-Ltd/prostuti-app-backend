@@ -5,21 +5,14 @@ export const TestTypes: TestType[] = ["MCQ","Written"];
 
 
 //filter
-// export const TestFilterableFields = [
-//     'searchTerm',
-//     'categoryType',
-//     'division',
-//     'subject',
-//     'chapter',
-//     'universityType',
-//     'universityName',
-//     'unit',
-//     'type',
-//     "ownTest"
-// ];
+export const TestFilterableFields = [
+    'searchTerm',
+    'type',
+    "ownTest"
+];
 
-// //searchTerm
-// export const TestSearchableFields = [
-//     "title",
-//     "description"
-// ];
+//searchTerm
+export const TestSearchableFields = [
+    "name",
+    
+];

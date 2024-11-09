@@ -11,7 +11,7 @@ const router = express.Router();
 
 router
     .post('/',auth(USER_ROLE.teacher),validateRequest(TestValidation.createTestSchema), TestController.createTest)
-    .get('/', TestController.getAllTests)
+    .get('/',auth(), TestController.getAllTests)
     .get('/:id', TestController.getTestByID)
     .delete('/:id', TestController.deleteTestByID)
     .patch('/:id', TestController.updateTest);

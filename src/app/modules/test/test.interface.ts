@@ -22,16 +22,9 @@ export type ITest={
   Record<string, unknown>
 >;
 
-// export type ITestFilters = {
-//   searchTerm?: string;
-//   categoryType?: string;
-//   division?: string;
-//   subject?: string;
-//   chapter?:string;
-//   universityType?: string;
-//   universityName?: string;
-//   unit?: string;
-//   type?:string,
-//   ownTest?: string;
+export type ITestFilters = {
+  searchTerm?: string;
+  type?: string;
+  ownTest?: string;
 
-// };
+};

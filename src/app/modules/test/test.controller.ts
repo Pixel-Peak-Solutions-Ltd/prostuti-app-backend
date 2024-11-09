@@ -4,6 +4,9 @@ import catchAsync from '../../utils/catchAsync';
 import sendSuccessResponse from '../../utils/sendSuccessResponse';
 import { TestService } from './test.service';
 import { TJWTDecodedUser } from '../../interfaces/jwt/jwt.type';
+import pick from '../../helpers/pick';
+import { paginationFields } from '../../constant';
+import { TestFilterableFields } from './test.constant';
 
 
 const createTest = catchAsync(async (req: Request, res: Response) => {
@@ -17,7 +20,11 @@ const createTest = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllTests = catchAsync(async (req: Request, res: Response) => {
-    const result = await TestService.getAllTests();
+    const filters = pick(req.query, TestFilterableFields);
+    const paginationOptions = pick(req.query, paginationFields);
+    const result = await TestService.getAllTests(filters,
+        paginationOptions,
+        req.user as TJWTDecodedUser);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
