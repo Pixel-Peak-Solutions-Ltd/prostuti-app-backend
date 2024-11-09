@@ -1,0 +1,37 @@
+import { Model, Types } from "mongoose";
+import { TestType } from "./test.constant";
+import { IQuestion } from "../question/question.interface";
+
+
+
+export type ITest={
+    name:string,
+    type: TestType,
+    time:number,
+    questionList: Array<{
+        questionId?: Types.ObjectId; 
+        newQuestion?: Partial<IQuestion>;
+    }>;
+    createdBy:Types.ObjectId,
+    updatedBy:Types.ObjectId
+  }
+
+
+  export type TestModel = Model<
+  ITest,
+  Record<string, unknown>
+>;
+
+// export type ITestFilters = {
+//   searchTerm?: string;
+//   categoryType?: string;
+//   division?: string;
+//   subject?: string;
+//   chapter?:string;
+//   universityType?: string;
+//   universityName?: string;
+//   unit?: string;
+//   type?:string,
+//   ownTest?: string;
+
+// };
