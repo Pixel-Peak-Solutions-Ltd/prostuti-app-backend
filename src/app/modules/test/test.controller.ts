@@ -28,13 +28,13 @@ const getAllTests = catchAsync(async (req: Request, res: Response) => {
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
-        message: 'Categories are retrieved successfully',
+        message: 'Tests are retrieved successfully',
         data: result,
     });
 });
 
 const getTestByID = catchAsync(async (req: Request, res: Response) => {
-    const result = await TestService.getTestByID();
+    const result = await TestService.getTestByID(req.params.id);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
@@ -54,7 +54,7 @@ const updateTest = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteTestByID = catchAsync(async (req: Request, res: Response) => {
-    const result = await TestService.deleteTestByID();
+    const result = await TestService.deleteTestByID(req.params.id,req.user as TJWTDecodedUser);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,

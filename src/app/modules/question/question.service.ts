@@ -170,6 +170,10 @@ const deleteQuestionByID = async (
         throw new AppError(StatusCodes.UNAUTHORIZED, 'You can not delete it');
     }
     const data = await Question.findByIdAndDelete(id);
+    if (!data) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Delete Failed');
+    }
+
     return data;
 };
 

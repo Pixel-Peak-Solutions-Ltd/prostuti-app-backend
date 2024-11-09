@@ -12,8 +12,8 @@ const router = express.Router();
 router
     .post('/',auth(USER_ROLE.teacher),validateRequest(TestValidation.createTestSchema), TestController.createTest)
     .get('/',auth(), TestController.getAllTests)
-    .get('/:id', TestController.getTestByID)
-    .delete('/:id', TestController.deleteTestByID)
+    .get('/:id',auth(), TestController.getTestByID)
+    .delete('/:id',auth(), TestController.deleteTestByID)
     .patch('/:id', TestController.updateTest);
 
 export const TestRoute = router;

@@ -8,6 +8,7 @@ import { IPaginationOptions } from '../../interfaces/common';
 import { calculatePagination } from '../../helpers/pagenationHelper';
 import { TestSearchableFields } from './test.constant';
 import mongoose, { SortOrder } from 'mongoose';
+import { User } from '../user/user.model';
 
 const createTest = async (
     userInfo: TJWTDecodedUser,
@@ -106,16 +107,45 @@ const getAllTests = async (
     };
 };
 
-const getTestByID = async () => {
-    return 'getTestByID service';
+const getTestByID = async (id: string): Promise<any> => {
+    const data = await Test.findById(id);
+    if (!data) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Test not found.');
+    }
+
+    return data;
 };
 
 const updateTest = async () => {
     return 'updateTest service';
 };
 
-const deleteTestByID = async () => {
-    return 'deleteTestByID service';
+const deleteTestByID = async (
+    id: string,
+    userInfo: TJWTDecodedUser,
+): Promise<any> => {
+    const checkUser = await User.findById(userInfo.userId);
+    if (!checkUser) {
+        throw new AppError(StatusCodes.BAD_REQUEST, 'Something went wrong');
+    }
+
+    const checkTest = await Test.findById(id);
+    if (!checkTest) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Test not found.');
+    }
+
+    if (checkUser._id.toString() !== checkTest.createdBy.toString()) {
+        throw new AppError(
+            StatusCodes.UNAUTHORIZED,
+            'You can not delete the test',
+        );
+    }
+    const data = await Test.findByIdAndDelete(id);
+    if (!data) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Delete Failed');
+    }
+
+    return data;
 };
 
 export const TestService = {
