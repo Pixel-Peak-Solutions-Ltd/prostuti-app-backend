@@ -1,12 +1,12 @@
 import multer from 'multer';
+import { Request, Express } from 'express';
 
+// Storage configuration
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        // # This part defines where the files need to be saved
         cb(null, './uploads');
     },
     filename: (req, file, cb) => {
-        // # This part sets the file name of the file
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
         cb(
             null,
@@ -22,22 +22,37 @@ const allowedMimeTypes = [
     'application/pdf',
     'application/x-pdf',
     'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     'application/vnd.ms-excel',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     'application/vnd.ms-powerpoint',
-    'application/vnd.openxmlformats-officedocument.presentationml.presentation', // .pptx
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
 ];
 
-export const upload = multer({
+const multerConfig = {
     storage: storage,
-    limits: { fileSize: 15 * 1024 * 1024 }, //file size is in bytes-here the maximum limit is 5mb
-    // image file validation
-    fileFilter: (req, file, cb) => {
+    limits: { fileSize: 15 * 1024 * 1024 },
+    fileFilter: (
+        req: Request,
+        file: Express.Multer.File,
+        cb: multer.FileFilterCallback,
+    ) => {
         if (allowedMimeTypes.includes(file.mimetype)) {
             cb(null, true);
         } else {
-            cb(new Error('Only jpg, png and jpeg files are supported'));
+            cb(
+                new Error(
+                    'Invalid file type. Only jpg, png, jpeg, pdf, doc, docx, xls, xlsx, ppt, and pptx files are allowed',
+                ),
+            );
         }
     },
-});
+};
+
+const uploadMiddleware = multer(multerConfig);
+
+export const upload = {
+    single: (fieldName: string) => uploadMiddleware.single(fieldName),
+    multiple: (fieldName: string, maxCount: number = 10) =>
+        uploadMiddleware.array(fieldName, maxCount),
+};

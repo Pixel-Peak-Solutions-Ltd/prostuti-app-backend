@@ -2,7 +2,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import { resourceController } from './resource.controller';
 import validateRequest from '../../../middlewares/validateRequest';
 import { resourceValidator } from './resource.validation';
-import { upload } from '../../../middlewares/multerConfig2';
+import { upload } from '../../../middlewares/multerConfig';
 import auth from '../../../middlewares/auth';
 import { USER_ROLE } from '../../user/user.constant';
 

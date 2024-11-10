@@ -11,6 +11,7 @@ import { courseRoute } from '../modules/courseManagement/course/course.route';
 import { recodedClassRoute } from '../modules/courseManagement/recodedClass/recodedClass.route';
 import { noticeRoute } from '../modules/courseManagement/notice/notice.route';
 import { resourceRoute } from '../modules/courseManagement/resource/resource.route';
+import { assignmentRoute } from '../modules/courseManagement/assignment/assignment.route';
 
 const globalRoute = Router();
 
@@ -27,6 +28,7 @@ const routes = [
     { path: '/recoded-class', route: recodedClassRoute },
     { path: '/notice', route: noticeRoute },
     { path: '/resource', route: resourceRoute },
+    { path: '/assignment', route: assignmentRoute },
 ];
 
 routes.forEach((route) => globalRoute.use(route.path, route.route));
