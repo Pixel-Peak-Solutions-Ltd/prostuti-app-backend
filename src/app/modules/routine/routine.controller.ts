@@ -3,11 +3,12 @@ import { StatusCodes } from 'http-status-codes';
 import catchAsync from '../../utils/catchAsync';
 import sendSuccessResponse from '../../utils/sendSuccessResponse';
 import { RoutineService } from './routine.service';
+import { TJWTDecodedUser } from '../../interfaces/jwt/jwt.type';
 
 
 
 const createRoutine = catchAsync(async (req: Request, res: Response) => {
-    const result = await RoutineService.createRoutine();
+    const result = await RoutineService.createRoutine(req.user as TJWTDecodedUser,req.body);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,

@@ -45,6 +45,10 @@ const createTest = async (
     });
 
     const data = await newTest.save();
+    if (!data) {
+        throw new AppError(StatusCodes.BAD_REQUEST, 'Creation Failed');
+    }
+
     return data;
 };
 
