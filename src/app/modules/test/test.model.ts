@@ -19,6 +19,10 @@ const TestSchema = new Schema<ITest, TestModel>(
             type: Number,
             required: [true, 'Test duration is required'],
         },
+        publishDate: {
+            type: Date,
+            required: [true, 'Test published date is required'],
+        },
 
         questionList: {
             type: [

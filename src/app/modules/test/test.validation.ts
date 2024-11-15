@@ -66,6 +66,10 @@ const createTestSchema = z.object({
             required_error: 'Test type is required.',
         }),
         time: z.number().int().positive('Time must be a positive integer'),
+        publishDate: z
+            .string()
+            .datetime({ message: 'Invalid date format' })
+            .min(1, 'Publish date is required'),
         questionList: z
             .array(questionListItemSchema)
             .min(1, 'At least one question is required'),

@@ -8,6 +8,7 @@ export type ITest={
     name:string,
     type: TestType,
     time:number,
+    publishDate: Date;
     questionList: Array<{
         questionId?: Types.ObjectId; 
         newQuestion?: Partial<IQuestion>;
@@ -26,5 +27,6 @@ export type ITestFilters = {
   searchTerm?: string;
   type?: string;
   ownTest?: string;
+  date?: string;
 
 };
