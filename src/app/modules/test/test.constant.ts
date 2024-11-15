@@ -8,7 +8,8 @@ export const TestTypes: TestType[] = ["MCQ","Written"];
 export const TestFilterableFields = [
     'searchTerm',
     'type',
-    "ownTest"
+    "ownTest",
+    "date"
 ];
 
 //searchTerm

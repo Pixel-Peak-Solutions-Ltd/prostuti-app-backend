@@ -39,6 +39,7 @@ const createTest = async (
         name: payload.name,
         type: payload.type,
         time: payload.time,
+        publishDate:payload.publishDate && new Date(payload.publishDate),
         questionList: payload.questionList,
         createdBy: userInfo.userId,
     });
@@ -52,7 +53,7 @@ const getAllTests = async (
     paginationOptions: IPaginationOptions,
     userInfo: TJWTDecodedUser,
 ): Promise<any> => {
-    const { searchTerm, ownTest, ...filtersData } = filters;
+    const { searchTerm, ownTest,date, ...filtersData } = filters;
     const { page, limit, skip, sortBy, sortOrder } =
         calculatePagination(paginationOptions);
 
@@ -67,12 +68,32 @@ const getAllTests = async (
             })),
         });
     }
-
+    //only returns the test that is created by the requested user
     if (ownTest === 'true') {
         andConditions.push({
             createdBy: new mongoose.Types.ObjectId(userInfo.userId),
         });
     }
+
+    //only return the test those will be published that date
+    if (date) {
+        const checkDate = new Date(date);
+        if (isNaN(checkDate.getTime())) {
+          throw new AppError(StatusCodes.NOT_ACCEPTABLE, 'Invalid date format!!!');
+        }
+        checkDate.setHours(0, 0, 0, 0);
+    
+        andConditions.push({
+          publishDate: {
+            $gte: checkDate,
+            $lt: new Date(
+              checkDate.getFullYear(),
+              checkDate.getMonth(),
+              checkDate.getDate() + 1,
+            ),
+          },
+        });
+      }
     // filtering data
     if (Object.keys(filtersData).length) {
         andConditions.push({
