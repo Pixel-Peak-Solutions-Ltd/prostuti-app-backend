@@ -18,5 +18,6 @@ export type IRoutine={
 export type IRoutineFilters = {
   searchTerm?: string;
   type?: string;
+  ownRoutine?:string,
   date?:string
 }

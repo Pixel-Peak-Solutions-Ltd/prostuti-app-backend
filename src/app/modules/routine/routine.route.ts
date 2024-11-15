@@ -11,9 +11,9 @@ const router = express.Router();
 
 router
     .post('/',auth(USER_ROLE.teacher),validateRequest(RoutineValidation.createRoutineSchema), RoutineController.createRoutine)
-    .get('/', RoutineController.getAllRoutines)
-    .get('/:id', RoutineController.getRoutineByID)
-    .delete('/:id', RoutineController.deleteRoutineByID)
+    .get('/',auth(), RoutineController.getAllRoutines)
+    .get('/:id',auth(), RoutineController.getRoutineByID)
+    .delete('/:id',auth(), RoutineController.deleteRoutineByID)
     .patch('/:id', RoutineController.updateRoutine);
 
 export const RoutineRoute = router;

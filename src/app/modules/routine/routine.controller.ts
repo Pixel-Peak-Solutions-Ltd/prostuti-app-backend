@@ -4,6 +4,9 @@ import catchAsync from '../../utils/catchAsync';
 import sendSuccessResponse from '../../utils/sendSuccessResponse';
 import { RoutineService } from './routine.service';
 import { TJWTDecodedUser } from '../../interfaces/jwt/jwt.type';
+import { RoutineFilterableFields } from './routine.constant';
+import { paginationFields } from '../../constant';
+import pick from '../../helpers/pick';
 
 
 
@@ -18,7 +21,10 @@ const createRoutine = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllRoutines = catchAsync(async (req: Request, res: Response) => {
-    const result = await RoutineService.getAllRoutines();
+    const filters = pick(req.query, RoutineFilterableFields);
+    const paginationOptions = pick(req.query, paginationFields);
+    const result = await RoutineService.getAllRoutines(filters,paginationOptions,req.user as TJWTDecodedUser);
+
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
@@ -28,7 +34,7 @@ const getAllRoutines = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getRoutineByID = catchAsync(async (req: Request, res: Response) => {
-    const result = await RoutineService.getRoutineByID();
+    const result = await RoutineService.getRoutineByID(req.params.id);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
@@ -48,7 +54,7 @@ const updateRoutine = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteRoutineByID = catchAsync(async (req: Request, res: Response) => {
-    const result = await RoutineService.deleteRoutineByID();
+    const result = await RoutineService.deleteRoutineByID(req.params.id,req.user as TJWTDecodedUser);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,

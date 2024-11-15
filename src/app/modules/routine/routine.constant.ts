@@ -8,6 +8,7 @@ export const RoutineTypes: RoutineType[] = ['Class', 'Assignment', 'Exam'];
 export const RoutineFilterableFields = [
     'searchTerm',
     'type',
+    'ownRoutine',
     'date'
 ];
 

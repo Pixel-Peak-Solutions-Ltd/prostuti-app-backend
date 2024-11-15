@@ -8,6 +8,7 @@ import { QuestionRoute } from '../modules/question/question.route';
 import { teacherRoute } from '../modules/teacher/teacher.route';
 import { favouriteQuestionRoute } from '../modules/favouriteQuestion/favouriteQuestion.route';
 import { TestRoute } from '../modules/test/test.route';
+import { RoutineRoute } from '../modules/routine/routine.route';
 
 const globalRoute = Router();
 
@@ -21,6 +22,7 @@ const routes = [
     { path: '/teacher', route: teacherRoute },
     { path: '/favourite', route: favouriteQuestionRoute },
     { path: '/test', route: TestRoute },
+    { path: '/routine', route: RoutineRoute },
 ];
 
 routes.forEach((route) => globalRoute.use(route.path, route.route));
