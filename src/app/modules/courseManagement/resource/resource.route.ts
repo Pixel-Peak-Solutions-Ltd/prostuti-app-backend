@@ -20,6 +20,11 @@ router
         validateRequest(resourceValidator.createResourceValidationSchema),
         resourceController.createResource,
     )
+    .get(
+        '/course/:courseId',
+        auth(),
+        resourceController.getAllCourseResourcesWithLessons,
+    )
     .get('/', resourceController.getAllResource)
     .get('/:resourceId', resourceController.getResourceByID)
     .delete('/:resourceId', resourceController.deleteResourceByID)

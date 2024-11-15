@@ -15,12 +15,15 @@ const validateVideoURL = (urls: string[]): boolean => {
 // Recoded Class Schema
 const recodedClassSchema = new Schema<IRecodedClass>(
     {
-        lessonName: {
-            type: String,
-            required: [true, 'Lesson name is required'],
-            trim: true,
-            maxlength: [100, 'Lesson name cannot be more than 100 characters'],
-            minlength: [2, 'Lesson name must be at least 2 characters long'],
+        course_id: {
+            type: Schema.Types.ObjectId,
+            required: true,
+            ref: 'Course',
+        },
+        lesson_id: {
+            type: Schema.Types.ObjectId,
+            required: true,
+            ref: 'Lesson',
         },
         recodeClassName: {
             type: String,

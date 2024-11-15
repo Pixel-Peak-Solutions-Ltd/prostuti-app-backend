@@ -1,7 +1,14 @@
+import { Types } from 'mongoose';
 import { z } from 'zod';
 
 const createResourceValidationSchema = z.object({
     body: z.object({
+        course_id: z.string().refine((val) => Types.ObjectId.isValid(val), {
+            message: 'Invalid MongoDB ObjectId',
+        }),
+        lesson_id: z.string().refine((val) => Types.ObjectId.isValid(val), {
+            message: 'Invalid MongoDB ObjectId',
+        }),
         name: z
             .string({
                 required_error: 'Resource name is required',

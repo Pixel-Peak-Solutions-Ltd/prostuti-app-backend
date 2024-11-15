@@ -1,22 +1,46 @@
 import { StatusCodes } from 'http-status-codes';
 import AppError from '../../../classes/errorClasses/AppError';
 import { Course } from '../course/course.model';
-import { INotice } from './notice.interface';
+import { INotice, TCreateNoticePayload } from './notice.interface';
 import { Notice } from './notice.model';
 
 // Create Notice
-const createNotice = async (payload: INotice) => {
+const createNotice = async (payload: TCreateNoticePayload) => {
+    const { course_id, notices } = payload;
+
     // Check if the course exists
-    const courseExists = await Course.findById(payload.course_id);
+    const courseExists = await Course.findById(course_id);
 
     if (!courseExists) {
         throw new Error('Course does not exist');
     }
 
-    // Create the notice
-    const newNotice = await Notice.create(payload);
+    // Create multiple lesson documents in a single operation
+    const newNotice = await Notice.insertMany(
+        notices.map((l) => ({
+            notice: l!.notice,
+            course_id,
+        })),
+    );
 
     return newNotice;
+};
+
+// GEt all assignments of a Course with Lesson name
+const getAllNoticesByCourseId = async (courseId: string) => {
+    // Check if the course exist
+    const isCourseExist = await Course.findById(courseId);
+    if (!isCourseExist) {
+        throw new AppError(
+            StatusCodes.NOT_FOUND,
+            'Course does not exist with this ID',
+        );
+    }
+
+    const notices = await Notice.find({
+        course_id: courseId,
+    });
+    return notices;
 };
 
 // Get All Notices
@@ -87,6 +111,7 @@ const deleteNoticeByID = async (noticeId: string) => {
 
 export const noticeService = {
     createNotice,
+    getAllNoticesByCourseId,
     getAllNotices,
     getNoticeByID,
     updateNotice,

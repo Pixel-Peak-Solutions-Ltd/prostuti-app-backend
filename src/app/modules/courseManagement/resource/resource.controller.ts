@@ -17,6 +17,21 @@ const createResource = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const getAllCourseResourcesWithLessons = catchAsync(
+    async (req: Request, res: Response) => {
+        const { courseId } = req.params;
+
+        const result =
+            await resourceService.getAllCourseResourcesWithLessons(courseId);
+
+        sendSuccessResponse(res, {
+            statusCode: StatusCodes.OK,
+            message: 'Resource created successfully',
+            data: result,
+        });
+    },
+);
+
 const getAllResource = catchAsync(async (req: Request, res: Response) => {
     const result = await resourceService.getAllResource();
 
@@ -70,6 +85,7 @@ const deleteResourceByID = catchAsync(async (req: Request, res: Response) => {
 
 export const resourceController = {
     createResource,
+    getAllCourseResourcesWithLessons,
     getAllResource,
     getResourceByID,
     updateResource,

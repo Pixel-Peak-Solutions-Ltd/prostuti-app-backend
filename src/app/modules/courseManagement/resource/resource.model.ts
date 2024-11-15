@@ -31,6 +31,16 @@ const resourceSchema = new Schema<TResource>(
 // Resources Schema Definition
 const resourcesSchema = new Schema<IResources>(
     {
+        course_id: {
+            type: Schema.Types.ObjectId,
+            required: true,
+            ref: 'Course',
+        },
+        lesson_id: {
+            type: Schema.Types.ObjectId,
+            required: true,
+            ref: 'Lesson',
+        },
         name: {
             type: String,
             required: [true, 'Name is required'],

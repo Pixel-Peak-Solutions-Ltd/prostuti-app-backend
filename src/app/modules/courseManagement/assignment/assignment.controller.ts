@@ -17,6 +17,22 @@ const createAssignment = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const getAllCourseAssignmentsWithLessons = catchAsync(
+    async (req: Request, res: Response) => {
+        const { courseId } = req.params;
+        const result =
+            await assignmentService.getAllCourseAssignmentsWithLessons(
+                courseId,
+            );
+
+        sendSuccessResponse(res, {
+            statusCode: StatusCodes.OK,
+            message: 'Retrieve all assignments of the course with lessons',
+            data: result,
+        });
+    },
+);
+
 const getAllAssignments = catchAsync(async (req: Request, res: Response) => {
     const result = await assignmentService.getAllAssignments();
 
@@ -69,6 +85,7 @@ const deleteAssignmentByID = catchAsync(async (req: Request, res: Response) => {
 
 export const assignmentController = {
     createAssignment,
+    getAllCourseAssignmentsWithLessons,
     getAllAssignments,
     getAssignmentByID,
     updateAssignment,

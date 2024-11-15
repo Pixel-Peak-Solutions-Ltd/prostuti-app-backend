@@ -2,12 +2,69 @@ import { StatusCodes } from 'http-status-codes';
 import AppError from '../../../classes/errorClasses/AppError';
 import { IRecodedClass } from './recodedClass.interface';
 import { RecodedClass } from './recodedClass.model';
+import { Course } from '../course/course.model';
+import { Lesson } from '../lesson/lesson.model';
 
 // Create Recoded Class
 const createRecodedClass = async (payload: Partial<IRecodedClass>) => {
+    // Check if the course exist
+    const isCourseExist = await Course.findById(payload.course_id);
+    if (!isCourseExist) {
+        throw new AppError(
+            StatusCodes.NOT_FOUND,
+            'Course does not exist with this ID',
+        );
+    }
+
+    // Check if the course exist
+    const isLessonExist = await Lesson.findById(payload.lesson_id);
+    if (!isLessonExist) {
+        throw new AppError(
+            StatusCodes.NOT_FOUND,
+            'Lesson does not exist with this ID',
+        );
+    }
+
+    // Check if the lesson belongs to of tah course
+    const isLessonBelongsToCourse = await Lesson.findOne({
+        _id: payload.lesson_id,
+        course_id: payload.course_id,
+    });
+    if (!isLessonBelongsToCourse) {
+        throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            'The lesson does not belong to the course',
+        );
+    }
+
     const result = await RecodedClass.create({ ...payload });
 
     return result;
+};
+
+// GEt all Recoded classes of a Course with Lesson name
+const getAllCourseRecodedClassWithLessons = async (courseId: string) => {
+    // Check if the course exist
+    const isCourseExist = await Course.findById(courseId);
+    if (!isCourseExist) {
+        throw new AppError(
+            StatusCodes.NOT_FOUND,
+            'Course does not exist with this ID',
+        );
+    }
+
+    // Fetch recoded classes and populate the lesson_id field
+    const recodedClasses = await RecodedClass.find({
+        course_id: courseId,
+    })
+        .populate({
+            path: 'lesson_id',
+            select: 'number name',
+            model: Lesson,
+        })
+        .select({ classVideoURL: 1 });
+
+    return recodedClasses;
 };
 
 // Get All Recoded Class
@@ -49,7 +106,8 @@ const updateRecodedClass = async (
 
     // Filter out the fields to update
     const updatedPayload: Partial<IRecodedClass> = {
-        ...(payload.lessonName && { lessonName: payload.lessonName }),
+        ...(payload.course_id && { course_id: payload.course_id }),
+        ...(payload.lesson_id && { course_id: payload.lesson_id }),
         ...(payload.recodeClassName && {
             recodeClassName: payload.recodeClassName,
         }),
@@ -84,6 +142,7 @@ const deleteRecodedClassByID = async (recodedClassId: string) => {
 
 export const recodedClassService = {
     createRecodedClass,
+    getAllCourseRecodedClassWithLessons,
     getAllRecodedClass,
     getRecodedClassByID,
     updateRecodedClass,

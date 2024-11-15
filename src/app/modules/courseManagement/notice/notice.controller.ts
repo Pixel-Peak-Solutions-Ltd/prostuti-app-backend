@@ -14,6 +14,19 @@ const createNotice = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const getAllNoticesByCourseId = catchAsync(
+    async (req: Request, res: Response) => {
+        const { courseId } = req.params;
+        const result = await noticeService.getAllNoticesByCourseId(courseId);
+
+        sendSuccessResponse(res, {
+            statusCode: StatusCodes.OK,
+            message: 'All notices for this course retrieved successfully',
+            data: result,
+        });
+    },
+);
+
 const getAllNotices = catchAsync(async (req: Request, res: Response) => {
     const result = await noticeService.getAllNotices();
 
@@ -62,6 +75,7 @@ const deleteNoticeByID = catchAsync(async (req: Request, res: Response) => {
 
 export const noticeController = {
     createNotice,
+    getAllNoticesByCourseId,
     getAllNotices,
     getNoticeByID,
     updateNotice,

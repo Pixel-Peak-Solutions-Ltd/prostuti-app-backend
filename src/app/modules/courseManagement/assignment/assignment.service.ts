@@ -9,11 +9,43 @@ import { IAssignment, TResource } from './assignment.interface';
 import { Assignment } from './assignment.model';
 import { Express } from 'express';
 import fs from 'fs';
+import { Course } from '../course/course.model';
+import { Lesson } from '../lesson/lesson.model';
 
 const createAssignment = async (
     payload: Partial<IAssignment>,
     files: Express.Multer.File[] | [],
 ) => {
+    // Check if the course exist
+    const isCourseExist = await Course.findById(payload.course_id);
+    if (!isCourseExist) {
+        throw new AppError(
+            StatusCodes.NOT_FOUND,
+            'Course does not exist with this ID',
+        );
+    }
+
+    // Check if the course exist
+    const isLessonExist = await Lesson.findById(payload.lesson_id);
+    if (!isLessonExist) {
+        throw new AppError(
+            StatusCodes.NOT_FOUND,
+            'Lesson does not exist with this ID',
+        );
+    }
+
+    // Check if the lesson belongs to of tah course
+    const isLessonBelongsToCourse = await Lesson.findOne({
+        _id: payload.lesson_id,
+        course_id: payload.course_id,
+    });
+    if (!isLessonBelongsToCourse) {
+        throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            'The lesson does not belong to the course',
+        );
+    }
+
     // If no files were uploaded, throw an error
     if (!files.length) {
         throw new AppError(
@@ -37,10 +69,11 @@ const createAssignment = async (
 
     // Create the resource document
     const resourceData: IAssignment = {
+        course_id: payload.course_id!,
+        lesson_id: payload.lesson_id!,
         assignmentNo: payload.assignmentNo!,
         marks: payload.marks!,
         unlockDate: payload.unlockDate!,
-        deadline: payload.deadline!,
         details: payload.details!,
         uploadFileResources: uploadedFiles.map((file) => ({
             diskType: file.diskType,
@@ -55,6 +88,31 @@ const createAssignment = async (
     const result = await Assignment.create(resourceData);
 
     return result;
+};
+
+// GEt all assignments of a Course with Lesson name
+const getAllCourseAssignmentsWithLessons = async (courseId: string) => {
+    // Check if the course exist
+    const isCourseExist = await Course.findById(courseId);
+    if (!isCourseExist) {
+        throw new AppError(
+            StatusCodes.NOT_FOUND,
+            'Course does not exist with this ID',
+        );
+    }
+
+    // Fetch assignments and populate the lesson_id field
+    const assignments = await Assignment.find({
+        course_id: courseId,
+    })
+        .populate({
+            path: 'lesson_id',
+            select: 'number name',
+            model: Lesson,
+        })
+        .select({ uploadFileResources: 1 });
+
+    return assignments;
 };
 
 const getAllAssignments = async () => {
@@ -116,7 +174,6 @@ const updateAssignment = async (
         ...(payload.assignmentNo && { assignmentNo: payload.assignmentNo }),
         ...(payload.marks && { marks: payload.marks }),
         ...(payload.unlockDate && { unlockDate: new Date(payload.unlockDate) }),
-        ...(payload.deadline && { deadline: new Date(payload.deadline) }),
         ...(payload.details && { details: payload.details }),
     };
 
@@ -216,6 +273,7 @@ const deleteAssignmentByID = async (assignmentId: string) => {
 
 export const assignmentService = {
     createAssignment,
+    getAllCourseAssignmentsWithLessons,
     getAllAssignments,
     getAssignmentByID,
     updateAssignment,

@@ -20,6 +20,11 @@ router
         validateRequest(assignmentValidator.createAssignmentValidationSchema),
         assignmentController.createAssignment,
     )
+    .get(
+        '/course/:courseId',
+        auth(),
+        assignmentController.getAllCourseAssignmentsWithLessons,
+    )
     .get('/', assignmentController.getAllAssignments)
     .get('/:assignmentId', assignmentController.getAssignmentByID)
     .delete('/:assignmentId', assignmentController.deleteAssignmentByID)

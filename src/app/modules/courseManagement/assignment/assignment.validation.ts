@@ -1,52 +1,42 @@
+import { Types } from 'mongoose';
 import { z } from 'zod';
 
 const createAssignmentValidationSchema = z.object({
-    body: z
-        .object({
-            assignmentNo: z.string().min(1, 'Assignment number is required'),
-            marks: z
-                .number({
-                    required_error: 'Marks are required',
-                    invalid_type_error: 'Marks must be a number',
-                })
-                .int('Marks must be a whole number')
-                .min(0, 'Marks cannot be negative'),
-            unlockDate: z
-                .string({
-                    required_error: 'Unlock date is required',
-                    invalid_type_error:
-                        'Unlock date must be a valid date string',
-                })
-                .datetime({
-                    message:
-                        'Invalid date format. Please provide a valid ISO date string',
-                }),
-            deadline: z
-                .string({
-                    required_error: 'Deadline is required',
-                    invalid_type_error: 'Deadline must be a valid date string',
-                })
-                .datetime({
-                    message:
-                        'Invalid date format. Please provide a valid ISO date string',
-                }),
-            details: z
-                .string()
-                .min(1, 'Details are required')
-                .min(1, 'Details cannot be empty'),
-        })
-        .superRefine((data, ctx) => {
-            const unlockDate = new Date(data.unlockDate);
-            const deadline = new Date(data.deadline);
-
-            if (deadline <= unlockDate) {
-                ctx.addIssue({
-                    path: ['deadline'],
-                    code: z.ZodIssueCode.custom,
-                    message: 'Deadline must be after unlock date',
-                });
-            }
-        }),
+    body: z.object({
+        course_id: z
+            .string()
+            .refine((val) => Types.ObjectId.isValid(val), {
+                message: 'Invalid MongoDB ObjectId',
+            })
+            .optional(),
+        lesson_id: z
+            .string()
+            .refine((val) => Types.ObjectId.isValid(val), {
+                message: 'Invalid MongoDB ObjectId',
+            })
+            .optional(),
+        assignmentNo: z.string().min(1, 'Assignment number is required'),
+        marks: z
+            .number({
+                required_error: 'Marks are required',
+                invalid_type_error: 'Marks must be a number',
+            })
+            .int('Marks must be a whole number')
+            .min(0, 'Marks cannot be negative'),
+        unlockDate: z
+            .string({
+                required_error: 'Unlock date is required',
+                invalid_type_error: 'Unlock date must be a valid date string',
+            })
+            .datetime({
+                message:
+                    'Invalid date format. Please provide a valid ISO date string',
+            }),
+        details: z
+            .string()
+            .min(1, 'Details are required')
+            .min(1, 'Details cannot be empty'),
+    }),
 });
 
 const updateAssignmentValidationSchema = z.object({

@@ -1,17 +1,15 @@
 import { z } from 'zod';
 import { validDomains } from './recodedClass.constant';
+import { Types } from 'mongoose';
 
 const createRecodedClassValidationSchema = z.object({
     body: z.object({
-        lessonName: z
-            .string({
-                required_error: 'Lesson name is required',
-                invalid_type_error: 'Lesson name must be a string',
-            })
-            .min(2, 'Lesson name must be at least 2 characters long')
-            .max(100, 'Lesson name cannot exceed 100 characters')
-            .trim(),
-
+        course_id: z.string().refine((val) => Types.ObjectId.isValid(val), {
+            message: 'Invalid MongoDB ObjectId',
+        }),
+        lesson_id: z.string().refine((val) => Types.ObjectId.isValid(val), {
+            message: 'Invalid MongoDB ObjectId',
+        }),
         recodeClassName: z
             .string({
                 required_error: 'Recode class name is required',
@@ -80,14 +78,17 @@ const createRecodedClassValidationSchema = z.object({
 
 const updateRecodedClassValidationSchema = z.object({
     body: z.object({
-        lessonName: z
-            .string({
-                required_error: 'Lesson name is required',
-                invalid_type_error: 'Lesson name must be a string',
+        course_id: z
+            .string()
+            .refine((val) => Types.ObjectId.isValid(val), {
+                message: 'Invalid MongoDB ObjectId',
             })
-            .min(2, 'Lesson name must be at least 2 characters long')
-            .max(100, 'Lesson name cannot exceed 100 characters')
-            .trim()
+            .optional(),
+        lesson_id: z
+            .string()
+            .refine((val) => Types.ObjectId.isValid(val), {
+                message: 'Invalid MongoDB ObjectId',
+            })
             .optional(),
 
         recodeClassName: z

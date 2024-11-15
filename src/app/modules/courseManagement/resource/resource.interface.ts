@@ -1,3 +1,5 @@
+import { Types } from 'mongoose';
+
 export interface TResource {
     diskType: string;
     path: string;
@@ -7,6 +9,8 @@ export interface TResource {
 }
 
 export interface IResources {
+    course_id: Types.ObjectId;
+    lesson_id: Types.ObjectId;
     name: string;
     resourceDate: Date;
     uploadFileResources: TResource[];

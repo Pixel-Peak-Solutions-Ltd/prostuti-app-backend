@@ -6,12 +6,19 @@ const createNoticeValidationSchema = z.object({
         course_id: z.string().refine((value) => Types.ObjectId.isValid(value), {
             message: 'Course ID must be a valid MongoDB ObjectId',
         }),
-        notice: z
-            .string()
-            .min(2, { message: 'Notice must be at least 2 characters long' })
-            .max(500, {
-                message: 'Notice cannot be longer than 500 characters',
+        notices: z.array(
+            z.object({
+                noticeId: z.string(),
+                notice: z
+                    .string()
+                    .min(2, {
+                        message: 'Notice must be at least 2 characters long',
+                    })
+                    .max(500, {
+                        message: 'Notice cannot be longer than 500 characters',
+                    }),
             }),
+        ),
     }),
 });
 

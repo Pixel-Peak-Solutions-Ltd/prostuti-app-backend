@@ -14,6 +14,23 @@ const createRecodedClass = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const getAllCourseRecodedClassWithLessons = catchAsync(
+    async (req: Request, res: Response) => {
+        const { courseId } = req.params;
+
+        const result =
+            await recodedClassService.getAllCourseRecodedClassWithLessons(
+                courseId,
+            );
+
+        sendSuccessResponse(res, {
+            statusCode: StatusCodes.OK,
+            message: 'Retrieve all recorded classes of the course with lessons',
+            data: result,
+        });
+    },
+);
+
 const getAllRecodedClass = catchAsync(async (req: Request, res: Response) => {
     const result = await recodedClassService.getAllRecodedClass();
 
@@ -69,6 +86,7 @@ const deleteRecodedClassByID = catchAsync(
 
 export const recodedClassController = {
     createRecodedClass,
+    getAllCourseRecodedClassWithLessons,
     getAllRecodedClass,
     getRecodedClassByID,
     updateRecodedClass,

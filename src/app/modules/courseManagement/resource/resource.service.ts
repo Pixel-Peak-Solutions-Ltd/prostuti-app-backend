@@ -9,12 +9,44 @@ import { deleteFromB2, uploadToB2 } from '../../../utils/backBlaze';
 import config from '../../../config';
 import { Resource } from './resource.model';
 import fs from 'fs';
+import { Course } from '../course/course.model';
+import { Lesson } from '../lesson/lesson.model';
 
 // Create Resources
 const createResource = async (
     payload: Partial<IResources>,
     files: Express.Multer.File[] | [],
 ) => {
+    // Check if the course exist
+    const isCourseExist = await Course.findById(payload.course_id);
+    if (!isCourseExist) {
+        throw new AppError(
+            StatusCodes.NOT_FOUND,
+            'Course does not exist with this ID',
+        );
+    }
+
+    // Check if the course exist
+    const isLessonExist = await Lesson.findById(payload.lesson_id);
+    if (!isLessonExist) {
+        throw new AppError(
+            StatusCodes.NOT_FOUND,
+            'Lesson does not exist with this ID',
+        );
+    }
+
+    // Check if the lesson belongs to of tah course
+    const isLessonBelongsToCourse = await Lesson.findOne({
+        _id: payload.lesson_id,
+        course_id: payload.course_id,
+    });
+    if (!isLessonBelongsToCourse) {
+        throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            'The lesson does not belong to the course',
+        );
+    }
+
     // If no files were uploaded, throw an error
     if (!files.length) {
         throw new AppError(
@@ -38,8 +70,10 @@ const createResource = async (
 
     // Create the resource document
     const resourceData: IResources = {
+        course_id: payload.course_id!,
+        lesson_id: payload.lesson_id!,
         name: payload.name as string,
-        resourceDate: payload.resourceDate || new Date(),
+        resourceDate: payload.resourceDate!,
         uploadFileResources: uploadedFiles.map((file) => ({
             diskType: file.diskType,
             path: file.path,
@@ -53,6 +87,31 @@ const createResource = async (
     const result = await Resource.create(resourceData);
 
     return result;
+};
+
+// GEt all Recoded classes of a Course with Lesson name
+const getAllCourseResourcesWithLessons = async (courseId: string) => {
+    // Check if the course exist
+    const isCourseExist = await Course.findById(courseId);
+    if (!isCourseExist) {
+        throw new AppError(
+            StatusCodes.NOT_FOUND,
+            'Course does not exist with this ID',
+        );
+    }
+
+    // Fetch resources and populate the lesson_id field
+    const resources = await Resource.find({
+        course_id: courseId,
+    })
+        .populate({
+            path: 'lesson_id',
+            select: 'number name',
+            model: Lesson,
+        })
+        .select({ uploadFileResources: 1 });
+
+    return resources;
 };
 
 // Get All Resources
@@ -217,6 +276,7 @@ const deleteResourceByID = async (resourceId: string) => {
 
 export const resourceService = {
     createResource,
+    getAllCourseResourcesWithLessons,
     getAllResource,
     getResourceByID,
     updateResource,

@@ -36,6 +36,16 @@ const resourceSchema = new Schema<TResource>(
 // Assignment Schema
 const assignmentSchema = new Schema<IAssignment>(
     {
+        course_id: {
+            type: Schema.Types.ObjectId,
+            required: true,
+            ref: 'Course',
+        },
+        lesson_id: {
+            type: Schema.Types.ObjectId,
+            required: true,
+            ref: 'Lesson',
+        },
         assignmentNo: {
             type: String,
             required: [true, 'Assignment number is required'],
@@ -60,10 +70,6 @@ const assignmentSchema = new Schema<IAssignment>(
                 },
                 message: 'Invalid unlock date',
             },
-        },
-        deadline: {
-            type: Date,
-            required: [true, 'Deadline is required'],
         },
         details: {
             type: String,

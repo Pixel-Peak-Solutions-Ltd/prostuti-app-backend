@@ -1,5 +1,8 @@
+import { Types } from 'mongoose';
+
 export interface IRecodedClass {
-    lessonName: string;
+    course_id: Types.ObjectId;
+    lesson_id: Types.ObjectId;
     recodeClassName: string;
     classDate: Date;
     classDetails: string;
