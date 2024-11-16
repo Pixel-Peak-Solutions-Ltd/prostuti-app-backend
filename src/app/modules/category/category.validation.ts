@@ -29,23 +29,19 @@ const createCategory = z.object({
             universityName: z
                 .string()
                 .min(1, 'University name cannot be an empty string')
-                .optional(),
-            unit: z
-                .string()
-                .min(1, 'Unit cannot be an empty string')
-                .optional(),
+                .optional()
         })
         .strict()
         .refine(
             (data) => {
                 if (data.type === 'Academic') {
-                    return data.division && data.subject;
+                    return data.division && data.subject && data.chapter
                 }
                 return true;
             },
             {
-                message: 'Division and Subject are required for Academic type.',
-                path: ['division', 'subject'],
+                message: 'Division , Subject and Chapter are required for Academic type.',
+                path: ['division', 'subject','chapter'],
             },
         )
         .refine(
@@ -106,11 +102,7 @@ const updateCategory = z.object({
             universityName: z
                 .string()
                 .min(1, 'University name cannot be an empty string')
-                .optional(),
-            unit: z
-                .string()
-                .min(1, 'Unit cannot be an empty string')
-                .optional(),
+                .optional()      
         })
         .strict(),
 });
