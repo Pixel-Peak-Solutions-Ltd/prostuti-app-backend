@@ -27,10 +27,7 @@ const CategorySchema = new Schema<ICategory, CategoryModel>(
         },
         universityName: {
             type: String,
-        },
-        unit: {
-            type: String,
-        },
+        }
     },
     {
         timestamps: true,

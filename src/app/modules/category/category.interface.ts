@@ -9,7 +9,7 @@ export type ICategory = {
     chapter?: string;
     universityType?: CategoryUniversityType;
     universityName?: string;
-    unit?: string;
+    // unit?: string;
 };
 
 export type CategoryModel = Model<ICategory, Record<string, unknown>>;
@@ -23,5 +23,5 @@ export type ICategoryFilters = {
     chapter?: string;
     universityType?: string;
     universityName?: string;
-    unit?: string;
+    // unit?: string;
 };
