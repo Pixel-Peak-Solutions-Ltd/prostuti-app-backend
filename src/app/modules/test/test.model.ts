@@ -6,6 +6,16 @@ import { IQuestion } from '../question/question.interface';
 
 const TestSchema = new Schema<ITest, TestModel>(
     {
+        course_id: {
+            type: Schema.Types.ObjectId,
+            required: true,
+            ref: 'Course',
+        },
+        lesson_id: {
+            type: Schema.Types.ObjectId,
+            required: true,
+            ref: 'Lesson',
+        },
         name: {
             type: String,
             required: [true, 'Test name is required'],

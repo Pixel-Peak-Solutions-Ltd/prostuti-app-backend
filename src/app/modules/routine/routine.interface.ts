@@ -3,6 +3,7 @@ import { RoutineType } from "./routine.constant";
 
 
 export type IRoutine={
+    course_id: Types.ObjectId;
     type: RoutineType
     date:Date,
     createdBy:Types.ObjectId,
@@ -19,5 +20,6 @@ export type IRoutineFilters = {
   searchTerm?: string;
   type?: string;
   ownRoutine?:string,
-  date?:string
+  date?:string,
+  course_id?:string
 }

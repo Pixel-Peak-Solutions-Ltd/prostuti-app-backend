@@ -13,6 +13,13 @@ const createRoutine = async (
     userInfo: TJWTDecodedUser,
     payload: Partial<IRoutine>,
 ): Promise<any> => {
+    //  // Check if the course exists
+    //  const courseExists = await Course.findById(payload.course_id);
+
+    //  if (!courseExists) {
+    //      throw new Error('Course does not exist');
+    //  }
+
     let routineDate = payload.date ? new Date(payload.date) : undefined;
 
     // Set the time to 23:59:59.999 (last millisecond of the day)
@@ -20,6 +27,7 @@ const createRoutine = async (
         routineDate.setHours(23, 59, 59, 999);
     }
     const newRoutine = new Routine({
+        course_id: payload.course_id,
         type: payload.type,
         date: routineDate,
         createdBy: userInfo.userId,
@@ -102,7 +110,10 @@ const getAllRoutines = async (
     const result = await Routine.find(whereConditions)
         .sort(sortConditions)
         .skip(skip)
-        .limit(limit);
+        .limit(limit)
+        .populate({
+            path: 'course_id',
+        });
 
     return {
         meta: {
