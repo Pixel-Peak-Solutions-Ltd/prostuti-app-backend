@@ -9,7 +9,8 @@ export const RoutineFilterableFields = [
     'searchTerm',
     'type',
     'ownRoutine',
-    'date'
+    'date',
+    'course_id'
 ];
 
 //searchTerm

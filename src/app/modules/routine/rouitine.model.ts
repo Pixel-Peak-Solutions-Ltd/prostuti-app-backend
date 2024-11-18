@@ -4,6 +4,11 @@ import { RoutineTypes } from './routine.constant';
 
 const RoutineSchema = new Schema<IRoutine, RoutineModel>(
     {
+        course_id: {
+            type: Schema.Types.ObjectId,
+            required: true,
+            ref: 'Course',
+        },
         type: {
             type: String,
             enum: RoutineTypes,

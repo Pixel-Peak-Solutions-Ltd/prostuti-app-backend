@@ -9,7 +9,9 @@ export const TestFilterableFields = [
     'searchTerm',
     'type',
     "ownTest",
-    "date"
+    "date",
+    "course_id",
+    "lesson_id"
 ];
 
 //searchTerm

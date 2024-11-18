@@ -1,4 +1,4 @@
-import { isValidObjectId } from 'mongoose';
+import { Types, isValidObjectId } from 'mongoose';
 import { z } from 'zod';
 import { QuestionTypes } from '../question/question.constant';
 import { TestTypes } from './test.constant';
@@ -61,6 +61,20 @@ const questionListItemSchema = z
 
 const createTestSchema = z.object({
     body: z.object({
+        course_id: z
+            .string()
+            .min(1, 'Course id is required')
+            .refine((val) => Types.ObjectId.isValid(val), {
+                message: 'Invalid MongoDB ObjectId',
+            }),
+
+        lesson_id: z
+            .string()
+            .min(1, 'Lesson id is required')
+            .refine((val) => Types.ObjectId.isValid(val), {
+                message: 'Invalid MongoDB ObjectId',
+            }),
+
         name: z.string().min(1, 'Test name is required'),
         type: z.enum([...TestTypes] as [string, ...string[]], {
             required_error: 'Test type is required.',

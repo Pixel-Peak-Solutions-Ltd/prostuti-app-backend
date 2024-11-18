@@ -14,6 +14,38 @@ const createTest = async (
     userInfo: TJWTDecodedUser,
     payload: Partial<ITest>,
 ): Promise<any> => {
+
+    
+    // // Check if the course exist
+    // const isCourseExist = await Course.findById(payload.course_id);
+    // if (!isCourseExist) {
+    //     throw new AppError(
+    //         StatusCodes.NOT_FOUND,
+    //         'Course does not exist with this ID',
+    //     );
+    // }
+
+    // // Check if the course exist
+    // const isLessonExist = await Lesson.findById(payload.lesson_id);
+    // if (!isLessonExist) {
+    //     throw new AppError(
+    //         StatusCodes.NOT_FOUND,
+    //         'Lesson does not exist with this ID',
+    //     );
+    // }
+
+    // // Check if the lesson belongs to of tah course
+    // const isLessonBelongsToCourse = await Lesson.findOne({
+    //     _id: payload.lesson_id,
+    //     course_id: payload.course_id,
+    // });
+    // if (!isLessonBelongsToCourse) {
+    //     throw new AppError(
+    //         StatusCodes.BAD_REQUEST,
+    //         'The lesson does not belong to the course',
+    //     );
+    // }
+
     //check if reference question id exists or not
     const { questionList } = payload;
 
@@ -36,10 +68,12 @@ const createTest = async (
 
     //create new test
     const newTest = new Test({
+        course_id: payload.course_id,
+        lesson_id: payload.lesson_id,
         name: payload.name,
         type: payload.type,
         time: payload.time,
-        publishDate:payload.publishDate && new Date(payload.publishDate),
+        publishDate: payload.publishDate && new Date(payload.publishDate),
         questionList: payload.questionList,
         createdBy: userInfo.userId,
     });
@@ -57,7 +91,7 @@ const getAllTests = async (
     paginationOptions: IPaginationOptions,
     userInfo: TJWTDecodedUser,
 ): Promise<any> => {
-    const { searchTerm, ownTest,date, ...filtersData } = filters;
+    const { searchTerm, ownTest, date, ...filtersData } = filters;
     const { page, limit, skip, sortBy, sortOrder } =
         calculatePagination(paginationOptions);
 
@@ -83,21 +117,24 @@ const getAllTests = async (
     if (date) {
         const checkDate = new Date(date);
         if (isNaN(checkDate.getTime())) {
-          throw new AppError(StatusCodes.NOT_ACCEPTABLE, 'Invalid date format!!!');
+            throw new AppError(
+                StatusCodes.NOT_ACCEPTABLE,
+                'Invalid date format!!!',
+            );
         }
         checkDate.setHours(0, 0, 0, 0);
-    
+
         andConditions.push({
-          publishDate: {
-            $gte: checkDate,
-            $lt: new Date(
-              checkDate.getFullYear(),
-              checkDate.getMonth(),
-              checkDate.getDate() + 1,
-            ),
-          },
+            publishDate: {
+                $gte: checkDate,
+                $lt: new Date(
+                    checkDate.getFullYear(),
+                    checkDate.getMonth(),
+                    checkDate.getDate() + 1,
+                ),
+            },
         });
-      }
+    }
     // filtering data
     if (Object.keys(filtersData).length) {
         andConditions.push({
@@ -120,7 +157,13 @@ const getAllTests = async (
     const result = await Test.find(whereConditions)
         .sort(sortConditions)
         .skip(skip)
-        .limit(limit);
+        .limit(limit)
+        .populate({
+            path: 'course_id',
+        })
+        .populate({
+            path: 'lesson_id',
+        });
 
     return {
         meta: {
