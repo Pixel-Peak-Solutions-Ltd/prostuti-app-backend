@@ -13,6 +13,9 @@ import { noticeRoute } from '../modules/courseManagement/notice/notice.route';
 import { resourceRoute } from '../modules/courseManagement/resource/resource.route';
 import { assignmentRoute } from '../modules/courseManagement/assignment/assignment.route';
 import { lessonRoute } from '../modules/courseManagement/lesson/lesson.route';
+import { TestRoute } from '../modules/test/test.route';
+import { RoutineRoute } from '../modules/routine/routine.route';
+
 
 const globalRoute = Router();
 
@@ -31,6 +34,8 @@ const routes = [
     { path: '/resource', route: resourceRoute },
     { path: '/assignment', route: assignmentRoute },
     { path: '/lesson', route: lessonRoute },
+    { path: '/test', route: TestRoute },
+    { path: '/routine', route: RoutineRoute },
 ];
 
 routes.forEach((route) => globalRoute.use(route.path, route.route));
