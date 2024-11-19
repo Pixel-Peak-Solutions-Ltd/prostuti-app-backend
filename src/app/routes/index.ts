@@ -7,8 +7,15 @@ import { categoryRoute } from '../modules/category/category.route';
 import { QuestionRoute } from '../modules/question/question.route';
 import { teacherRoute } from '../modules/teacher/teacher.route';
 import { favouriteQuestionRoute } from '../modules/favouriteQuestion/favouriteQuestion.route';
+import { courseRoute } from '../modules/courseManagement/course/course.route';
+import { recodedClassRoute } from '../modules/courseManagement/recodedClass/recodedClass.route';
+import { noticeRoute } from '../modules/courseManagement/notice/notice.route';
+import { resourceRoute } from '../modules/courseManagement/resource/resource.route';
+import { assignmentRoute } from '../modules/courseManagement/assignment/assignment.route';
+import { lessonRoute } from '../modules/courseManagement/lesson/lesson.route';
 import { TestRoute } from '../modules/test/test.route';
 import { RoutineRoute } from '../modules/routine/routine.route';
+
 
 const globalRoute = Router();
 
@@ -21,6 +28,12 @@ const routes = [
     { path: '/question', route: QuestionRoute },
     { path: '/teacher', route: teacherRoute },
     { path: '/favourite', route: favouriteQuestionRoute },
+    { path: '/course', route: courseRoute },
+    { path: '/recoded-class', route: recodedClassRoute },
+    { path: '/notice', route: noticeRoute },
+    { path: '/resource', route: resourceRoute },
+    { path: '/assignment', route: assignmentRoute },
+    { path: '/lesson', route: lessonRoute },
     { path: '/test', route: TestRoute },
     { path: '/routine', route: RoutineRoute },
 ];
