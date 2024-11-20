@@ -17,35 +17,33 @@ const createQuestion = async (
     if (!Array.isArray(payload) || payload.length === 0) {
         throw new AppError(StatusCodes.BAD_REQUEST, 'No questions provided');
     }
+    const categoryId = payload[0].category_id;
+    const category = await Category.findById(categoryId)
+    if (!category) {
+        throw new AppError(
+            StatusCodes.NOT_FOUND,
+            `Category not found for category_id: ${categoryId}`,
+        );
+    }
 
-    const questionsToCreate = await Promise.all(
-        payload.map(async (question) => {
-            const checkCategory = await Category.findById(question.category_id);
-            if (!checkCategory) {
-                throw new AppError(
-                    StatusCodes.NOT_FOUND,
-                    `Category not found for category_id: ${question.category_id}`,
-                );
-            }
+    const questionsToCreate = payload.map((question) => {
+        const newQuestion: Partial<IQuestion> = {
+            type: question.type,
+            title: question.title,
+            description: question.description,
+            category_id: category._id,
+            createdBy: new Types.ObjectId(userInfo.userId),
+        };
 
-            let newQuestion: Partial<IQuestion> = {
-                type: question.type,
-                title: question.title,
-                description: question.description,
-                category_id: checkCategory._id,
-                createdBy: new Types.ObjectId(userInfo.userId),
-            };
+        if (question.type === 'MCQ') {
+            newQuestion.options = question.options;
+            newQuestion.correctOption = question.correctOption;
+        }
 
-            if (question.type === 'MCQ') {
-                newQuestion.options = question.options;
-                newQuestion.correctOption = question.correctOption;
-            }
+        return newQuestion;
+    });
 
-            return newQuestion;
-        }),
-    );
-
-    const data = await Question.insertMany(questionsToCreate);
+    const data = await Question.create(questionsToCreate);
 
     return data;
 };
