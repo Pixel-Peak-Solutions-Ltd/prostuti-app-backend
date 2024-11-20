@@ -43,7 +43,7 @@ const createQuestion = async (
         return newQuestion;
     });
 
-    const data = await Question.insertMany(questionsToCreate);
+    const data = await Question.create(questionsToCreate);
 
     return data;
 };
