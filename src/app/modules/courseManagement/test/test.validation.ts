@@ -1,6 +1,6 @@
 import { Types, isValidObjectId } from 'mongoose';
 import { z } from 'zod';
-import { QuestionTypes } from '../question/question.constant';
+import { QuestionTypes } from '../../question/question.constant';
 import { TestTypes } from './test.constant';
 
 const questionListItemSchema = z

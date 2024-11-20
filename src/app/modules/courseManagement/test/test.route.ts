@@ -1,8 +1,8 @@
 import express from 'express';
+import auth from '../../../middlewares/auth';
+import validateRequest from '../../../middlewares/validateRequest';
+import { USER_ROLE } from '../../user/user.constant';
 import { TestController } from './test.controller';
-import auth from '../../middlewares/auth';
-import { USER_ROLE } from '../user/user.constant';
-import validateRequest from '../../middlewares/validateRequest';
 import { TestValidation } from './test.validation';
 
 

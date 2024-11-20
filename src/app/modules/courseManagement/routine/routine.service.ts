@@ -1,13 +1,13 @@
 import { StatusCodes } from 'http-status-codes';
-import AppError from '../../classes/errorClasses/AppError';
-import { TJWTDecodedUser } from '../../interfaces/jwt/jwt.type';
-import { Routine } from './rouitine.model';
-import { IRoutine, IRoutineFilters } from './routine.interface';
-import { IPaginationOptions } from '../../interfaces/common';
-import { calculatePagination } from '../../helpers/pagenationHelper';
-import { RoutineSearchableFields } from './routine.constant';
 import mongoose, { SortOrder } from 'mongoose';
-import { User } from '../user/user.model';
+import AppError from '../../../classes/errorClasses/AppError';
+import { calculatePagination } from '../../../helpers/pagenationHelper';
+import { IPaginationOptions } from '../../../interfaces/common';
+import { TJWTDecodedUser } from '../../../interfaces/jwt/jwt.type';
+import { User } from '../../user/user.model';
+import { Routine } from './rouitine.model';
+import { RoutineSearchableFields } from './routine.constant';
+import { IRoutine, IRoutineFilters } from './routine.interface';
 
 const createRoutine = async (
     userInfo: TJWTDecodedUser,

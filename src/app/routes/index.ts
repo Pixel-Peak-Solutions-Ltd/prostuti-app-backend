@@ -1,20 +1,20 @@
 import { Router } from 'express';
-import { studentRoute } from '../modules/student/student.route';
-import { userRoute } from '../modules/user/user.route';
 import { authRoute } from '../modules/auth/auth.route';
-import { phonVerificationRoute } from '../modules/phoneVerification/phoneVerification.route';
 import { categoryRoute } from '../modules/category/category.route';
-import { QuestionRoute } from '../modules/question/question.route';
-import { teacherRoute } from '../modules/teacher/teacher.route';
-import { favouriteQuestionRoute } from '../modules/favouriteQuestion/favouriteQuestion.route';
-import { courseRoute } from '../modules/courseManagement/course/course.route';
-import { recodedClassRoute } from '../modules/courseManagement/recodedClass/recodedClass.route';
-import { noticeRoute } from '../modules/courseManagement/notice/notice.route';
-import { resourceRoute } from '../modules/courseManagement/resource/resource.route';
 import { assignmentRoute } from '../modules/courseManagement/assignment/assignment.route';
+import { courseRoute } from '../modules/courseManagement/course/course.route';
 import { lessonRoute } from '../modules/courseManagement/lesson/lesson.route';
-import { TestRoute } from '../modules/test/test.route';
-import { RoutineRoute } from '../modules/routine/routine.route';
+import { noticeRoute } from '../modules/courseManagement/notice/notice.route';
+import { recodedClassRoute } from '../modules/courseManagement/recodedClass/recodedClass.route';
+import { resourceRoute } from '../modules/courseManagement/resource/resource.route';
+import { RoutineRoute } from '../modules/courseManagement/routine/routine.route';
+import { TestRoute } from '../modules/courseManagement/test/test.route';
+import { favouriteQuestionRoute } from '../modules/favouriteQuestion/favouriteQuestion.route';
+import { phonVerificationRoute } from '../modules/phoneVerification/phoneVerification.route';
+import { QuestionRoute } from '../modules/question/question.route';
+import { studentRoute } from '../modules/student/student.route';
+import { teacherRoute } from '../modules/teacher/teacher.route';
+import { userRoute } from '../modules/user/user.route';
 
 
 const globalRoute = Router();

@@ -1,8 +1,8 @@
 import { Schema, model } from 'mongoose';
+import { QuestionTypes } from '../../question/question.constant';
+import { IQuestion } from '../../question/question.interface';
 import { TestTypes } from './test.constant';
 import { ITest, TestModel } from './test.interface';
-import { QuestionTypes } from '../question/question.constant';
-import { IQuestion } from '../question/question.interface';
 
 const TestSchema = new Schema<ITest, TestModel>(
     {

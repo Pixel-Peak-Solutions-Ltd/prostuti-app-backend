@@ -1,12 +1,12 @@
 import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import catchAsync from '../../utils/catchAsync';
-import sendSuccessResponse from '../../utils/sendSuccessResponse';
-import { RoutineService } from './routine.service';
-import { TJWTDecodedUser } from '../../interfaces/jwt/jwt.type';
+import { paginationFields } from '../../../constant';
+import pick from '../../../helpers/pick';
+import { TJWTDecodedUser } from '../../../interfaces/jwt/jwt.type';
+import catchAsync from '../../../utils/catchAsync';
+import sendSuccessResponse from '../../../utils/sendSuccessResponse';
 import { RoutineFilterableFields } from './routine.constant';
-import { paginationFields } from '../../constant';
-import pick from '../../helpers/pick';
+import { RoutineService } from './routine.service';
 
 
 

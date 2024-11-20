@@ -1,6 +1,6 @@
 import { Model, Types } from 'mongoose';
+import { IQuestion } from '../../question/question.interface';
 import { TestType } from './test.constant';
-import { IQuestion } from '../question/question.interface';
 
 export type ITest = {
     course_id: Types.ObjectId;
