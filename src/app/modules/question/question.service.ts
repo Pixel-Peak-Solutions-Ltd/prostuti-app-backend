@@ -18,7 +18,7 @@ const createQuestion = async (
         throw new AppError(StatusCodes.BAD_REQUEST, 'No questions provided');
     }
     const categoryId = payload[0].category_id;
-    const category = await Category.findById(categoryId).lean();
+    const category = await Category.findById(categoryId)
     if (!category) {
         throw new AppError(
             StatusCodes.NOT_FOUND,
