@@ -83,6 +83,18 @@ const courseSchema = new Schema<ICourse>(
             minlength: [5, 'Course details must be at least 5 characters long'],
             maxlength: [5000, 'Course details cannot exceed 5000 characters'],
         },
+        isPending: {
+            type: Boolean,
+            default: true,
+        },
+        isPublished: {
+            type: Boolean,
+            default: false,
+        },
+        approvedBy: {
+            type: Schema.Types.ObjectId,
+            ref: 'User',
+        },
     },
     {
         timestamps: true,

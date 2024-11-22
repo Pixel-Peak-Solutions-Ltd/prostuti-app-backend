@@ -15,11 +15,38 @@ const createNotice = async (payload: TCreateNoticePayload) => {
         throw new Error('Course does not exist');
     }
 
+    // Check for duplicate lesson numbers within the same course
+    const noticeIDs = notices.map((l) => l!.noticeId);
+    const duplicateWithinInput = noticeIDs.some(
+        (number, index) => noticeIDs.indexOf(number) !== index,
+    );
+    if (duplicateWithinInput) {
+        throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            'Duplicate notice id within the input',
+        );
+    }
+
+    // Check for existing lessons with same number in the course
+    const existingNotice = await Notice.find({
+        course_id,
+        noticeId: { $in: noticeIDs },
+    });
+
+    if (existingNotice.length > 0) {
+        const existingNumbers = existingNotice.map((l) => l.noticeId);
+        throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            `Notice(s) already exist for this course: ${existingNumbers.join(', ')}`,
+        );
+    }
+
     // Create multiple lesson documents in a single operation
     const newNotice = await Notice.insertMany(
         notices.map((l) => ({
-            notice: l!.notice,
             course_id,
+            notice: l!.notice,
+            noticeId: l!.noticeId,
         })),
     );
 

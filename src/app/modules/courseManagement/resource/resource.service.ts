@@ -26,7 +26,7 @@ const createResource = async (
         );
     }
 
-    // Check if the course exist
+    // Check if the lesson exist
     const isLessonExist = await Lesson.findById(payload.lesson_id);
     if (!isLessonExist) {
         throw new AppError(
@@ -40,10 +40,24 @@ const createResource = async (
         _id: payload.lesson_id,
         course_id: payload.course_id,
     });
+
     if (!isLessonBelongsToCourse) {
         throw new AppError(
             StatusCodes.BAD_REQUEST,
             'The lesson does not belong to the course',
+        );
+    }
+
+    // Check if the resources already added for this course under that lesson
+    const isResourcesAdded = await Resource.findOne({
+        course_id: payload.course_id,
+        lesson_id: payload.lesson_id,
+    });
+
+    if (isResourcesAdded) {
+        throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            'Already resource(s) added for this lesson',
         );
     }
 
@@ -109,7 +123,7 @@ const getAllCourseResourcesWithLessons = async (courseId: string) => {
             select: 'number name',
             model: Lesson,
         })
-        .select({ uploadFileResources: 1 });
+        .select({ uploadFileResources: 1, name: 1 });
 
     return resources;
 };

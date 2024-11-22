@@ -11,6 +11,38 @@ const createLesson = async (payload: {
 }) => {
     const { lessons, course_id } = payload;
 
+    // Validate course existence
+    const courseExists = await Course.findById(course_id);
+    if (!courseExists) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Course does not exist');
+    }
+
+    // Check for duplicate lesson numbers within the same course
+    const lessonNumbers = lessons.map((l) => l!.number);
+    const duplicateWithinInput = lessonNumbers.some(
+        (number, index) => lessonNumbers.indexOf(number) !== index,
+    );
+    if (duplicateWithinInput) {
+        throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            'Duplicate lesson numbers within the input',
+        );
+    }
+
+    // Check for existing lessons with same number in the course
+    const existingLessons = await Lesson.find({
+        course_id,
+        number: { $in: lessonNumbers },
+    });
+
+    if (existingLessons.length > 0) {
+        const existingNumbers = existingLessons.map((l) => l.number);
+        throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            `Lesson number(s) already exist for this course: ${existingNumbers.join(', ')}`,
+        );
+    }
+
     // Create multiple lesson documents in a single operation
     const createdLessons = await Lesson.insertMany(
         lessons.map((l) => ({

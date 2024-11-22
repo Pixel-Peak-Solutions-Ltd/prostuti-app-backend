@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { StatusCodes } from 'http-status-codes';
 import fs from 'fs';
-import { Types } from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 import AppError from '../../../classes/errorClasses/AppError';
 import config from '../../../config';
 import { TJWTDecodedUser } from '../../../interfaces/jwt/jwt.type';
@@ -48,6 +48,110 @@ const createCourse = async (
     const newCourse = await Course.create(courseData);
 
     return newCourse;
+};
+
+// Course Preview
+const getCoursePreview = async (courseId: string) => {
+    // Aggregate course preview with optimized lookup
+    const coursePreview = await Course.aggregate([
+        // Match the specific course
+        { $match: { _id: new mongoose.Types.ObjectId(courseId) } },
+
+        // Lookup lessons with optimized pipeline
+        {
+            $lookup: {
+                from: 'lessons',
+                localField: '_id',
+                foreignField: 'course_id',
+                as: 'lessons',
+                pipeline: [
+                    { $sort: { number: 1 } }, // Sort lessons in order
+                    {
+                        $lookup: {
+                            from: 'recodedclasses',
+                            localField: '_id',
+                            foreignField: 'lesson_id',
+                            as: 'recodedClasses',
+                        },
+                    },
+                    {
+                        $lookup: {
+                            from: 'resources',
+                            localField: '_id',
+                            foreignField: 'lesson_id',
+                            as: 'resources',
+                        },
+                    },
+                    {
+                        $lookup: {
+                            from: 'assignments',
+                            localField: '_id',
+                            foreignField: 'lesson_id',
+                            as: 'assignments',
+                        },
+                    },
+                    {
+                        $lookup: {
+                            from: 'tests',
+                            localField: '_id',
+                            foreignField: 'lesson_id',
+                            as: 'tests',
+                        },
+                    },
+                ],
+            },
+        },
+
+        // Project to shape the output
+        {
+            $project: {
+                _id: 1,
+                name: 1,
+                details: 1,
+                image: 1,
+                lessons: {
+                    _id: 1,
+                    number: 1,
+                    name: 1,
+                    recodedClasses: {
+                        _id: 1,
+                        recodeClassName: 1,
+                        classDetails: 1,
+                        classDate: 1,
+                        classVideoURL: 1,
+                    },
+                    assignments: {
+                        _id: 1,
+                        assignmentNo: 1,
+                        marks: 1,
+                        details: 1,
+                        uploadFileResources: 1,
+                    },
+                    resources: {
+                        _id: 1,
+                        name: 1,
+                        resourceDate: 1,
+                        uploadFileResources: 1,
+                    },
+                    tests: {
+                        _id: 1,
+                        name: 1,
+                        type: 1,
+                        time: 1,
+                        publishDate: 1,
+                        questionList: 1,
+                    },
+                },
+            },
+        },
+    ]);
+
+    // Handle case when no course is found
+    if (!coursePreview.length) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Course not found');
+    }
+
+    return coursePreview[0];
 };
 
 const getAllCourses = async () => {
@@ -191,6 +295,7 @@ const deleteCourseByID = async (courseId: string) => {
 
 export const courseService = {
     createCourse,
+    getCoursePreview,
     getAllCourses,
     getCourseByID,
     updateCourse,

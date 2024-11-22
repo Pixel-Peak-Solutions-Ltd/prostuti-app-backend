@@ -15,4 +15,7 @@ export interface ICourse {
     category: CategoryType;
     image: TImage;
     details: string;
+    isPending: boolean;
+    isPublished: boolean;
+    approvedBy: Types.ObjectId;
 }

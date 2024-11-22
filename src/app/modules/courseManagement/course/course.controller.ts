@@ -19,6 +19,19 @@ const createCourse = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+// Preview Course
+const getCoursePreview = catchAsync(async (req: Request, res: Response) => {
+    const { courseId } = req.params;
+
+    const result = await courseService.getCoursePreview(courseId);
+
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'Course preview retrieved successfully',
+        data: result,
+    });
+});
+
 const getAllCourses = catchAsync(async (req: Request, res: Response) => {
     const result = await courseService.getAllCourses();
 
@@ -73,6 +86,7 @@ const deleteCourseByID = catchAsync(async (req: Request, res: Response) => {
 
 export const courseController = {
     createCourse,
+    getCoursePreview,
     getAllCourses,
     getCourseByID,
     updateCourse,
