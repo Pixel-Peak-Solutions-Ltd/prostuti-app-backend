@@ -8,7 +8,7 @@ import AppError from '../../../classes/errorClasses/AppError';
 import config from '../../../config';
 import { TJWTDecodedUser } from '../../../interfaces/jwt/jwt.type';
 import { deleteFromB2, uploadToB2 } from '../../../utils/backBlaze';
-import { ICourse } from './course.interface';
+import { ICourse, TPriceType } from './course.interface';
 import { Course } from './course.model';
 import { Express } from 'express';
 import { USER_ROLE } from '../../user/user.constant';
@@ -293,6 +293,26 @@ const deleteCourseByID = async (courseId: string) => {
     return null;
 };
 
+const approvedCourse = async (
+    courseId: string,
+    user: TJWTDecodedUser,
+    payload: { priceType: TPriceType; price: number },
+) => {
+    const updatedCourse = await Course.findByIdAndUpdate(
+        courseId,
+        {
+            isPending: false,
+            isPublished: true,
+            priceType: payload.priceType,
+            price: payload.price,
+            approvedBy: user.userId,
+        },
+        { new: true, runValidators: true },
+    );
+
+    return updatedCourse;
+};
+
 export const courseService = {
     createCourse,
     getCoursePreview,
@@ -300,4 +320,5 @@ export const courseService = {
     getCourseByID,
     updateCourse,
     deleteCourseByID,
+    approvedCourse,
 };

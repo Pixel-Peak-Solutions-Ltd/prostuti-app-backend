@@ -1,6 +1,8 @@
 import { Types } from 'mongoose';
 import { CategoryType } from '../../category/category.constant';
 
+export type TPriceType = 'Subscription';
+
 export interface TImage {
     diskType: string;
     path: string;
@@ -15,6 +17,8 @@ export interface ICourse {
     category: CategoryType;
     image: TImage;
     details: string;
+    priceType: TPriceType;
+    price: number;
     isPending: boolean;
     isPublished: boolean;
     approvedBy: Types.ObjectId;

@@ -84,6 +84,22 @@ const deleteCourseByID = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const approvedCourse = catchAsync(async (req: Request, res: Response) => {
+    const { courseId } = req.params;
+
+    const result = await courseService.approvedCourse(
+        courseId,
+        req.user,
+        req.body,
+    );
+
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'Course approved successfully',
+        data: result,
+    });
+});
+
 export const courseController = {
     createCourse,
     getCoursePreview,
@@ -91,4 +107,5 @@ export const courseController = {
     getCourseByID,
     updateCourse,
     deleteCourseByID,
+    approvedCourse,
 };

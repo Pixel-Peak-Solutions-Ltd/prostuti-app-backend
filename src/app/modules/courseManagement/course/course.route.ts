@@ -34,6 +34,12 @@ router
         },
         validateRequest(courseValidator.updateCourseValidationSchema),
         courseController.updateCourse,
+    )
+    .post(
+        '/approve/:courseId',
+        auth(USER_ROLE.admin),
+        validateRequest(courseValidator.approveCourseValidationSchema),
+        courseController.approvedCourse,
     );
 
 export const courseRoute = router;

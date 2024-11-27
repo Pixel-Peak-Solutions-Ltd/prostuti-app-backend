@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { categoryType } from '../../category/category.constant';
+import { priceType } from './course.constant';
 
 const createCourseValidationSchema = z.object({
     body: z.object({
@@ -59,7 +60,24 @@ const updateCourseValidationSchema = z.object({
     }),
 });
 
+const approveCourseValidationSchema = z.object({
+    body: z.object({
+        priceType: z.enum([...(priceType as [string, ...string[]])], {
+            required_error: 'Price type is required',
+            invalid_type_error: `Invalid categoryType. Allowed values are: ${Object.values(priceType).join(', ')}`,
+        }),
+        price: z
+            .number({
+                required_error: 'Price is required',
+                invalid_type_error: 'Price must be in number',
+            })
+            .positive()
+            .min(0, 'Price must be minimum zero'),
+    }),
+});
+
 export const courseValidator = {
     createCourseValidationSchema,
     updateCourseValidationSchema,
+    approveCourseValidationSchema,
 };
