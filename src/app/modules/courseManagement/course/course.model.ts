@@ -1,6 +1,7 @@
 import { Schema, model } from 'mongoose';
 import { ICourse, TImage } from './course.interface';
 import { categoryType } from '../../category/category.constant';
+import { priceType } from './course.constant';
 
 // Image Schema
 const imageSchema = new Schema<TImage>(
@@ -82,6 +83,25 @@ const courseSchema = new Schema<ICourse>(
             trim: true,
             minlength: [5, 'Course details must be at least 5 characters long'],
             maxlength: [5000, 'Course details cannot exceed 5000 characters'],
+        },
+        priceType: {
+            type: String,
+            enum: priceType,
+        },
+        price: {
+            type: Number,
+        },
+        isPending: {
+            type: Boolean,
+            default: true,
+        },
+        isPublished: {
+            type: Boolean,
+            default: false,
+        },
+        approvedBy: {
+            type: Schema.Types.ObjectId,
+            ref: 'User',
         },
     },
     {

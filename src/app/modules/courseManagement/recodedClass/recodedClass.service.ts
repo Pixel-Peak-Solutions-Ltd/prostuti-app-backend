@@ -30,10 +30,24 @@ const createRecodedClass = async (payload: Partial<IRecodedClass>) => {
         _id: payload.lesson_id,
         course_id: payload.course_id,
     });
+
     if (!isLessonBelongsToCourse) {
         throw new AppError(
             StatusCodes.BAD_REQUEST,
             'The lesson does not belong to the course',
+        );
+    }
+
+    // Check if the recoded class already added for this course under that lesson
+    const isRecodedClassAdded = await RecodedClass.findOne({
+        course_id: payload.course_id,
+        lesson_id: payload.lesson_id,
+    });
+
+    if (isRecodedClassAdded) {
+        throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            'Already recoded class(es) added for this lesson',
         );
     }
 
@@ -62,7 +76,7 @@ const getAllCourseRecodedClassWithLessons = async (courseId: string) => {
             select: 'number name',
             model: Lesson,
         })
-        .select({ classVideoURL: 1 });
+        .select({ classVideoURL: 1, recodeClassName: 1 });
 
     return recodedClasses;
 };

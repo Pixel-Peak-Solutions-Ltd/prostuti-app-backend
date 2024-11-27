@@ -20,6 +20,7 @@ router
         validateRequest(courseValidator.createCourseValidationSchema),
         courseController.createCourse,
     )
+    .get('/preview/:courseId', auth(), courseController.getCoursePreview)
     .get('/', courseController.getAllCourses)
     .get('/:courseId', courseController.getCourseByID)
     .delete('/:courseId', courseController.deleteCourseByID)
@@ -33,6 +34,12 @@ router
         },
         validateRequest(courseValidator.updateCourseValidationSchema),
         courseController.updateCourse,
+    )
+    .post(
+        '/approve/:courseId',
+        auth(USER_ROLE.admin),
+        validateRequest(courseValidator.approveCourseValidationSchema),
+        courseController.approvedCourse,
     );
 
 export const courseRoute = router;

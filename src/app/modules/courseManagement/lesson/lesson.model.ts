@@ -31,5 +31,8 @@ const lessonSchema = new Schema<ILesson>(
     },
 );
 
+// Add a unique compound index to ensure unique lesson number per course
+lessonSchema.index({ course_id: 1, number: 1 }, { unique: true });
+
 // Create and export the model
 export const Lesson = model<ILesson>('Lesson', lessonSchema);
