@@ -12,6 +12,7 @@ import { ICourse, TPriceType } from './course.interface';
 import { Course } from './course.model';
 import { Express } from 'express';
 import { USER_ROLE } from '../../user/user.constant';
+import { Student } from '../../student/student.model';
 
 // Create Course
 const createCourse = async (
@@ -39,7 +40,7 @@ const createCourse = async (
     const courseData: Partial<ICourse> = {
         teacher_id: new Types.ObjectId(user.userId),
         name: payload.name,
-        category: payload.category,
+        category_id: payload.category_id,
         details: payload.details,
         image: uploadedImage,
     };
@@ -50,14 +51,17 @@ const createCourse = async (
     return newCourse;
 };
 
+// Get All courses
+const getAllCourses = async () => {
+    const courses = await Course.find({ isPending: false, isPublished: true });
+
+    return courses;
+};
+
 // Course Preview
 const getCoursePreview = async (courseId: string) => {
-    // Aggregate course preview with optimized lookup
     const coursePreview = await Course.aggregate([
-        // Match the specific course
         { $match: { _id: new mongoose.Types.ObjectId(courseId) } },
-
-        // Lookup lessons with optimized pipeline
         {
             $lookup: {
                 from: 'lessons',
@@ -65,7 +69,7 @@ const getCoursePreview = async (courseId: string) => {
                 foreignField: 'course_id',
                 as: 'lessons',
                 pipeline: [
-                    { $sort: { number: 1 } }, // Sort lessons in order
+                    { $sort: { number: 1 } },
                     {
                         $lookup: {
                             from: 'recodedclasses',
@@ -98,55 +102,64 @@ const getCoursePreview = async (courseId: string) => {
                             as: 'tests',
                         },
                     },
+                    {
+                        $project: {
+                            _id: 1,
+                            number: 1,
+                            name: 1,
+                            recodedClassesCount: { $size: '$recodedClasses' },
+                            resourcesCount: { $size: '$resources' },
+                            assignmentsCount: { $size: '$assignments' },
+                            testsCount: { $size: '$tests' },
+                            recodedClasses: {
+                                _id: 1,
+                                recodeClassName: 1,
+                                classDetails: 1,
+                                classDate: 1,
+                                classVideoURL: 1,
+                            },
+                            assignments: {
+                                _id: 1,
+                                assignmentNo: 1,
+                                marks: 1,
+                                details: 1,
+                                uploadFileResources: 1,
+                                unlockDate: 1,
+                            },
+                            resources: {
+                                _id: 1,
+                                name: 1,
+                                resourceDate: 1,
+                                uploadFileResources: 1,
+                            },
+                            tests: {
+                                _id: 1,
+                                name: 1,
+                                type: 1,
+                                time: 1,
+                                publishDate: 1,
+                            },
+                        },
+                    },
                 ],
             },
         },
-
-        // Project to shape the output
         {
             $project: {
                 _id: 1,
                 name: 1,
                 details: 1,
                 image: 1,
-                lessons: {
-                    _id: 1,
-                    number: 1,
-                    name: 1,
-                    recodedClasses: {
-                        _id: 1,
-                        recodeClassName: 1,
-                        classDetails: 1,
-                        classDate: 1,
-                        classVideoURL: 1,
-                    },
-                    assignments: {
-                        _id: 1,
-                        assignmentNo: 1,
-                        marks: 1,
-                        details: 1,
-                        uploadFileResources: 1,
-                    },
-                    resources: {
-                        _id: 1,
-                        name: 1,
-                        resourceDate: 1,
-                        uploadFileResources: 1,
-                    },
-                    tests: {
-                        _id: 1,
-                        name: 1,
-                        type: 1,
-                        time: 1,
-                        publishDate: 1,
-                        questionList: 1,
-                    },
-                },
+                totalLessons: { $size: '$lessons' },
+                totalRecodedClasses: { $sum: '$lessons.recodedClassesCount' },
+                totalResources: { $sum: '$lessons.resourcesCount' },
+                totalAssignments: { $sum: '$lessons.assignmentsCount' },
+                totalTests: { $sum: '$lessons.testsCount' },
+                lessons: 1,
             },
         },
     ]);
 
-    // Handle case when no course is found
     if (!coursePreview.length) {
         throw new AppError(StatusCodes.NOT_FOUND, 'Course not found');
     }
@@ -154,9 +167,51 @@ const getCoursePreview = async (courseId: string) => {
     return coursePreview[0];
 };
 
-const getAllCourses = async () => {
-    // Get all courses
-    const courses = await Course.find({});
+const getPublishedCoursesForStudent = async (user: TJWTDecodedUser) => {
+    const studentProfile = await Student.findOne({ user_id: user.userId });
+
+    // Get all  courses
+    // Use aggregation to efficiently filter courses
+    const courses = await Course.aggregate([
+        // Match published and non-pending courses
+        {
+            $match: {
+                isPending: false,
+                isPublished: true,
+            },
+        },
+        // Lookup category details
+        {
+            $lookup: {
+                from: 'categories', // Ensure this matches your categories collection name
+                localField: 'category_id',
+                foreignField: '_id',
+                as: 'category',
+            },
+        },
+        // Unwind the category array
+        {
+            $unwind: '$category',
+        },
+        // Filter courses matching student's categoryType
+        {
+            $match: {
+                'category.type': studentProfile!.categoryType,
+            },
+        },
+        // Optional: Project only needed fields to reduce payload
+        {
+            $project: {
+                name: 1,
+                details: 1,
+                image: 1,
+                price: 1,
+                priceType: 1,
+                teacher_id: 1,
+                category: 1,
+            },
+        },
+    ]);
 
     return courses;
 };
@@ -210,7 +265,6 @@ const updateCourse = async (
     // Create the updated payload
     const updatedPayload: Partial<ICourse> = {
         ...(payload.name && { name: payload.name }),
-        ...(payload.category && { category: payload.category }),
         ...(payload.details && { details: payload.details }),
     };
 
@@ -316,8 +370,9 @@ const approvedCourse = async (
 export const courseService = {
     createCourse,
     getCoursePreview,
-    getAllCourses,
+    getPublishedCoursesForStudent,
     getCourseByID,
+    getAllCourses,
     updateCourse,
     deleteCourseByID,
     approvedCourse,

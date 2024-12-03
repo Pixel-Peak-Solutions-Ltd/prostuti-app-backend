@@ -123,7 +123,7 @@ const getAllCourseResourcesWithLessons = async (courseId: string) => {
             select: 'number name',
             model: Lesson,
         })
-        .select({ uploadFileResources: 1, name: 1 });
+        .select({ uploadFileResources: 1, name: 1, resourceDate: 1 });
 
     return resources;
 };

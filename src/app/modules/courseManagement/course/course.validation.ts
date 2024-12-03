@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { categoryType } from '../../category/category.constant';
 import { priceType } from './course.constant';
+import { Types } from 'mongoose';
 
 const createCourseValidationSchema = z.object({
     body: z.object({
@@ -15,10 +16,14 @@ const createCourseValidationSchema = z.object({
                 (value) => /^[a-zA-Z0-9\s-]+$/.test(value),
                 'Course name can only contain letters, numbers, spaces, and hyphens',
             ),
-        category: z.enum([...(categoryType as [string, ...string[]])], {
-            required_error: 'Category type is required',
-            invalid_type_error: `Invalid categoryType. Allowed values are: ${Object.values(categoryType).join(', ')}`,
-        }),
+        category_id: z
+            .string({
+                required_error: 'category_id is required',
+                invalid_type_error: 'category_id must be a string',
+            })
+            .refine((value: string) => Types.ObjectId.isValid(value), {
+                message: 'Invalid MongoDB ObjectId',
+            }),
         details: z
             .string({
                 required_error: 'Course details are required',
