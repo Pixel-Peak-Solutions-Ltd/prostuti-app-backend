@@ -76,7 +76,7 @@ const getAllCourseRecodedClassWithLessons = async (courseId: string) => {
             select: 'number name',
             model: Lesson,
         })
-        .select({ classVideoURL: 1, recodeClassName: 1 });
+        .select({ classVideoURL: 1, recodeClassName: 1, classDate: 1 });
 
     return recodedClasses;
 };

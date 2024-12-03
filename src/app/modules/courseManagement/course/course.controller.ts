@@ -32,15 +32,19 @@ const getCoursePreview = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
-const getAllCourses = catchAsync(async (req: Request, res: Response) => {
-    const result = await courseService.getAllCourses();
+const getPublishedCoursesForStudent = catchAsync(
+    async (req: Request, res: Response) => {
+        const user = req.user;
 
-    sendSuccessResponse(res, {
-        statusCode: StatusCodes.OK,
-        message: 'Courses are retrieved successfully',
-        data: result,
-    });
-});
+        const result = await courseService.getPublishedCoursesForStudent(user);
+
+        sendSuccessResponse(res, {
+            statusCode: StatusCodes.OK,
+            message: 'Courses are retrieved successfully',
+            data: result,
+        });
+    },
+);
 
 const getCourseByID = catchAsync(async (req: Request, res: Response) => {
     const { courseId } = req.params;
@@ -50,6 +54,17 @@ const getCourseByID = catchAsync(async (req: Request, res: Response) => {
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
         message: 'Course retrieved successfully',
+        data: result,
+    });
+});
+
+// Get All Courses
+const getAllCourses = catchAsync(async (req: Request, res: Response) => {
+    const result = await courseService.getAllCourses();
+
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'All courses retrieved successfully',
         data: result,
     });
 });
@@ -103,8 +118,9 @@ const approvedCourse = catchAsync(async (req: Request, res: Response) => {
 export const courseController = {
     createCourse,
     getCoursePreview,
-    getAllCourses,
+    getPublishedCoursesForStudent,
     getCourseByID,
+    getAllCourses,
     updateCourse,
     deleteCourseByID,
     approvedCourse,

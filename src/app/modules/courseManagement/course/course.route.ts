@@ -20,8 +20,13 @@ router
         validateRequest(courseValidator.createCourseValidationSchema),
         courseController.createCourse,
     )
+    .get('/all-courses', courseController.getAllCourses)
     .get('/preview/:courseId', auth(), courseController.getCoursePreview)
-    .get('/', courseController.getAllCourses)
+    .get(
+        '/student-published-courses',
+        auth(USER_ROLE.student),
+        courseController.getPublishedCoursesForStudent,
+    )
     .get('/:courseId', courseController.getCourseByID)
     .delete('/:courseId', courseController.deleteCourseByID)
     .patch(

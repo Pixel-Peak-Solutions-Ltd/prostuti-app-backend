@@ -1,7 +1,6 @@
 import { Schema, model } from 'mongoose';
-import { ICourse, TImage } from './course.interface';
-import { categoryType } from '../../category/category.constant';
 import { priceType } from './course.constant';
+import { ICourse, TImage } from './course.interface';
 
 // Image Schema
 const imageSchema = new Schema<TImage>(
@@ -65,13 +64,10 @@ const courseSchema = new Schema<ICourse>(
             minlength: [3, 'Course name must be at least 3 characters long'],
             maxlength: [255, 'Course name cannot be more than 255 characters'],
         },
-        category: {
-            type: String,
-            required: [true, 'Course category is required'],
-            enum: {
-                values: [...categoryType],
-                message: '{VALUE} is not a valid category',
-            },
+        category_id: {
+            type: Schema.Types.ObjectId,
+            required: [true, 'category_id is required'],
+            ref: 'Category',
         },
         image: {
             type: imageSchema,

@@ -1,5 +1,4 @@
 import { Types } from 'mongoose';
-import { CategoryType } from '../../category/category.constant';
 
 export type TPriceType = 'Subscription';
 
@@ -14,7 +13,7 @@ export interface TImage {
 export interface ICourse {
     teacher_id: Types.ObjectId;
     name: string;
-    category: CategoryType;
+    category_id: Types.ObjectId;
     image: TImage;
     details: string;
     priceType: TPriceType;
