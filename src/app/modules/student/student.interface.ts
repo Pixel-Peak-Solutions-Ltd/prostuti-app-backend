@@ -1,6 +1,14 @@
 import { Types } from 'mongoose';
 import { CategoryType } from '../category/category.constant';
 
+export interface TImage {
+    diskType: string;
+    path: string;
+    originalName: string;
+    modifiedName: string;
+    fileId: string;
+}
+
 export interface IStudent {
     user_id: Types.ObjectId;
     studentId: string;
@@ -8,5 +16,12 @@ export interface IStudent {
     categoryType: CategoryType;
     phone: string;
     email: string;
-    profileImageURL: string;
+    image?: TImage;
 }
+
+// Define allowed update fields type
+export type TAllowedStudentUpdates = Pick<IStudent, 'name' | 'categoryType'>;
+
+export type TUpdatePayloadType = Partial<
+    TAllowedStudentUpdates & { image?: TImage }
+>;

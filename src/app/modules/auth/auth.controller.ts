@@ -120,10 +120,22 @@ const resetStudentPassword = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+// Change password
+const changeUserPassword = catchAsync(async (req, res) => {
+    const result = await authService.changeUserPassword(req.user, req.body);
+
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'Password changed successfully',
+        data: result,
+    });
+});
+
 export const authController = {
     registerStudent,
     loginUser,
     getStudentRefreshToken,
     getTeacherAdminRefreshToken,
     resetStudentPassword,
+    changeUserPassword,
 };

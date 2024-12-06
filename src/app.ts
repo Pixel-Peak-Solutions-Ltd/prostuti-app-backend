@@ -1,20 +1,21 @@
-import express, { Application } from 'express';
-import cors from 'cors';
-import notFound from './app/middlewares/notFound';
-import globalErrorHandler from './app/middlewares/globalErrorHandler';
-import globalRoute from './app/routes';
-import healthCheck from './app/middlewares/healthCheck';
+import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
+import cors from 'cors';
+import express, { Application } from 'express';
+import globalErrorHandler from './app/middlewares/globalErrorHandler';
+import healthCheck from './app/middlewares/healthCheck';
+import notFound from './app/middlewares/notFound';
+import globalRoute from './app/routes';
 import languageMiddleware from './app/middlewares/language';
 import i18n from './app/i18n';
 
 const app: Application = express();
 
-
 // cors options
 const corsOptions = {
     origin: 'http://localhost:5173', // Your frontend's URL
     credentials: true, // Allow cookies and credentials to be sent
+    optionSuccessStatus: 200,
 };
 
 // Trust proxy
@@ -25,6 +26,8 @@ app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 app.use(cookieParser());
 app.use(express.json());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 // App route
 app.use('/api/v1', globalRoute);

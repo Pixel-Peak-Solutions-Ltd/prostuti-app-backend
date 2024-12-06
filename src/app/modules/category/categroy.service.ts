@@ -1,13 +1,11 @@
 import { StatusCodes } from 'http-status-codes';
+import { SortOrder } from 'mongoose';
 import AppError from '../../classes/errorClasses/AppError';
+import { calculatePagination } from '../../helpers/pagenationHelper';
 import { IPaginationOptions } from '../../interfaces/common';
 import { TJWTDecodedUser } from '../../interfaces/jwt/jwt.type';
-import { User } from '../user/user.model';
+import { categorySearchableFields } from './category.constant';
 import { ICategory, ICategoryFilters } from './category.interface';
-import { USER_STATUS } from '../user/user.constant';
-import { calculatePagination } from '../../helpers/pagenationHelper';
-import { categorySearchableFields, categoryType } from './category.constant';
-import { SortOrder } from 'mongoose';
 import { Category } from './category.model';
 
 const createCategory = async (
@@ -35,14 +33,13 @@ const createCategory = async (
             type: payload.type,
             division: payload.division,
             subject: payload.subject,
-            ...(payload.chapter && { chapter: payload.chapter }),
+            chapter: payload.chapter ,
         };
     } else if (payload.type === 'Admission') {
         newCategory = {
             type: payload.type,
             universityType: payload.universityType,
             universityName: payload.universityName,
-            ...(payload.unit && { unit: payload.unit }),
             subject: payload.subject,
         };
     } else {
@@ -533,7 +530,6 @@ const updateCategory = async (
         chapter,
         universityType,
         universityName,
-        unit,
     } = payload;
 
     //check user
@@ -564,7 +560,6 @@ const updateCategory = async (
     if (chapter) updateData.chapter = chapter;
     if (universityType) updateData.universityType = universityType;
     if (universityName) updateData.universityName = universityName;
-    if (unit) updateData.unit = unit;
 
     const updatedCategory = await Category.findByIdAndUpdate(id, updateData, {
         new: true,

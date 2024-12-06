@@ -1,6 +1,33 @@
 import { Schema, model } from 'mongoose';
-import { ITeacher } from './teacher.interface';
+import { ITeacher, TImage } from './teacher.interface';
 import { formatPhoneNumber } from '../../utils/formatPhoneNumber';
+import { categoryType } from '../category/category.constant';
+
+const imageSchema = new Schema<TImage>(
+    {
+        diskType: {
+            type: String,
+            required: [true, 'Image disk type is required'],
+        },
+        path: {
+            type: String,
+            required: [true, 'Image url is required'],
+        },
+        originalName: {
+            type: String,
+            required: [true, 'Image original name is required'],
+        },
+        modifiedName: {
+            type: String,
+            required: [true, 'Image modified name is required'],
+        },
+        fileId: {
+            type: String,
+            required: [true, 'File ID is required'],
+        },
+    },
+    { _id: false, versionKey: false },
+);
 
 const teacherSchema = new Schema<ITeacher>(
     {
@@ -49,9 +76,32 @@ const teacherSchema = new Schema<ITeacher>(
                     `${props.value} is not a valid email address!`,
             },
         },
-        profileImageURL: {
+        image: {
+            type: imageSchema,
+        },
+        joinedDate: {
+            type: String,
+            validate: {
+                validator: function (v: string) {
+                    // Validate format: "Month DD,YYYY"
+                    return /^(January|February|March|April|May|June|July|August|September|October|November|December)\s([0-9]{2}),([0-9]{4})$/.test(
+                        v,
+                    );
+                },
+                message: (props) =>
+                    `${props.value} is not a valid date format! Use format: 'Month DD,YYYY'`,
+            },
+        },
+        subject: {
             type: String,
             trim: true,
+        },
+        jobType: {
+            type: String,
+            enum: {
+                values: categoryType,
+                message: `Invalid jobType. Allowed values are: ${Object.values(categoryType).join(', ')}`,
+            },
         },
     },
     {
@@ -60,6 +110,7 @@ const teacherSchema = new Schema<ITeacher>(
     },
 );
 
+// Pre-save middleware for save operations
 // Pre-save middleware to format the phone number
 teacherSchema.pre('save', function (next) {
     if (this.phone && this.isModified('phone')) {
@@ -67,5 +118,16 @@ teacherSchema.pre('save', function (next) {
     }
     next();
 });
+
+// Pre-update middleware for update operations
+// Pre-update middleware to format the phone number
+teacherSchema.pre('findOneAndUpdate', function (next) {
+    const update = this.getUpdate() as { phone?: string };
+    if (update?.phone) {
+        update.phone = formatPhoneNumber(update.phone);
+    }
+    next();
+});
+
 // Create and export the model
 export const Teacher = model<ITeacher>('Teacher', teacherSchema);
