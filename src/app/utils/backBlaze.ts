@@ -46,10 +46,12 @@ export const uploadToB2 = async (
             mime: file.mimetype,
         });
 
+        // url: https://all-users.s3.us-west-004.backblazeb2.com/courseCoverImage/6724fd912384ed2d3c261310-1732730283929-64779474-5-ways-to-improve-your-course-cover-design-1024x575.png
         // Create image object
         const image: TImage = {
             diskType: file.mimetype,
-            path: `https://f004.backblazeb2.com/file/${bucketName}/${fullFileName}`,
+            // path: `https://f004.backblazeb2.com/file/${bucketName}/${fullFileName}`,
+            path: `https://${bucketName}.s3.us-west-004.backblazeb2.com/${fullFileName}`,
             originalName: file.originalname,
             modifiedName: file.filename,
             fileId: response.data.fileId,
