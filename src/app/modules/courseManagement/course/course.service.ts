@@ -156,6 +156,8 @@ const getCoursePreview = async (courseId: string) => {
                 totalAssignments: { $sum: '$lessons.assignmentsCount' },
                 totalTests: { $sum: '$lessons.testsCount' },
                 lessons: 1,
+                priceType: 1,
+                price: 1
             },
         },
     ]);

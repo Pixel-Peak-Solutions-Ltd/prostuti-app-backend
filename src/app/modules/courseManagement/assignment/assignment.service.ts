@@ -47,17 +47,17 @@ const createAssignment = async (
     }
 
     // Check if the assignment already added for this course under that lesson
-    const isAssignmentsAdded = await Assignment.findOne({
-        course_id: payload.course_id,
-        lesson_id: payload.lesson_id,
-    });
+    // const isAssignmentsAdded = await Assignment.findOne({
+    //     course_id: payload.course_id,
+    //     lesson_id: payload.lesson_id,
+    // });
 
-    if (isAssignmentsAdded) {
-        throw new AppError(
-            StatusCodes.BAD_REQUEST,
-            'Already assignment(s) added for this lesson',
-        );
-    }
+    // if (isAssignmentsAdded) {
+    //     throw new AppError(
+    //         StatusCodes.BAD_REQUEST,
+    //         'Already assignment(s) added for this lesson',
+    //     );
+    // }
 
     // If no files were uploaded, throw an error
     if (!files.length) {
