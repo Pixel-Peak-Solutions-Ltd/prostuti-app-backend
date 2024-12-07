@@ -25,6 +25,6 @@ const noticeSchema = new Schema<INotice>(
     },
 );
 
-noticeSchema.index({ course_id: 1, noticeId: 1 }, { unique: true });
+noticeSchema.index({ course_id: 1, noticeId: 1, notice: 1 }, { unique: true });
 
 export const Notice = model<INotice>('Notice', noticeSchema);

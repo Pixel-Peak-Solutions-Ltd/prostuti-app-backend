@@ -66,7 +66,7 @@ const resourcesSchema = new Schema<IResources>(
     },
 );
 
-resourcesSchema.index({ course_id: 1, lesson_id: 1 }, { unique: true });
+resourcesSchema.index({ course_id: 1, lesson_id: 1, name: 1 }, { unique: true });
 
 // Create and export the model
 export const Resource = model<IResources>('Resource', resourcesSchema);

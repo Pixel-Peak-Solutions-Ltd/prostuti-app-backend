@@ -87,7 +87,7 @@ const assignmentSchema = new Schema<IAssignment>(
     },
 );
 
-assignmentSchema.index({ course_id: 1, lesson_id: 1 }, { unique: true });
+assignmentSchema.index({ course_id: 1, lesson_id: 1, assignmentNo: 1 }, { unique: true });
 
 // Create and export the model
 export const Assignment = model<IAssignment>('Assignment', assignmentSchema);

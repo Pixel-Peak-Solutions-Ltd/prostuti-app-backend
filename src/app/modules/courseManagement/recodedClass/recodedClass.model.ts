@@ -88,7 +88,7 @@ const recodedClassSchema = new Schema<IRecodedClass>(
     },
 );
 
-recodedClassSchema.index({ course_id: 1, lesson_id: 1 }, { unique: true });
+recodedClassSchema.index({ course_id: 1, lesson_id: 1, recodeClassName: 1 }, { unique: true });
 
 // Compound index for optimized queries
 recodedClassSchema.index({ recodeClassName: 1, classDate: 1 });
