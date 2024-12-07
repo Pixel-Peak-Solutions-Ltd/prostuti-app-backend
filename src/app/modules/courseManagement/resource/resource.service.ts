@@ -49,17 +49,17 @@ const createResource = async (
     }
 
     // Check if the resources already added for this course under that lesson
-    const isResourcesAdded = await Resource.findOne({
-        course_id: payload.course_id,
-        lesson_id: payload.lesson_id,
-    });
+    // const isResourcesAdded = await Resource.findOne({
+    //     course_id: payload.course_id,
+    //     lesson_id: payload.lesson_id,
+    // });
 
-    if (isResourcesAdded) {
-        throw new AppError(
-            StatusCodes.BAD_REQUEST,
-            'Already resource(s) added for this lesson',
-        );
-    }
+    // if (isResourcesAdded) {
+    //     throw new AppError(
+    //         StatusCodes.BAD_REQUEST,
+    //         'Already resource(s) added for this lesson',
+    //     );
+    // }
 
     // If no files were uploaded, throw an error
     if (!files.length) {

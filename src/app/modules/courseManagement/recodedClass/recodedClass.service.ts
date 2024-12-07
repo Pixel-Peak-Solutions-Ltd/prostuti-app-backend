@@ -39,17 +39,17 @@ const createRecodedClass = async (payload: Partial<IRecodedClass>) => {
     }
 
     // Check if the recoded class already added for this course under that lesson
-    const isRecodedClassAdded = await RecodedClass.findOne({
-        course_id: payload.course_id,
-        lesson_id: payload.lesson_id,
-    });
+    // const isRecodedClassAdded = await RecodedClass.findOne({
+    //     course_id: payload.course_id,
+    //     lesson_id: payload.lesson_id,
+    // });
 
-    if (isRecodedClassAdded) {
-        throw new AppError(
-            StatusCodes.BAD_REQUEST,
-            'Already recoded class(es) added for this lesson',
-        );
-    }
+    // if (isRecodedClassAdded) {
+    //     throw new AppError(
+    //         StatusCodes.BAD_REQUEST,
+    //         'Already recoded class(es) added for this lesson',
+    //     );
+    // }
 
     const result = await RecodedClass.create({ ...payload });
 
