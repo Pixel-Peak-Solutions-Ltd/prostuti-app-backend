@@ -5,7 +5,10 @@ import sendSuccessResponse from '../../../utils/sendSuccessResponse';
 import { recodedClassService } from './recodedClass.service';
 
 const createRecodedClass = catchAsync(async (req: Request, res: Response) => {
-    const result = await recodedClassService.createRecodedClass(req.body);
+    const result = await recodedClassService.createRecodedClass(
+        req.body,
+        req.file,
+    );
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,

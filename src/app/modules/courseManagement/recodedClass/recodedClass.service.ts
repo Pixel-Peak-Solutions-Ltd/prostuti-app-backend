@@ -4,9 +4,16 @@ import { IRecodedClass } from './recodedClass.interface';
 import { RecodedClass } from './recodedClass.model';
 import { Course } from '../course/course.model';
 import { Lesson } from '../lesson/lesson.model';
+import { Express } from 'express';
+import config from '../../../config';
+import { uploadToB2 } from '../../../utils/backBlaze';
+import fs from 'fs';
 
 // Create Recoded Class
-const createRecodedClass = async (payload: Partial<IRecodedClass>) => {
+const createRecodedClass = async (
+    payload: Partial<IRecodedClass>,
+    file: Express.Multer.File | undefined,
+) => {
     // Check if the course exist
     const isCourseExist = await Course.findById(payload.course_id);
     if (!isCourseExist) {
@@ -50,6 +57,40 @@ const createRecodedClass = async (payload: Partial<IRecodedClass>) => {
     //         'Already recoded class(es) added for this lesson',
     //     );
     // }
+
+    // Handle image update if file exists
+
+    if (file) {
+        try {
+            // First upload the new image
+            const newVideo = await uploadToB2(
+                file,
+                config.backblaze_all_users_bucket_name,
+                config.backblaze_all_users_bucket_id,
+                'videos',
+            );
+
+            // If upload successful, update the payload
+            payload.classVideoURL = newVideo;
+
+            // Then try to delete the old image asynchronously
+        } catch (error) {
+            // Here we specifically catch upload errors
+            if (error instanceof AppError) {
+                // Delete local file after upload
+                fs.unlinkSync(file.path);
+                // Throw Error
+                throw error; // Rethrow AppError with custom message
+            }
+            // Delete local file after upload
+            fs.unlinkSync(file.path);
+            // Throw Error
+            throw new AppError(
+                StatusCodes.INTERNAL_SERVER_ERROR,
+                'Failed to process image update',
+            );
+        }
+    }
 
     const result = await RecodedClass.create({ ...payload });
 
