@@ -30,11 +30,16 @@ const allowedMimeTypes = [
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     'application/vnd.ms-powerpoint',
     'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'video/mp4',
+    'video/x-msvideo',
+    'video/x-matroska',
+    'video/quicktime',
+    'video/x-ms-wmv',
 ];
 
 const multerConfig = {
     storage: storage,
-    limits: { fileSize: 15 * 1024 * 1024 },
+    limits: { fileSize: 500 * 1024 * 1024 }, // Increased to 50MB for video uploads
     fileFilter: (
         req: Request,
         file: Express.Multer.File,
@@ -45,7 +50,7 @@ const multerConfig = {
         } else {
             cb(
                 new Error(
-                    'Invalid file type. Only jpg, png, jpeg, pdf, doc, docx, xls, xlsx, ppt, and pptx files are allowed',
+                    'Invalid file type. Only jpg, png, jpeg, pdf, doc, docx, xls, xlsx, ppt, pptx, and common video files are allowed',
                 ),
             );
         }
