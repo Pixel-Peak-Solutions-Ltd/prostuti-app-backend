@@ -15,7 +15,7 @@ const createTest = async (
     payload: Partial<ITest>,
 ): Promise<any> => {
 
-    
+
     // // Check if the course exist
     // const isCourseExist = await Course.findById(payload.course_id);
     // if (!isCourseExist) {
@@ -163,6 +163,9 @@ const getAllTests = async (
         })
         .populate({
             path: 'lesson_id',
+        })
+        .populate({
+            path: 'questionList.questionId', // Path to populate
         });
 
     return {
@@ -176,7 +179,13 @@ const getAllTests = async (
 };
 
 const getTestByID = async (id: string): Promise<any> => {
-    const data = await Test.findById(id);
+    const data = await Test.findById(id)
+        .populate({
+            path: 'lesson_id',
+        })
+        .populate({
+            path: 'questionList.questionId', // Path to populate
+        });
     if (!data) {
         throw new AppError(StatusCodes.NOT_FOUND, 'Test not found.');
     }
