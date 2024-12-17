@@ -1,5 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
-import mongoose, { SortOrder } from 'mongoose';
+import mongoose, { SortOrder, Types } from 'mongoose';
 import AppError from '../../../classes/errorClasses/AppError';
 import { calculatePagination } from '../../../helpers/pagenationHelper';
 import { IPaginationOptions } from '../../../interfaces/common';
@@ -9,62 +9,70 @@ import { User } from '../../user/user.model';
 import { TestSearchableFields } from './test.constant';
 import { ITest, ITestFilters } from './test.interface';
 import { Test } from './test.model';
+import { IQuestion } from '../../question/question.interface';
+import { Course } from '../course/course.model';
+import { Lesson } from '../lesson/lesson.model';
 
 const createTest = async (
     userInfo: TJWTDecodedUser,
-    payload: Partial<ITest>,
+    payload: any,
 ): Promise<any> => {
-
-
-    // // Check if the course exist
-    // const isCourseExist = await Course.findById(payload.course_id);
-    // if (!isCourseExist) {
-    //     throw new AppError(
-    //         StatusCodes.NOT_FOUND,
-    //         'Course does not exist with this ID',
-    //     );
-    // }
+    
+ 
+    const {  questionList } = payload;
 
     // // Check if the course exist
-    // const isLessonExist = await Lesson.findById(payload.lesson_id);
-    // if (!isLessonExist) {
-    //     throw new AppError(
-    //         StatusCodes.NOT_FOUND,
-    //         'Lesson does not exist with this ID',
-    //     );
-    // }
+    const checkCourse = await Course.findById(payload.course_id);
+    if (!checkCourse) {
+        throw new AppError(
+            StatusCodes.NOT_FOUND,
+            'Course does not exist with this ID',
+        );
+    }
 
-    // // Check if the lesson belongs to of tah course
-    // const isLessonBelongsToCourse = await Lesson.findOne({
-    //     _id: payload.lesson_id,
-    //     course_id: payload.course_id,
-    // });
-    // if (!isLessonBelongsToCourse) {
-    //     throw new AppError(
-    //         StatusCodes.BAD_REQUEST,
-    //         'The lesson does not belong to the course',
-    //     );
-    // }
+        // Check if the course exist
+    const isLessonExist = await Lesson.findById(payload.lesson_id);
+    if (!isLessonExist) {
+        throw new AppError(
+            StatusCodes.NOT_FOUND,
+            'Lesson does not exist with this ID',
+        );
+    }
 
-    //check if reference question id exists or not
-    const { questionList } = payload;
+    // Check if the lesson belongs to of tah course
+    const isLessonBelongsToCourse = await Lesson.findOne({
+        _id: payload.lesson_id,
+        course_id: payload.course_id,
+    });
+    if (!isLessonBelongsToCourse) {
+        throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            'The lesson does not belong to the course',
+        );
+    }
 
-    const questionIds =
-        questionList &&
-        questionList.filter((q) => q.questionId).map((q) => q.questionId);
+    const allQuestionIds: string[] = [];
 
-    if (questionIds && questionIds.length > 0) {
-        const existingQuestions = await Question.find({
-            _id: { $in: questionIds },
-        }).select('_id');
-
-        if (existingQuestions.length !== questionIds.length) {
-            throw new AppError(
-                StatusCodes.NOT_FOUND,
-                'One or more questions do not exist in your question database',
-            );
+    for (const item of questionList) {
+        if (item.questionId) {
+            // Validate existing question ID
+            const existingQuestion = await Question.findById(item.questionId).select('_id');
+            if (!existingQuestion) {
+                throw new AppError(StatusCodes.NOT_FOUND, `Question ID ${item.questionId} does not exist.`);
+            }
+            allQuestionIds.push(existingQuestion._id.toString());
+        } else if (item.newQuestion) {
+            
+            const questionToSave = new Question({
+                ...item.newQuestion,
+                category_id: checkCourse.category_id,
+                createdBy: new Types.ObjectId(userInfo.userId),
+            });
+            const savedQuestion = await questionToSave.save();
+            allQuestionIds.push(savedQuestion._id.toString());
         }
     }
+
 
     //create new test
     const newTest = new Test({
@@ -74,7 +82,7 @@ const createTest = async (
         type: payload.type,
         time: payload.time,
         publishDate: payload.publishDate && new Date(payload.publishDate),
-        questionList: payload.questionList,
+        questionList: allQuestionIds,
         createdBy: userInfo.userId,
     });
 
@@ -165,7 +173,7 @@ const getAllTests = async (
             path: 'lesson_id',
         })
         .populate({
-            path: 'questionList.questionId', // Path to populate
+            path: 'questionList',
         });
 
     return {
@@ -184,7 +192,7 @@ const getTestByID = async (id: string): Promise<any> => {
             path: 'lesson_id',
         })
         .populate({
-            path: 'questionList.questionId', // Path to populate
+            path: 'questionList', 
         });
     if (!data) {
         throw new AppError(StatusCodes.NOT_FOUND, 'Test not found.');
