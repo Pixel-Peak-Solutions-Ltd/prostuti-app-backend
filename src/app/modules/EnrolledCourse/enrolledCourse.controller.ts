@@ -15,6 +15,11 @@ const createFreeEnrolledCourse = catchAsync(async (req: Request, res: Response) 
     });
 });
 
+const createPaidEnrolledCourse = catchAsync(async (req: Request, res: Response) => {
+    const result = await EnrolledCourseService.createPaidEnrolledCourse(req.user as TJWTDecodedUser,req.body)
+   res.redirect(result)
+});
+
 export const EnrolledCourseController = {
-   createFreeEnrolledCourse
+   createFreeEnrolledCourse,createPaidEnrolledCourse
 };

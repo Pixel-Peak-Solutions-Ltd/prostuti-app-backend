@@ -16,7 +16,7 @@ import { QuestionRoute } from '../modules/question/question.route';
 import { studentRoute } from '../modules/student/student.route';
 import { teacherRoute } from '../modules/teacher/teacher.route';
 import { userRoute } from '../modules/user/user.route';
-import { EnrolledCourseRoute } from '../modules/EnrolledCourse/enrolledCourse.route';
+import { EnrolledCourseRoute } from '../modules/enrolledCourse/enrolledCourse.route';
 
 
 const globalRoute = Router();

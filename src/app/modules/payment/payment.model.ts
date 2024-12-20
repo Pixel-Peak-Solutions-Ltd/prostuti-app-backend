@@ -9,11 +9,11 @@ const PaymentSchema = new Schema<IPayment, PaymentModel>(
             ref: 'Student',
             required: [true, 'Student id id required'],
         },
-        course_id: {
-            type: Schema.Types.ObjectId,
-            ref: 'Course',
-            required: [true, 'Course Id is required'],
-        },
+        // course_id: {
+        //     type: Schema.Types.ObjectId,
+        //     ref: 'Course',
+        //     required: [true, 'Course Id is required'],
+        // },
         paymentType: {
             type: String,
             enum: PaymentType,

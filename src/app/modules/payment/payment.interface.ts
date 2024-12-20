@@ -4,7 +4,7 @@ import { PaymentStatus, PaymentType } from "./payment.constant";
 
 export type IPayment={
     student_id: Types.ObjectId;
-    course_id: Types.ObjectId; 
+    // course_id: Types.ObjectId; 
     paymentType: PaymentType;
     amount: number;
     status: PaymentStatus 
@@ -22,7 +22,7 @@ export type IPayment={
 export type IPaymentFilters = {
   searchTerm?: string;
   student_id?: string;
-  course_id?: string;
+  // course_id?: string;
   paymentType?: string;
   status?: string;
   createdDate?: string;
