@@ -44,6 +44,9 @@ const EnrolledCourseSchema = new Schema<IEnrolledCourse, EnrolledCourseModel>(
     },
 );
 
+EnrolledCourseSchema.index({ student_id: 1, course_id: 1 }, { unique: true });
+
+
 export const EnrolledCourse = model<IEnrolledCourse, EnrolledCourseModel>(
     'EnrolledCourse',
     EnrolledCourseSchema,

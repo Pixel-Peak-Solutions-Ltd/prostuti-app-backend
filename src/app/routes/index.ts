@@ -1,4 +1,5 @@
 import { Router } from 'express';
+
 import { authRoute } from '../modules/auth/auth.route';
 import { categoryRoute } from '../modules/category/category.route';
 import { assignmentRoute } from '../modules/courseManagement/assignment/assignment.route';
@@ -15,6 +16,7 @@ import { QuestionRoute } from '../modules/question/question.route';
 import { studentRoute } from '../modules/student/student.route';
 import { teacherRoute } from '../modules/teacher/teacher.route';
 import { userRoute } from '../modules/user/user.route';
+import { EnrolledCourseRoute } from '../modules/EnrolledCourse/enrolledCourse.route';
 
 
 const globalRoute = Router();
@@ -36,6 +38,7 @@ const routes = [
     { path: '/lesson', route: lessonRoute },
     { path: '/test', route: TestRoute },
     { path: '/routine', route: RoutineRoute },
+    { path: '/enroll-course', route: EnrolledCourseRoute }
 ];
 
 routes.forEach((route) => globalRoute.use(route.path, route.route));

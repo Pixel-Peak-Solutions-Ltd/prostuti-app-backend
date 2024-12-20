@@ -1,6 +1,6 @@
 import { Types } from 'mongoose';
 
-export type TPriceType = 'Subscription';
+export type TPriceType = 'Free'|'Paid'|'Subscription';
 
 export interface TImage {
     diskType: string;
