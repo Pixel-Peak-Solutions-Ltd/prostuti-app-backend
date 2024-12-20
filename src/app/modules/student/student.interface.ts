@@ -17,6 +17,9 @@ export interface IStudent {
     phone: string;
     email: string;
     image?: TImage;
+    enrolledCourses?: Types.ObjectId[],
+    subscriptionStartDate?: Date;
+    subscriptionEndDate?: Date;
 }
 
 // Define allowed update fields type
