@@ -1,8 +1,8 @@
-export type EnrolledCourseType = 'Free' | 'One-Time' | 'Subscription';
+export type EnrolledCourseType = 'Free' | 'Paid' | 'Subscription';
 
 export const EnrolledCourseTypes: EnrolledCourseType[] = [
     'Free',
-    'One-Time',
+    'Paid',
     'Subscription',
 ];
 

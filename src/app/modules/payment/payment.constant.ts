@@ -1,9 +1,9 @@
-export type PaymentType = 'One-Time' | 'Subscription';
+export type PaymentType = 'Paid' | 'Subscription';
 export type PaymentStatus = 'Success' | 'Failed' | 'Pending';
 
 
 
-export const PaymentType: PaymentType[] = ['One-Time' , 'Subscription'];
+export const PaymentType: PaymentType[] = ['Paid' , 'Subscription'];
 export const PaymentStatus: PaymentStatus[] = ['Success' , 'Failed' , 'Pending'];
 
 
