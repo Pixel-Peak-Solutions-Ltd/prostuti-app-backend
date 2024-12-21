@@ -1,5 +1,7 @@
 declare namespace NodeJS {
     export type ProcessEnv = {
+        FRONTEND_URL: any;
+        BACKEND_URL: any;
         NODE_ENV: string;
         PORT: number;
         DATABASE_URL: string;

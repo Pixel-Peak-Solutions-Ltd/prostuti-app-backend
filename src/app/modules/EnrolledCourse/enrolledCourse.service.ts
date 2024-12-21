@@ -9,6 +9,7 @@ import { EnrolledCourse } from './enrolledCourse.model';
 // @ts-ignore
 import SSLCommerzPayment from 'sslcommerz-lts';
 import { Payment } from '../payment/payment.model';
+import config from '../../config';
 
 const store_id = 'bakin62b84b547d1c3';
 const store_passwd = 'bakin62b84b547d1c3@ssl';
@@ -175,10 +176,10 @@ const createPaidEnrolledCourse = async (
         total_amount: totalPrice,
         currency: 'BDT',
         tran_id: transactionId,
-        success_url: 'http://localhost:5000/api/v1/enroll-course/paid/success',
-        fail_url: 'http://localhost:5000/fail',
-        cancel_url: 'http://localhost:5000/cancel',
-        ipn_url: 'http://localhost:5000/ipn',
+        success_url: `${config.backend_url}/api/v1/enroll-course/paid/success?trans_id=${transactionId}`,
+        fail_url: `${config.backend_url}/api/v1/enroll-course/paid/failed?trans_id=${transactionId}`,
+        cancel_url: `${config.backend_url}/cancel`,
+        ipn_url: `${config.backend_url}/ipn`,
         shipping_method: 'Courier',
         product_name: 'Courses',
         product_category: 'Education',
@@ -237,12 +238,72 @@ const createPaidEnrolledCourse = async (
             'Failed to enroll in the courses.',
         );
     }
+    console.log(
+apiResponse.GatewayPageURL
+    );
 
     return apiResponse.GatewayPageURL;
 };
 
+const createPaidEnrolledCourseSuccess = async (
+    userInfo: TJWTDecodedUser,
+    trans_id:string
+) => {
+     // Update Payment Status
+     const paymentDetails = await Payment.findOneAndUpdate(
+        { transactionId: trans_id },
+        { status: 'Success' },
+        { new: true }
+    );
+
+    if (!paymentDetails) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Payment not found.');
+    }
+
+    // Retrieve Enrolled Courses
+    const enrolledCourses = await EnrolledCourse.find({ payment_id: paymentDetails._id });
+
+    if (enrolledCourses.length === 0) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'No enrolled courses found for this payment.');
+    }
+
+    // aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaUpdate Student Record
+    const courseIds = enrolledCourses.map(course => course._id);
+    const updatedStudent = await Student.findByIdAndUpdate(
+        paymentDetails.student_id,
+        {
+            $push: { enrolledCourses: { $each: courseIds } },
+        },
+        { new: true }
+    );
+
+    if (!updatedStudent) {
+        throw new AppError(StatusCodes.BAD_REQUEST, 'Failed to update student enrollment.');
+    }
+
+}
+const createPaidEnrolledCourseFailed = async (
+    userInfo: TJWTDecodedUser,
+    trans_id:string
+) => {
+      // Step 1: Delete Payment Record
+    const paymentDetails = await Payment.findOneAndDelete({ transactionId: trans_id });
+
+    if (!paymentDetails) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Payment not found.');
+    }
+
+    // Step 2: Delete Enrolled Courses
+    const deleteResult = await EnrolledCourse.deleteMany({ payment_id: paymentDetails._id });
+
+    if (deleteResult.deletedCount === 0) {
+        throw new AppError(StatusCodes.BAD_REQUEST, 'Payment not found.');
+    }
+}
 
 export const EnrolledCourseService = {
     createFreeEnrolledCourse,
     createPaidEnrolledCourse,
+    createPaidEnrolledCourseSuccess,
+    createPaidEnrolledCourseFailed
 };
