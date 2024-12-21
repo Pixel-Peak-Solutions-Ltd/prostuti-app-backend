@@ -1,11 +1,11 @@
 import { StatusCodes } from 'http-status-codes';
 import mongoose from 'mongoose';
+import { v4 as uuidv4 } from 'uuid';
 import AppError from '../../classes/errorClasses/AppError';
 import { TJWTDecodedUser } from '../../interfaces/jwt/jwt.type';
 import { Course } from '../courseManagement/course/course.model';
 import { Student } from '../student/student.model';
 import { EnrolledCourse } from './enrolledCourse.model';
-import { v4 as uuidv4 } from 'uuid';
 // @ts-ignore
 import SSLCommerzPayment from 'sslcommerz-lts';
 import { Payment } from '../payment/payment.model';
@@ -113,19 +113,19 @@ const createFreeEnrolledCourse = async (
 const createPaidEnrolledCourse = async (
     userInfo: TJWTDecodedUser,
     payload: { course_id: string[]; totalPrice: number },
-): Promise<any> => {
+): Promise<string> => {
     const { course_id, totalPrice } = payload;
 
-    //  // Get student details
+    // Get student details
     const studentDetails = await Student.findOne({ user_id: userInfo.userId });
     if (!studentDetails) {
         throw new AppError(StatusCodes.NOT_FOUND, 'Student does not exist');
     }
 
-    //     // Get the courses
+    // Get the courses
     const courses = await Course.find({ _id: { $in: course_id } });
 
-    // //check if all course id are valid
+    // Validate courses
     if (courses.length !== course_id.length) {
         throw new AppError(
             StatusCodes.NOT_FOUND,
@@ -133,7 +133,7 @@ const createPaidEnrolledCourse = async (
         );
     }
 
-    //  // Ensure all courses are paid
+    // Ensure all courses are paid
     const nonPaidCourse = courses.find((course) => course.priceType !== 'Paid');
     if (nonPaidCourse) {
         throw new AppError(
@@ -142,86 +142,105 @@ const createPaidEnrolledCourse = async (
         );
     }
 
-    //    // Calculate the total price from the selected courses
+    // Calculate the total price from the selected courses
     const calculatedTotalPrice = courses.reduce(
         (sum, course) => sum + course.price,
         0,
     );
 
-    console.log(calculatedTotalPrice);
-
-    // // Validate if the total price matches the sum of course prices
+    // Validate if the total price matches
     if (calculatedTotalPrice !== totalPrice) {
         throw new AppError(
             StatusCodes.BAD_REQUEST,
             'Total price does not match the sum of course prices.',
         );
     }
-    for (const course of courses) {
-        // Check if already enrolled in this course
-        const existingEnrollment = await EnrolledCourse.findOne({
-            student_id: studentDetails._id,
-            course_id: course._id,
-        });
 
-        if (existingEnrollment) {
-            throw new AppError(
-                StatusCodes.CONFLICT,
-                `Already enrolled in the course: ${course.name}`,
-            );
-        }
+    // Ensure student is not already enrolled in any of the courses
+    const existingEnrollments = await EnrolledCourse.find({
+        student_id: studentDetails._id,
+        course_id: { $in: course_id },
+    });
+
+    if (existingEnrollments.length > 0) {
+        throw new AppError(
+            StatusCodes.CONFLICT,
+            'Already enrolled in one or more selected courses.',
+        );
     }
 
     const transactionId = uuidv4();
 
-    const data = {
+    const paymentData = {
         total_amount: totalPrice,
         currency: 'BDT',
-        tran_id: transactionId, // use unique tran_id for each api call
+        tran_id: transactionId,
         success_url: 'http://localhost:5000/api/v1/enroll-course/paid/success',
         fail_url: 'http://localhost:5000/fail',
         cancel_url: 'http://localhost:5000/cancel',
         ipn_url: 'http://localhost:5000/ipn',
         shipping_method: 'Courier',
-        product_name: 'Computer.',
-        product_category: 'Electronic',
-        product_profile: 'general',
-        cus_name: 'Customer Name',
-        cus_email: 'customer@example.com',
+        product_name: 'Courses',
+        product_category: 'Education',
+        product_profile: 'Paid',
+        cus_name: studentDetails.name,
+        cus_email: studentDetails.email,
         cus_add1: 'Dhaka',
         cus_add2: 'Dhaka',
         cus_city: 'Dhaka',
         cus_state: 'Dhaka',
         cus_postcode: '1000',
         cus_country: 'Bangladesh',
-        cus_phone: '01711111111',
-        cus_fax: '01711111111',
+        cus_phone: studentDetails.phone,
+        cus_fax: studentDetails.phone,
         ship_name: 'Customer Name',
         ship_add1: 'Dhaka',
         ship_add2: 'Dhaka',
         ship_city: 'Dhaka',
         ship_state: 'Dhaka',
         ship_postcode: 1000,
-        ship_country: 'Bangladesh',
+        ship_country: 'Bangladesh'      
     };
+
     const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live);
-    const apiResponse = await sslcz.init(data); // Await the response
+    const apiResponse = await sslcz.init(paymentData);
+
     if (!apiResponse || !apiResponse.GatewayPageURL) {
         throw new AppError(
             StatusCodes.BAD_REQUEST,
             'Failed to initialize payment gateway',
         );
     }
-    const gatewayPageURL = apiResponse.GatewayPageURL;
-    const newPayment = new Payment({
+
+    // Save payment information
+    const payment = new Payment({
         student_id: studentDetails._id,
         paymentType: 'Paid',
         amount: totalPrice,
-        transactionId: transactionId,
+        transactionId,
     });
-    await newPayment.save();
-    return gatewayPageURL;
+    await payment.save();
+
+    // Enroll the student in all selected courses
+    const enrollments = courses.map((course) => ({
+        student_id: studentDetails._id,
+        course_id: course._id,
+        enrollmentType: 'Paid',
+        payment_id: payment._id,
+    }));
+
+    const enrolledCourses = await EnrolledCourse.insertMany(enrollments);
+
+    if (!enrolledCourses || enrolledCourses.length === 0) {
+        throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            'Failed to enroll in the courses.',
+        );
+    }
+
+    return apiResponse.GatewayPageURL;
 };
+
 
 export const EnrolledCourseService = {
     createFreeEnrolledCourse,

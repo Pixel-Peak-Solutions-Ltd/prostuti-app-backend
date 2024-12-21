@@ -22,7 +22,20 @@ const EnrolledCourseSchema = new Schema<IEnrolledCourse, EnrolledCourseModel>(
             enum: EnrolledCourseTypes,
             required: true,
         },
-        payment_id: { type: Schema.Types.ObjectId, ref: 'Payment' },
+        payment_id: {
+            type: Schema.Types.ObjectId,
+            ref: 'Payment',
+            validate: {
+                validator: function (value) {
+                    // If enrollmentType is 'Paid', payment_id must be provided
+                    if (this.enrollmentType === 'Paid') {
+                        return !!value; // Must not be null or undefined
+                    }
+                    return true; // For other enrollment types, no validation
+                },
+                message: 'payment_id is required for Paid enrollmentType.',
+            },
+        },
         enrolledAt: { type: Date, default: Date.now },
         enrolledExpireAt: {
             type: Date,
@@ -30,9 +43,9 @@ const EnrolledCourseSchema = new Schema<IEnrolledCourse, EnrolledCourseModel>(
                 validator: function (value) {
                     // If enrollmentType is Subscription, enrolledExpireAt must be set
                     if (this.enrollmentType === 'Subscription') {
-                        return !!value; // Must not be null or undefined
+                        return !!value; 
                     }
-                    return true; // For other types, no validation
+                    return true; 
                 },
                 message:
                     'enrolledExpireAt is required for Subscription enrollmentType.',
