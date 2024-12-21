@@ -7,6 +7,8 @@ export default {
     NODE_ENV: process.env.NODE_ENV,
     port: process.env.PORT,
     database_url: process.env.DATABASE_URL,
+    backend_url:process.env.BACKEND_URL,
+    frontend_url:process.env.FRONTEND_URL,
     bcrypt_salt: process.env.BCRYPT_SALT,
     jwt_access_token_secret: process.env.JWT_ACCESS_TOKEN_SECRET,
     jwt_refresh_token_secret: process.env.JWT_REFRESH_TOKEN_SECRET,
