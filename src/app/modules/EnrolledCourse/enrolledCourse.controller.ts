@@ -19,16 +19,22 @@ const createFreeEnrolledCourse = catchAsync(async (req: Request, res: Response) 
 
 const createPaidEnrolledCourse = catchAsync(async (req: Request, res: Response) => {
     const result = await EnrolledCourseService.createPaidEnrolledCourse(req.user as TJWTDecodedUser,req.body)
-    res.redirect(result)
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'Payment Redirect Link',
+        data: result,
+    });
 });
 const createPaidEnrolledCourseSuccess = catchAsync(async (req: Request, res: Response) => {
     const trans_id = req.query.trans_id as string;
+    const courseIdString = req.query.course_id as string; 
+     const course_id = courseIdString.split(',');
 
     
-    if (!trans_id) {
-        throw new AppError(StatusCodes.BAD_REQUEST, 'Transaction ID is required.');
+    if (!trans_id || !course_id) {
+        throw new AppError(StatusCodes.BAD_REQUEST, 'Transaction ID  and courses id are required.');
     }
-    await EnrolledCourseService.createPaidEnrolledCourseSuccess(req.user as TJWTDecodedUser,trans_id)
+    await EnrolledCourseService.createPaidEnrolledCourseSuccess(req.user as TJWTDecodedUser,trans_id,course_id)
     res.redirect(`${config.frontend_url}/payment/success`)
 })
 
@@ -43,6 +49,17 @@ const createPaidEnrolledCourseFailed = catchAsync(async (req: Request, res: Resp
     res.redirect(`${config.frontend_url}/payment/failed`)
 })
 
+const createPaidEnrolledCourseCanceled = catchAsync(async (req: Request, res: Response) => {
+    const trans_id = req.query.trans_id as string;
+
+    
+    if (!trans_id) {
+        throw new AppError(StatusCodes.BAD_REQUEST, 'Transaction ID is required.');
+    }
+    await EnrolledCourseService.createPaidEnrolledCourseCanceled(req.user as TJWTDecodedUser,trans_id)
+    res.redirect(`${config.frontend_url}/payment/canceled`)
+})
+
 export const EnrolledCourseController = {
-   createFreeEnrolledCourse,createPaidEnrolledCourse,createPaidEnrolledCourseSuccess,createPaidEnrolledCourseFailed
+   createFreeEnrolledCourse,createPaidEnrolledCourse,createPaidEnrolledCourseSuccess,createPaidEnrolledCourseFailed,createPaidEnrolledCourseCanceled
 };

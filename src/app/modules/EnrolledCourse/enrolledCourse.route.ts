@@ -13,6 +13,8 @@ router.post('/free',auth(USER_ROLE.student),validateRequest(EnrolledCourseValida
 router.post('/paid/init',auth(USER_ROLE.student),validateRequest(EnrolledCourseValidation.createPaidEnrolledCourse),EnrolledCourseController.createPaidEnrolledCourse )
 router.post("/paid/success",EnrolledCourseController.createPaidEnrolledCourseSuccess)
 router.post("/paid/failed",EnrolledCourseController.createPaidEnrolledCourseFailed)
+router.post("/paid/canceled",EnrolledCourseController.createPaidEnrolledCourseCanceled)
+
 
 
 
