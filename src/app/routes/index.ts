@@ -17,6 +17,7 @@ import { studentRoute } from '../modules/student/student.route';
 import { teacherRoute } from '../modules/teacher/teacher.route';
 import { userRoute } from '../modules/user/user.route';
 import { EnrolledCourseRoute } from '../modules/enrolledCourse/enrolledCourse.route';
+import { PaymentRoute } from '../modules/payment/payment.route';
 
 
 const globalRoute = Router();
@@ -38,7 +39,8 @@ const routes = [
     { path: '/lesson', route: lessonRoute },
     { path: '/test', route: TestRoute },
     { path: '/routine', route: RoutineRoute },
-    { path: '/enroll-course', route: EnrolledCourseRoute }
+    { path: '/enroll-course', route: EnrolledCourseRoute },
+    { path: '/payment', route: PaymentRoute },
 ];
 
 routes.forEach((route) => globalRoute.use(route.path, route.route));
