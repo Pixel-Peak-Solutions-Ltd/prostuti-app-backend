@@ -328,7 +328,7 @@ const getTeacherAdminRefreshToken = async (token: string) => {
     const accessToken = jwtHelpers.createToken(
         jwtPayload,
         config.jwt_access_token_secret,
-        config.jwt_student_access_token_expires_in,
+        config.jwt_access_token_expired_in,
     );
 
     return {
