@@ -8,8 +8,8 @@ import { Student } from '../student/student.model';
 import { EnrolledCourse } from './enrolledCourse.model';
 // @ts-ignore
 import SSLCommerzPayment from 'sslcommerz-lts';
-import { Payment } from '../payment/payment.model';
 import config from '../../config';
+import { Payment } from '../payment/payment.model';
 
 const store_id = 'bakin62b84b547d1c3';
 const store_passwd = 'bakin62b84b547d1c3@ssl';
@@ -110,6 +110,113 @@ const createFreeEnrolledCourse = async (
         await session.endSession();
     }
 };
+
+const createSubscriptionEnrolledCourse = async (
+    userInfo: TJWTDecodedUser,
+    payload: { course_id: string[] },
+): Promise<any> => {
+    const { course_id } = payload;
+
+    // Get student details
+    const studentDetails = await Student.findOne({ user_id: userInfo.userId });
+    if (!studentDetails) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Student does not exist');
+    }
+    if (
+        studentDetails.subscriptionEndDate &&
+        studentDetails.subscriptionEndDate < new Date()
+    ) {
+        throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            'Active subscription plan to add subscribed course',
+        );
+    }
+
+
+    // Check if all course IDs are valid
+    const courses = await Course.find({ _id: { $in: course_id } });
+
+    // If courses not found
+    if (courses.length !== course_id.length) {
+        throw new AppError(
+            StatusCodes.NOT_FOUND,
+            'One or more courses are not found.',
+        );
+    }
+
+    // Check if all courses are subscription based
+    const nonSubscriptionCourse = courses.find((course) => course.priceType !== 'Subscription');
+    if (nonSubscriptionCourse) {
+        throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            'One or more courses are not subscription based.',
+        );
+    }
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        // Enroll courses
+        for (const course of courses) {
+            // Check if already enrolled in this course
+            const existingEnrollment = await EnrolledCourse.findOne({
+                student_id: studentDetails._id,
+                course_id: course._id,
+            });
+
+            if (existingEnrollment) {
+                throw new AppError(
+                    StatusCodes.CONFLICT,
+                    `Already enrolled in the course: ${course.name}`,
+                );
+            }
+
+            // Create new enrollment
+            const newEnrolledCourse = await EnrolledCourse.create(
+                [
+                    {
+                        student_id: studentDetails._id,
+                        course_id: course._id,
+                        enrollmentType: 'Subscription',
+                    },
+                ],
+                { session },
+            );
+
+            if (!newEnrolledCourse || newEnrolledCourse.length === 0) {
+                throw new AppError(
+                    StatusCodes.BAD_REQUEST,
+                    'Failed to enroll in the course.',
+                );
+            }
+
+            // Update student with the new enrolled course
+            const updatedStudent = await Student.findByIdAndUpdate(
+                studentDetails._id,
+                {
+                    $push: { enrolledCourses: newEnrolledCourse[0]._id },
+                },
+                { session, new: true },
+            );
+
+            if (!updatedStudent) {
+                throw new AppError(
+                    StatusCodes.BAD_REQUEST,
+                    'Failed to update student enrollment.',
+                );
+            }
+        }
+
+        await session.commitTransaction();
+    } catch (error) {
+        await session.abortTransaction();
+        throw error;
+    } finally {
+        await session.endSession();
+    }
+};
+
 
 const createPaidEnrolledCourse = async (
     userInfo: TJWTDecodedUser,
@@ -311,6 +418,7 @@ const createPaidEnrolledCourseCanceled = async (trans_id: string) => {
 
 export const EnrolledCourseService = {
     createFreeEnrolledCourse,
+    createSubscriptionEnrolledCourse,
     createPaidEnrolledCourse,
     createPaidEnrolledCourseSuccess,
     createPaidEnrolledCourseFailed,

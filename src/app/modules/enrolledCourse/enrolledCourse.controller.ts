@@ -15,7 +15,16 @@ const createFreeEnrolledCourse = catchAsync(async (req: Request, res: Response) 
         message: 'Successfully added to enrolled course',
         data: result,
     });
+});const createSubscriptionEnrolledCourse = catchAsync(async (req: Request, res: Response) => {
+    const result = await EnrolledCourseService.createSubscriptionEnrolledCourse(req.user as TJWTDecodedUser,req.body)
+
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'Successfully added to enrolled course',
+        data: result,
+    });
 });
+
 
 const createPaidEnrolledCourse = catchAsync(async (req: Request, res: Response) => {
     const result = await EnrolledCourseService.createPaidEnrolledCourse(req.user as TJWTDecodedUser,req.body)
@@ -61,5 +70,5 @@ const createPaidEnrolledCourseCanceled = catchAsync(async (req: Request, res: Re
 })
 
 export const EnrolledCourseController = {
-   createFreeEnrolledCourse,createPaidEnrolledCourse,createPaidEnrolledCourseSuccess,createPaidEnrolledCourseFailed,createPaidEnrolledCourseCanceled
+   createFreeEnrolledCourse,createSubscriptionEnrolledCourse,createPaidEnrolledCourse,createPaidEnrolledCourseSuccess,createPaidEnrolledCourseFailed,createPaidEnrolledCourseCanceled
 };
