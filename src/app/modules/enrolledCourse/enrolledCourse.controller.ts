@@ -6,6 +6,9 @@ import { EnrolledCourseService } from "./enrolledCourse.service";
 import { TJWTDecodedUser } from "../../interfaces/jwt/jwt.type";
 import AppError from "../../classes/errorClasses/AppError";
 import config from "../../config";
+import pick from "../../helpers/pick";
+import { EnrolledCourseFilterableFields } from "./enrolledCourse.constant";
+import { paginationFields } from "../../constant";
 
 const createFreeEnrolledCourse = catchAsync(async (req: Request, res: Response) => {
     const result = await EnrolledCourseService.createFreeEnrolledCourse(req.user as TJWTDecodedUser,req.body)
@@ -15,7 +18,16 @@ const createFreeEnrolledCourse = catchAsync(async (req: Request, res: Response) 
         message: 'Successfully added to enrolled course',
         data: result,
     });
+});const createSubscriptionEnrolledCourse = catchAsync(async (req: Request, res: Response) => {
+    const result = await EnrolledCourseService.createSubscriptionEnrolledCourse(req.user as TJWTDecodedUser,req.body)
+
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'Successfully added to enrolled course',
+        data: result,
+    });
 });
+
 
 const createPaidEnrolledCourse = catchAsync(async (req: Request, res: Response) => {
     const result = await EnrolledCourseService.createPaidEnrolledCourse(req.user as TJWTDecodedUser,req.body)
@@ -34,7 +46,7 @@ const createPaidEnrolledCourseSuccess = catchAsync(async (req: Request, res: Res
     if (!trans_id || !course_id) {
         throw new AppError(StatusCodes.BAD_REQUEST, 'Transaction ID  and courses id are required.');
     }
-    await EnrolledCourseService.createPaidEnrolledCourseSuccess(req.user as TJWTDecodedUser,trans_id,course_id)
+    await EnrolledCourseService.createPaidEnrolledCourseSuccess(trans_id,course_id)
     res.redirect(`${config.frontend_url}/payment/success`)
 })
 
@@ -45,7 +57,7 @@ const createPaidEnrolledCourseFailed = catchAsync(async (req: Request, res: Resp
     if (!trans_id) {
         throw new AppError(StatusCodes.BAD_REQUEST, 'Transaction ID is required.');
     }
-    await EnrolledCourseService.createPaidEnrolledCourseFailed(req.user as TJWTDecodedUser,trans_id)
+    await EnrolledCourseService.createPaidEnrolledCourseFailed(trans_id)
     res.redirect(`${config.frontend_url}/payment/failed`)
 })
 
@@ -56,10 +68,33 @@ const createPaidEnrolledCourseCanceled = catchAsync(async (req: Request, res: Re
     if (!trans_id) {
         throw new AppError(StatusCodes.BAD_REQUEST, 'Transaction ID is required.');
     }
-    await EnrolledCourseService.createPaidEnrolledCourseCanceled(req.user as TJWTDecodedUser,trans_id)
+    await EnrolledCourseService.createPaidEnrolledCourseCanceled(trans_id)
     res.redirect(`${config.frontend_url}/payment/canceled`)
 })
 
+const getAllEnrolledCourses = catchAsync(async (req: Request, res: Response) => {
+    const filters = pick(req.query, EnrolledCourseFilterableFields);
+    const paginationOptions = pick(req.query, paginationFields);
+      const result = await EnrolledCourseService.getAllEnrolledCourses(filters,
+          paginationOptions,
+          req.user as TJWTDecodedUser);
+  
+      sendSuccessResponse(res, {
+          statusCode: StatusCodes.OK,
+          message: 'Enrolled Courses are retrieved successfully',
+          data: result,
+      });
+  });
+  const getEnrolledCourseByID = catchAsync(async (req: Request, res: Response) => {
+    const result = await EnrolledCourseService.getEnrolledCourseByID(req.params.id,req.user as TJWTDecodedUser);
+
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'Single EnrolledCourse retrieved successfully',
+        data: result,
+    });
+});
+
 export const EnrolledCourseController = {
-   createFreeEnrolledCourse,createPaidEnrolledCourse,createPaidEnrolledCourseSuccess,createPaidEnrolledCourseFailed,createPaidEnrolledCourseCanceled
+   createFreeEnrolledCourse,createSubscriptionEnrolledCourse,createPaidEnrolledCourse,createPaidEnrolledCourseSuccess,createPaidEnrolledCourseFailed,createPaidEnrolledCourseCanceled,getAllEnrolledCourses,getEnrolledCourseByID
 };

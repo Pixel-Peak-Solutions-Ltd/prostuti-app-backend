@@ -11,6 +11,17 @@ const createFreeEnrolledCourse = z.object({
             .min(1, 'At least one course id is required'),
     }).strict()
 })
+const createSubscriptionEnrolledCourse = z.object({
+    body: z.object({
+        course_id: z
+            .array(
+                z
+                    .string()
+                    .length(24, 'Each Course ID must be a valid ObjectId'),
+            )
+            .min(1, 'At least one course id is required'),
+    }).strict()
+})
 const createPaidEnrolledCourse = z.object({
     body: z.object({
 
@@ -25,4 +36,4 @@ const createPaidEnrolledCourse = z.object({
     }).strict()
 })
 
-export const EnrolledCourseValidation = { createFreeEnrolledCourse,createPaidEnrolledCourse };
+export const EnrolledCourseValidation = { createFreeEnrolledCourse,createPaidEnrolledCourse,createSubscriptionEnrolledCourse};

@@ -23,6 +23,6 @@ export type IEnrolledCourseFilters = {
   course_id?: string;
   enrollmentType?: string;
   enrolledAt?: string;
-  enrolledExpireAt: string;
+  enrolledExpireAt?: string;
   //e
 };

@@ -9,6 +9,7 @@ import config from '../../config';
 import { Student } from '../student/student.model';
 import { subscriptionPlansDetails } from './payment.constant';
 import { Payment } from './payment.model';
+import { Subscription } from '../subscription/subscription.model';
 
 const store_id = 'bakin62b84b547d1c3';
 const store_passwd = 'bakin62b84b547d1c3@ssl';
@@ -61,10 +62,10 @@ const createSubscriptionPayment = async (
         total_amount: price,
         currency: 'BDT',
         tran_id: transactionId,
-        success_url: `${config.backend_url}/api/v1/payment/subscription/success?trans_id=${transactionId}`,
+        success_url: `${config.backend_url}/api/v1/payment/subscription/success?trans_id=${transactionId}&requestedPlan=${requestedPlan}`,
         fail_url: `${config.backend_url}/api/v1/payment/subscription/failed?trans_id=${transactionId}`,
-        cancel_url: `${config.backend_url}/cancel`,
-        ipn_url: `${config.backend_url}/ipn`,
+        cancel_url: `${config.backend_url}/api/v1/payment/subscription/canceled?trans_id=${transactionId}`,
+        ipn_url: `${config.backend_url}/api/v1/payment/subscription/ipn?trans_id=${transactionId}`,
         shipping_method: 'Courier',
         product_name: 'Courses',
         product_category: 'Education',
@@ -114,8 +115,8 @@ const createSubscriptionPayment = async (
 };
 
 const createSubscriptionPaymentSuccess = async (
-    userInfo: TJWTDecodedUser,
     trans_id: string,
+    requestedPlan: string,
 ) => {
     // Update Payment Status
     const paymentDetails = await Payment.findOneAndUpdate(
@@ -127,9 +128,18 @@ const createSubscriptionPaymentSuccess = async (
     if (!paymentDetails) {
         throw new AppError(StatusCodes.NOT_FOUND, 'Payment not found.');
     }
+    const newSubscription = new Subscription({
+        student_id: paymentDetails.student_id,
+        payment_id: paymentDetails._id,
+        subscriptionPlan: requestedPlan,
+        price: paymentDetails.amount,
+        status: 'Active',
+        endDate: paymentDetails.expireDate,
+    });
+    await newSubscription.save();
 
-    const updateStudentDetails = await Student.findOneAndUpdate(
-        { user_id: userInfo.userId },
+    const updateStudentDetails = await Student.findByIdAndUpdate(
+        paymentDetails.student_id,
         {
             subscriptionStartDate: new Date(),
             subscriptionEndDate: paymentDetails.expireDate,
@@ -143,10 +153,17 @@ const createSubscriptionPaymentSuccess = async (
         );
     }
 };
-const createSubscriptionPaymentFailed = async (
-    userInfo: TJWTDecodedUser,
-    trans_id: string,
-) => {
+const createSubscriptionPaymentFailed = async (trans_id: string) => {
+    // Delete Payment Record
+    const paymentDetails = await Payment.findOneAndDelete({
+        transactionId: trans_id,
+    });
+
+    if (!paymentDetails) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Payment not found.');
+    }
+};
+const createSubscriptionPaymentCanceled = async (trans_id: string) => {
     // Delete Payment Record
     const paymentDetails = await Payment.findOneAndDelete({
         transactionId: trans_id,
@@ -161,4 +178,5 @@ export const PaymentService = {
     createSubscriptionPayment,
     createSubscriptionPaymentSuccess,
     createSubscriptionPaymentFailed,
+    createSubscriptionPaymentCanceled,
 };

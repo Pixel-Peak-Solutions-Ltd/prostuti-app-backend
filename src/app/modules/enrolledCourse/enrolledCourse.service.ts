@@ -1,5 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
-import mongoose from 'mongoose';
+import mongoose, { SortOrder } from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
 import AppError from '../../classes/errorClasses/AppError';
 import { TJWTDecodedUser } from '../../interfaces/jwt/jwt.type';
@@ -8,8 +8,13 @@ import { Student } from '../student/student.model';
 import { EnrolledCourse } from './enrolledCourse.model';
 // @ts-ignore
 import SSLCommerzPayment from 'sslcommerz-lts';
-import { Payment } from '../payment/payment.model';
 import config from '../../config';
+import { Payment } from '../payment/payment.model';
+import { get } from 'mongoose';
+import { EnrolledCourseSearchableFields } from './enrolledCourse.constant';
+import { calculatePagination } from '../../helpers/pagenationHelper';
+import { IEnrolledCourseFilters } from './enrolledCourse.interface';
+import { IPaginationOptions } from '../../interfaces/common';
 
 const store_id = 'bakin62b84b547d1c3';
 const store_passwd = 'bakin62b84b547d1c3@ssl';
@@ -110,6 +115,108 @@ const createFreeEnrolledCourse = async (
         await session.endSession();
     }
 };
+
+const createSubscriptionEnrolledCourse = async (
+    userInfo: TJWTDecodedUser,
+    payload: { course_id: string[] },
+): Promise<any> => {
+    const { course_id } = payload;
+
+    // Get student details
+    const studentDetails = await Student.findOne({ user_id: userInfo.userId });
+    if (!studentDetails) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Student does not exist');
+    }
+    if (!studentDetails.subscriptionEndDate || studentDetails.subscriptionEndDate < new Date()) {
+        throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            'Active subscription plan to add subscribed course',
+        );
+    }
+    // Check if all course IDs are valid
+    const courses = await Course.find({ _id: { $in: course_id } });
+
+    // If courses not found
+    if (courses.length !== course_id.length) {
+        throw new AppError(
+            StatusCodes.NOT_FOUND,
+            'One or more courses are not found.',
+        );
+    }
+
+    // Check if all courses are subscription based
+    const nonSubscriptionCourse = courses.find((course) => course.priceType !== 'Subscription');
+    if (nonSubscriptionCourse) {
+        throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            'One or more courses are not subscription based.',
+        );
+    }
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        // Enroll courses
+        for (const course of courses) {
+            // Check if already enrolled in this course
+            const existingEnrollment = await EnrolledCourse.findOne({
+                student_id: studentDetails._id,
+                course_id: course._id,
+            });
+
+            if (existingEnrollment) {
+                throw new AppError(
+                    StatusCodes.CONFLICT,
+                    `Already enrolled in the course: ${course.name}`,
+                );
+            }
+
+            // Create new enrollment
+            const newEnrolledCourse = await EnrolledCourse.create(
+                [
+                    {
+                        student_id: studentDetails._id,
+                        course_id: course._id,
+                        enrollmentType: 'Subscription',
+                    },
+                ],
+                { session },
+            );
+
+            if (!newEnrolledCourse || newEnrolledCourse.length === 0) {
+                throw new AppError(
+                    StatusCodes.BAD_REQUEST,
+                    'Failed to enroll in the course.',
+                );
+            }
+
+            // Update student with the new enrolled course
+            const updatedStudent = await Student.findByIdAndUpdate(
+                studentDetails._id,
+                {
+                    $push: { enrolledCourses: newEnrolledCourse[0]._id },
+                },
+                { session, new: true },
+            );
+
+            if (!updatedStudent) {
+                throw new AppError(
+                    StatusCodes.BAD_REQUEST,
+                    'Failed to update student enrollment.',
+                );
+            }
+        }
+
+        await session.commitTransaction();
+    } catch (error) {
+        await session.abortTransaction();
+        throw error;
+    } finally {
+        await session.endSession();
+    }
+};
+
 
 const createPaidEnrolledCourse = async (
     userInfo: TJWTDecodedUser,
@@ -222,14 +329,12 @@ const createPaidEnrolledCourse = async (
     });
     await payment.save();
 
-    
     console.log(apiResponse.GatewayPageURL);
 
     return apiResponse.GatewayPageURL;
 };
 
 const createPaidEnrolledCourseSuccess = async (
-    userInfo: TJWTDecodedUser,
     trans_id: string,
     course_id: string[],
 ) => {
@@ -243,23 +348,34 @@ const createPaidEnrolledCourseSuccess = async (
     if (!paymentDetails) {
         throw new AppError(StatusCodes.NOT_FOUND, 'Payment not found.');
     }
+    // Ensure student is not already enrolled in any of the courses
+    const existingEnrollments = await EnrolledCourse.find({
+        student_id: paymentDetails.student_id,
+        course_id: { $in: course_id },
+    });
 
-   // Enroll the student in all selected courses
-   const enrollments = course_id.map((course) => ({
-    student_id: paymentDetails.student_id,
-    course_id: course,
-    enrollmentType: 'Paid',
-    payment_id: paymentDetails._id,
-   }));
+    if (existingEnrollments.length > 0) {
+        throw new AppError(
+            StatusCodes.CONFLICT,
+            'Already enrolled in one or more selected courses.',
+        );
+    }
+    // Enroll the student in all selected courses
+    const enrollments = course_id.map((course) => ({
+        student_id: paymentDetails.student_id,
+        course_id: course,
+        enrollmentType: 'Paid',
+        payment_id: paymentDetails._id,
+    }));
 
-const enrolledCourses = await EnrolledCourse.insertMany(enrollments);
+    const enrolledCourses = await EnrolledCourse.insertMany(enrollments);
 
-if (!enrolledCourses || enrolledCourses.length === 0) {
-    throw new AppError(
-        StatusCodes.BAD_REQUEST,
-        'Failed to enroll in the courses.',
-    );
-}
+    if (!enrolledCourses || enrolledCourses.length === 0) {
+        throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            'Failed to enroll in the courses.',
+        );
+    }
 
     // aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaUpdate Student Record
     const courseIds = enrolledCourses.map((course) => course._id);
@@ -278,10 +394,7 @@ if (!enrolledCourses || enrolledCourses.length === 0) {
         );
     }
 };
-const createPaidEnrolledCourseFailed = async (
-    userInfo: TJWTDecodedUser,
-    trans_id: string,
-) => {
+const createPaidEnrolledCourseFailed = async (trans_id: string) => {
     // Step 1: Delete Payment Record
     const paymentDetails = await Payment.findOneAndDelete({
         transactionId: trans_id,
@@ -290,13 +403,8 @@ const createPaidEnrolledCourseFailed = async (
     if (!paymentDetails) {
         throw new AppError(StatusCodes.NOT_FOUND, 'Payment not found.');
     }
-
- 
 };
-const createPaidEnrolledCourseCanceled = async (
-    userInfo: TJWTDecodedUser,
-    trans_id: string,
-) => {
+const createPaidEnrolledCourseCanceled = async (trans_id: string) => {
     console.log('canceled');
     // Step 1: Delete Payment Record
     const paymentDetails = await Payment.findOneAndDelete({
@@ -306,14 +414,119 @@ const createPaidEnrolledCourseCanceled = async (
     if (!paymentDetails) {
         throw new AppError(StatusCodes.NOT_FOUND, 'Payment not found.');
     }
-
-   
 };
+
+const getAllEnrolledCourses = async (
+    filters: IEnrolledCourseFilters,
+    paginationOptions: IPaginationOptions,
+    userInfo: TJWTDecodedUser,
+): Promise<any> => {
+    const { searchTerm, ...filtersData } = filters;
+    const { page, limit, skip, sortBy, sortOrder } =
+            calculatePagination(paginationOptions);
+    const andConditions = [];
+    // Get student details
+    const studentDetails = await Student.findOne({ user_id: userInfo.userId });
+    if (!studentDetails) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Student does not exist');
+    }
+    
+    andConditions.push({student_id:studentDetails._id})
+
+    
+        // searching data
+        if (searchTerm) {
+            andConditions.push({
+                $or: EnrolledCourseSearchableFields.map((field) => ({
+                    [field]: {
+                        $regex: searchTerm,
+                        $options: 'i',
+                    },
+                })),
+            });
+        }
+
+
+    // Exclude subscription courses if subscription is expired or not available
+    if (!studentDetails.subscriptionEndDate || new Date(studentDetails.subscriptionEndDate) < new Date()) {
+        andConditions.push({
+            enrollmentType: { $ne: 'Subscription' },
+        });
+    }
+    
+        // filtering data
+        if (Object.keys(filtersData).length) {
+            andConditions.push({
+                $and: Object.entries(filtersData).map(([field, value]) => ({
+                    [field]: value,
+                })),
+            });
+        }
+        const sortConditions: { [key: string]: SortOrder } = {};
+    
+        if (sortBy && sortOrder) {
+            sortConditions[sortBy] = sortOrder;
+        }
+    
+        const whereConditions =
+            andConditions.length > 0 ? { $and: andConditions } : {};
+    
+        const count = await EnrolledCourse.countDocuments(whereConditions);
+        const result = await EnrolledCourse.find(whereConditions)
+            .populate('course_id')
+            .sort(sortConditions)
+            .skip(skip)
+            .limit(limit);
+    
+        return {
+            meta: {
+                page,
+                limit: limit === 0 ? count : limit,
+                count,
+            },
+            data: result,
+        };
+};
+
+const getEnrolledCourseByID = async (id: string,userInfo: TJWTDecodedUser): Promise<any> => {
+   // Get student details
+   const studentDetails = await Student.findOne({ user_id: userInfo.userId });
+   if (!studentDetails) {
+       throw new AppError(StatusCodes.NOT_FOUND, 'Student does not exist');
+   }
+
+   // Fetch the enrolled course
+   const data = await EnrolledCourse.findOne({_id:id,student_id:studentDetails._id})
+       .populate('course_id')
+      
+   
+   if (!data) {
+       throw new AppError(StatusCodes.NOT_FOUND, 'You have not enrolled in this course.');
+   }
+
+   // Check subscription validity if the enrollment type is "Subscription"
+   if (data.enrollmentType === 'Subscription') {
+       const { subscriptionEndDate } = studentDetails;
+       if (!subscriptionEndDate || new Date(subscriptionEndDate) < new Date()) {
+           throw new AppError(
+               StatusCodes.FORBIDDEN,
+               'Subscription is either expired or not active'
+           );
+       }
+   }
+
+   return data;
+};
+
+
 
 export const EnrolledCourseService = {
     createFreeEnrolledCourse,
+    createSubscriptionEnrolledCourse,
     createPaidEnrolledCourse,
     createPaidEnrolledCourseSuccess,
     createPaidEnrolledCourseFailed,
     createPaidEnrolledCourseCanceled,
+    getAllEnrolledCourses,
+    getEnrolledCourseByID,
 };
