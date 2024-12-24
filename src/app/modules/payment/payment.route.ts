@@ -10,5 +10,6 @@ const router = express.Router();
 router.post('/subscription/init',auth(USER_ROLE.student),validateRequest(PaymentValidation.createSubscriptionPayment),PaymentController.createSubscriptionPayment )
 router.post("/subscription/success",PaymentController.createSubscriptionPaymentSuccess)
 router.post("/subscription/failed",PaymentController.createSubscriptionPaymentFailed)
+router.post("/subscription/canceled",PaymentController.createSubscriptionPaymentCanceled)
 
 export const PaymentRoute = router;

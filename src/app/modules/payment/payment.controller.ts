@@ -32,6 +32,17 @@ const createSubscriptionPaymentFailed = catchAsync(async (req: Request, res: Res
     res.redirect(`${config.frontend_url}/payment/failed`)
 })
 
+const createSubscriptionPaymentCanceled = catchAsync(async (req: Request, res: Response) => {
+    const trans_id = req.query.trans_id as string;
+
+    
+    if (!trans_id) {
+        throw new AppError(StatusCodes.BAD_REQUEST, 'Transaction ID is required.');
+    }
+    await PaymentService.createSubscriptionPaymentCanceled(req.user as TJWTDecodedUser,trans_id)
+    res.redirect(`${config.frontend_url}/payment/canceled`)
+})
+
 export const PaymentController = {
-   createSubscriptionPayment,createSubscriptionPaymentSuccess,createSubscriptionPaymentFailed
+   createSubscriptionPayment,createSubscriptionPaymentSuccess,createSubscriptionPaymentFailed,createSubscriptionPaymentCanceled
 };

@@ -63,8 +63,8 @@ const createSubscriptionPayment = async (
         tran_id: transactionId,
         success_url: `${config.backend_url}/api/v1/payment/subscription/success?trans_id=${transactionId}`,
         fail_url: `${config.backend_url}/api/v1/payment/subscription/failed?trans_id=${transactionId}`,
-        cancel_url: `${config.backend_url}/cancel`,
-        ipn_url: `${config.backend_url}/ipn`,
+        cancel_url: `${config.backend_url}/api/v1/payment/subscription/canceled?trans_id=${transactionId}`,
+        ipn_url: `${config.backend_url}/api/v1/payment/subscription/ipn?trans_id=${transactionId}`,
         shipping_method: 'Courier',
         product_name: 'Courses',
         product_category: 'Education',
@@ -156,9 +156,23 @@ const createSubscriptionPaymentFailed = async (
         throw new AppError(StatusCodes.NOT_FOUND, 'Payment not found.');
     }
 };
+const createSubscriptionPaymentCanceled = async (
+    userInfo: TJWTDecodedUser,
+    trans_id: string,
+) => {
+    // Delete Payment Record
+    const paymentDetails = await Payment.findOneAndDelete({
+        transactionId: trans_id,
+    });
+
+    if (!paymentDetails) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Payment not found.');
+    }
+};
 
 export const PaymentService = {
     createSubscriptionPayment,
     createSubscriptionPaymentSuccess,
     createSubscriptionPaymentFailed,
+    createSubscriptionPaymentCanceled,
 };
