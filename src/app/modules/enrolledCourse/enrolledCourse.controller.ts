@@ -6,6 +6,9 @@ import { EnrolledCourseService } from "./enrolledCourse.service";
 import { TJWTDecodedUser } from "../../interfaces/jwt/jwt.type";
 import AppError from "../../classes/errorClasses/AppError";
 import config from "../../config";
+import pick from "../../helpers/pick";
+import { EnrolledCourseFilterableFields } from "./enrolledCourse.constant";
+import { paginationFields } from "../../constant";
 
 const createFreeEnrolledCourse = catchAsync(async (req: Request, res: Response) => {
     const result = await EnrolledCourseService.createFreeEnrolledCourse(req.user as TJWTDecodedUser,req.body)
@@ -69,6 +72,29 @@ const createPaidEnrolledCourseCanceled = catchAsync(async (req: Request, res: Re
     res.redirect(`${config.frontend_url}/payment/canceled`)
 })
 
+const getAllEnrolledCourses = catchAsync(async (req: Request, res: Response) => {
+    const filters = pick(req.query, EnrolledCourseFilterableFields);
+    const paginationOptions = pick(req.query, paginationFields);
+      const result = await EnrolledCourseService.getAllEnrolledCourses(filters,
+          paginationOptions,
+          req.user as TJWTDecodedUser);
+  
+      sendSuccessResponse(res, {
+          statusCode: StatusCodes.OK,
+          message: 'Enrolled Courses are retrieved successfully',
+          data: result,
+      });
+  });
+  const getEnrolledCourseByID = catchAsync(async (req: Request, res: Response) => {
+    const result = await EnrolledCourseService.getEnrolledCourseByID(req.params.id,req.user as TJWTDecodedUser);
+
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'Single EnrolledCourse retrieved successfully',
+        data: result,
+    });
+});
+
 export const EnrolledCourseController = {
-   createFreeEnrolledCourse,createSubscriptionEnrolledCourse,createPaidEnrolledCourse,createPaidEnrolledCourseSuccess,createPaidEnrolledCourseFailed,createPaidEnrolledCourseCanceled
+   createFreeEnrolledCourse,createSubscriptionEnrolledCourse,createPaidEnrolledCourse,createPaidEnrolledCourseSuccess,createPaidEnrolledCourseFailed,createPaidEnrolledCourseCanceled,getAllEnrolledCourses,getEnrolledCourseByID
 };

@@ -17,6 +17,10 @@ router.post("/paid/failed",EnrolledCourseController.createPaidEnrolledCourseFail
 router.post("/paid/canceled",EnrolledCourseController.createPaidEnrolledCourseCanceled)
 
 
+router.get("/",auth(USER_ROLE.student),EnrolledCourseController.getAllEnrolledCourses)
+router.get("/:id",auth(USER_ROLE.student),EnrolledCourseController.getEnrolledCourseByID)
+
+
 
 
 

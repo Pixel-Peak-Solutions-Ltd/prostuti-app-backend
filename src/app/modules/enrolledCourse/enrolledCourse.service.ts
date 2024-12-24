@@ -1,5 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
-import mongoose from 'mongoose';
+import mongoose, { SortOrder } from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
 import AppError from '../../classes/errorClasses/AppError';
 import { TJWTDecodedUser } from '../../interfaces/jwt/jwt.type';
@@ -10,6 +10,11 @@ import { EnrolledCourse } from './enrolledCourse.model';
 import SSLCommerzPayment from 'sslcommerz-lts';
 import config from '../../config';
 import { Payment } from '../payment/payment.model';
+import { get } from 'mongoose';
+import { EnrolledCourseSearchableFields } from './enrolledCourse.constant';
+import { calculatePagination } from '../../helpers/pagenationHelper';
+import { IEnrolledCourseFilters } from './enrolledCourse.interface';
+import { IPaginationOptions } from '../../interfaces/common';
 
 const store_id = 'bakin62b84b547d1c3';
 const store_passwd = 'bakin62b84b547d1c3@ssl';
@@ -122,17 +127,12 @@ const createSubscriptionEnrolledCourse = async (
     if (!studentDetails) {
         throw new AppError(StatusCodes.NOT_FOUND, 'Student does not exist');
     }
-    if (
-        studentDetails.subscriptionEndDate &&
-        studentDetails.subscriptionEndDate < new Date()
-    ) {
+    if (!studentDetails.subscriptionEndDate || studentDetails.subscriptionEndDate < new Date()) {
         throw new AppError(
             StatusCodes.BAD_REQUEST,
             'Active subscription plan to add subscribed course',
         );
     }
-
-
     // Check if all course IDs are valid
     const courses = await Course.find({ _id: { $in: course_id } });
 
@@ -416,6 +416,110 @@ const createPaidEnrolledCourseCanceled = async (trans_id: string) => {
     }
 };
 
+const getAllEnrolledCourses = async (
+    filters: IEnrolledCourseFilters,
+    paginationOptions: IPaginationOptions,
+    userInfo: TJWTDecodedUser,
+): Promise<any> => {
+    const { searchTerm, ...filtersData } = filters;
+    const { page, limit, skip, sortBy, sortOrder } =
+            calculatePagination(paginationOptions);
+    const andConditions = [];
+    // Get student details
+    const studentDetails = await Student.findOne({ user_id: userInfo.userId });
+    if (!studentDetails) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Student does not exist');
+    }
+    
+    andConditions.push({student_id:studentDetails._id})
+
+    
+        // searching data
+        if (searchTerm) {
+            andConditions.push({
+                $or: EnrolledCourseSearchableFields.map((field) => ({
+                    [field]: {
+                        $regex: searchTerm,
+                        $options: 'i',
+                    },
+                })),
+            });
+        }
+
+
+    // Exclude subscription courses if subscription is expired or not available
+    if (!studentDetails.subscriptionEndDate || new Date(studentDetails.subscriptionEndDate) < new Date()) {
+        andConditions.push({
+            enrollmentType: { $ne: 'Subscription' },
+        });
+    }
+    
+        // filtering data
+        if (Object.keys(filtersData).length) {
+            andConditions.push({
+                $and: Object.entries(filtersData).map(([field, value]) => ({
+                    [field]: value,
+                })),
+            });
+        }
+        const sortConditions: { [key: string]: SortOrder } = {};
+    
+        if (sortBy && sortOrder) {
+            sortConditions[sortBy] = sortOrder;
+        }
+    
+        const whereConditions =
+            andConditions.length > 0 ? { $and: andConditions } : {};
+    
+        const count = await EnrolledCourse.countDocuments(whereConditions);
+        const result = await EnrolledCourse.find(whereConditions)
+            .populate('course_id')
+            .sort(sortConditions)
+            .skip(skip)
+            .limit(limit);
+    
+        return {
+            meta: {
+                page,
+                limit: limit === 0 ? count : limit,
+                count,
+            },
+            data: result,
+        };
+};
+
+const getEnrolledCourseByID = async (id: string,userInfo: TJWTDecodedUser): Promise<any> => {
+   // Get student details
+   const studentDetails = await Student.findOne({ user_id: userInfo.userId });
+   if (!studentDetails) {
+       throw new AppError(StatusCodes.NOT_FOUND, 'Student does not exist');
+   }
+
+   // Fetch the enrolled course
+   const data = await EnrolledCourse.findOne({_id:id,student_id:studentDetails._id})
+       .populate('course_id')
+      
+   
+   if (!data) {
+       throw new AppError(StatusCodes.NOT_FOUND, 'You have not enrolled in this course.');
+   }
+
+   // Check subscription validity if the enrollment type is "Subscription"
+   if (data.enrollmentType === 'Subscription') {
+       const { subscriptionEndDate } = studentDetails;
+       if (!subscriptionEndDate || new Date(subscriptionEndDate) < new Date()) {
+           throw new AppError(
+               StatusCodes.FORBIDDEN,
+               'Subscription is either expired or not active'
+           );
+       }
+   }
+
+   return data;
+};
+
+
+
 export const EnrolledCourseService = {
     createFreeEnrolledCourse,
     createSubscriptionEnrolledCourse,
@@ -423,4 +527,6 @@ export const EnrolledCourseService = {
     createPaidEnrolledCourseSuccess,
     createPaidEnrolledCourseFailed,
     createPaidEnrolledCourseCanceled,
+    getAllEnrolledCourses,
+    getEnrolledCourseByID,
 };
