@@ -222,7 +222,6 @@ const createPaidEnrolledCourse = async (
     });
     await payment.save();
 
-    
     console.log(apiResponse.GatewayPageURL);
 
     return apiResponse.GatewayPageURL;
@@ -243,23 +242,34 @@ const createPaidEnrolledCourseSuccess = async (
     if (!paymentDetails) {
         throw new AppError(StatusCodes.NOT_FOUND, 'Payment not found.');
     }
+    // Ensure student is not already enrolled in any of the courses
+    const existingEnrollments = await EnrolledCourse.find({
+        student_id: paymentDetails.student_id,
+        course_id: { $in: course_id },
+    });
 
-   // Enroll the student in all selected courses
-   const enrollments = course_id.map((course) => ({
-    student_id: paymentDetails.student_id,
-    course_id: course,
-    enrollmentType: 'Paid',
-    payment_id: paymentDetails._id,
-   }));
+    if (existingEnrollments.length > 0) {
+        throw new AppError(
+            StatusCodes.CONFLICT,
+            'Already enrolled in one or more selected courses.',
+        );
+    }
+    // Enroll the student in all selected courses
+    const enrollments = course_id.map((course) => ({
+        student_id: paymentDetails.student_id,
+        course_id: course,
+        enrollmentType: 'Paid',
+        payment_id: paymentDetails._id,
+    }));
 
-const enrolledCourses = await EnrolledCourse.insertMany(enrollments);
+    const enrolledCourses = await EnrolledCourse.insertMany(enrollments);
 
-if (!enrolledCourses || enrolledCourses.length === 0) {
-    throw new AppError(
-        StatusCodes.BAD_REQUEST,
-        'Failed to enroll in the courses.',
-    );
-}
+    if (!enrolledCourses || enrolledCourses.length === 0) {
+        throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            'Failed to enroll in the courses.',
+        );
+    }
 
     // aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaUpdate Student Record
     const courseIds = enrolledCourses.map((course) => course._id);
@@ -290,8 +300,6 @@ const createPaidEnrolledCourseFailed = async (
     if (!paymentDetails) {
         throw new AppError(StatusCodes.NOT_FOUND, 'Payment not found.');
     }
-
- 
 };
 const createPaidEnrolledCourseCanceled = async (
     userInfo: TJWTDecodedUser,
@@ -306,8 +314,6 @@ const createPaidEnrolledCourseCanceled = async (
     if (!paymentDetails) {
         throw new AppError(StatusCodes.NOT_FOUND, 'Payment not found.');
     }
-
-   
 };
 
 export const EnrolledCourseService = {
