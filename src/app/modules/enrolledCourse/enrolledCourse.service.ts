@@ -228,7 +228,6 @@ const createPaidEnrolledCourse = async (
 };
 
 const createPaidEnrolledCourseSuccess = async (
-    userInfo: TJWTDecodedUser,
     trans_id: string,
     course_id: string[],
 ) => {
@@ -288,10 +287,7 @@ const createPaidEnrolledCourseSuccess = async (
         );
     }
 };
-const createPaidEnrolledCourseFailed = async (
-    userInfo: TJWTDecodedUser,
-    trans_id: string,
-) => {
+const createPaidEnrolledCourseFailed = async (trans_id: string) => {
     // Step 1: Delete Payment Record
     const paymentDetails = await Payment.findOneAndDelete({
         transactionId: trans_id,
@@ -301,10 +297,7 @@ const createPaidEnrolledCourseFailed = async (
         throw new AppError(StatusCodes.NOT_FOUND, 'Payment not found.');
     }
 };
-const createPaidEnrolledCourseCanceled = async (
-    userInfo: TJWTDecodedUser,
-    trans_id: string,
-) => {
+const createPaidEnrolledCourseCanceled = async (trans_id: string) => {
     console.log('canceled');
     // Step 1: Delete Payment Record
     const paymentDetails = await Payment.findOneAndDelete({

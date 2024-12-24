@@ -5,19 +5,25 @@ import { TJWTDecodedUser } from "../../interfaces/jwt/jwt.type";
 import AppError from "../../classes/errorClasses/AppError";
 import config from "../../config";
 import { StatusCodes } from "http-status-codes";
+import sendSuccessResponse from "../../utils/sendSuccessResponse";
 
 const createSubscriptionPayment = catchAsync(async (req: Request, res: Response) => {
     const result = await PaymentService.createSubscriptionPayment(req.user as TJWTDecodedUser,req.body)
-    res.redirect(result)
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'Payment Redirect Link',
+        data: result,
+    });
 });
 const createSubscriptionPaymentSuccess = catchAsync(async (req: Request, res: Response) => {
     const trans_id = req.query.trans_id as string;
+    const requestedPlan = req.query.requestedPlan as string;
 
     
-    if (!trans_id) {
-        throw new AppError(StatusCodes.BAD_REQUEST, 'Transaction ID is required.');
+    if (!trans_id||!requestedPlan) {
+        throw new AppError(StatusCodes.BAD_REQUEST, 'Transaction ID and required plan are required.');
     }
-    await PaymentService.createSubscriptionPaymentSuccess(req.user as TJWTDecodedUser,trans_id)
+    await PaymentService.createSubscriptionPaymentSuccess(trans_id,requestedPlan)
     res.redirect(`${config.frontend_url}/payment/success`)
 })
 
@@ -28,7 +34,7 @@ const createSubscriptionPaymentFailed = catchAsync(async (req: Request, res: Res
     if (!trans_id) {
         throw new AppError(StatusCodes.BAD_REQUEST, 'Transaction ID is required.');
     }
-    await PaymentService.createSubscriptionPaymentFailed(req.user as TJWTDecodedUser,trans_id)
+    await PaymentService.createSubscriptionPaymentFailed(trans_id)
     res.redirect(`${config.frontend_url}/payment/failed`)
 })
 
@@ -39,7 +45,7 @@ const createSubscriptionPaymentCanceled = catchAsync(async (req: Request, res: R
     if (!trans_id) {
         throw new AppError(StatusCodes.BAD_REQUEST, 'Transaction ID is required.');
     }
-    await PaymentService.createSubscriptionPaymentCanceled(req.user as TJWTDecodedUser,trans_id)
+    await PaymentService.createSubscriptionPaymentCanceled(trans_id)
     res.redirect(`${config.frontend_url}/payment/canceled`)
 })
 
