@@ -78,6 +78,8 @@ const registerStudent = async (
             email: newUser[0].email,
             phone: newUser[0].phone,
             categoryType,
+            subscriptionStartDate:null,
+            subscriptionEndDate:null,
         };
 
         const newStudent = await Student.create([student], { session });
