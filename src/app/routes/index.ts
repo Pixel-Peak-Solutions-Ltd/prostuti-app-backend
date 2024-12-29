@@ -18,6 +18,7 @@ import { teacherRoute } from '../modules/teacher/teacher.route';
 import { userRoute } from '../modules/user/user.route';
 import { EnrolledCourseRoute } from '../modules/enrolledCourse/enrolledCourse.route';
 import { PaymentRoute } from '../modules/payment/payment.route';
+import { TestHistoryRoute } from '../modules/courseManagement/test-history/testHistory.route';
 
 
 const globalRoute = Router();
@@ -38,6 +39,7 @@ const routes = [
     { path: '/assignment', route: assignmentRoute },
     { path: '/lesson', route: lessonRoute },
     { path: '/test', route: TestRoute },
+    { path: '/test-history', route: TestHistoryRoute },
     { path: '/routine', route: RoutineRoute },
     { path: '/enroll-course', route: EnrolledCourseRoute },
     { path: '/payment', route: PaymentRoute },
