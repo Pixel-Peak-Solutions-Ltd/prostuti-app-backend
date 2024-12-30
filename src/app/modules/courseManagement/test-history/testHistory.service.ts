@@ -41,36 +41,45 @@ const createTestHistory = async (
     if (!studentDetails) {
         throw new AppError(StatusCodes.NOT_FOUND, 'Student does not exist');
     }
-   // Check if student is enrolled in the course
-    const checkEnrolled = await EnrolledCourse.findOne({course_id:course_id,student_id:studentDetails._id})
-   if (!checkEnrolled) {
-       throw new AppError(StatusCodes.NOT_FOUND, 'You have not enrolled in this course.');
-   }
-   
-   //get total score of the test
-   const totalScore = checkTest.questionList.length;
+    // Check if student is enrolled in the course
+    const checkEnrolled = await EnrolledCourse.findOne({
+        course_id: course_id,
+        student_id: studentDetails._id,
+    });
+    if (!checkEnrolled) {
+        throw new AppError(
+            StatusCodes.NOT_FOUND,
+            'You have not enrolled in this course.',
+        );
+    }
 
+    //get total score of the test
+    const totalScore = checkTest.questionList.length;
 
     //get the score of the test
     const questions = await Question.find({
-        '_id': { $in: checkTest.questionList },
+        _id: { $in: checkTest.questionList },
     });
 
     if (!questions || questions.length === 0) {
-        throw new AppError(StatusCodes.NOT_FOUND, 'No questions found for this test.');
+        throw new AppError(
+            StatusCodes.NOT_FOUND,
+            'No questions found for this test.',
+        );
     }
 
     let score = 0;
     let wrongScore = 0;
     let rightScore = 0;
 
-
     for (const answer of answers) {
-        if (answer.selectedOption === "") {
-            continue; 
+        if (answer.selectedOption === '') {
+            continue;
         }
 
-        const question = questions.find(q => q._id.toString() === answer.question_id.toString());
+        const question = questions.find(
+            (q) => q._id.toString() === answer.question_id.toString(),
+        );
         if (!question) {
             throw new AppError(StatusCodes.NOT_FOUND, 'Question not found.');
         }
@@ -87,8 +96,7 @@ const createTestHistory = async (
     if (score >= totalScore * 0.4) {
         isPassed = true;
     }
-     
-    
+
     const data = await TestHistory.create({
         course_id,
         lesson_id,
@@ -100,14 +108,25 @@ const createTestHistory = async (
         wrongScore,
         answers,
         isPassed,
-        timeTaken
+        timeTaken,
     });
 
     return data;
 };
 
-const getTestHistoryByID = async (id: string): Promise<any> => {
-    const data = await TestHistory.findById(id)
+const getTestHistoryByID = async (
+    id: string,
+    userInfo: TJWTDecodedUser,
+): Promise<any> => {
+    // Get student details
+    const studentDetails = await Student.findOne({ user_id: userInfo.userId });
+    if (!studentDetails) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Student does not exist');
+    }
+    const data = await TestHistory.findOne({
+        test_id: id,
+        student_id: studentDetails._id,
+    })
         .populate({
             path: 'test_id',
         })
@@ -115,14 +134,11 @@ const getTestHistoryByID = async (id: string): Promise<any> => {
             path: 'answers.question_id',
         });
     if (!data) {
-        throw new AppError(StatusCodes.NOT_FOUND, 'TestHistory not found.');
+        throw new AppError(StatusCodes.NOT_FOUND, 'TestHistory not found for this student.');
     }
 
     return data;
 };
-
-
-
 
 // const getAllTestHistorys = async (
 //     filters: ITestHistoryFilters,
@@ -216,8 +232,6 @@ const getTestHistoryByID = async (id: string): Promise<any> => {
 //     };
 // };
 
-
-
 // const updateTestHistory = async () => {
 //     return 'updateTestHistory service';
 // };
@@ -252,5 +266,5 @@ const getTestHistoryByID = async (id: string): Promise<any> => {
 
 export const TestHistoryService = {
     createTestHistory,
-    getTestHistoryByID
+    getTestHistoryByID,
 };
