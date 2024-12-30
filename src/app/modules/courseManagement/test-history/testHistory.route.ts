@@ -13,7 +13,7 @@ const router = express.Router();
 router
     .post('/submit-test',auth(USER_ROLE.student),validateRequest(TestHistoryValidation.createTestHistorySchema), TestHistoryController.createTestHistory)
     // .get('/',auth(), TestHistoryController.getAllTestHistorys)
-    .get('/:id',auth(), TestHistoryController.getTestHistoryByID)
+    .get('/:id',auth(USER_ROLE.student), TestHistoryController.getTestHistoryByID)
     // .delete('/:id',auth(), TestHistoryController.deleteTestHistoryByID)
     // .patch('/:id', TestHistoryController.updateTestHistory);
 

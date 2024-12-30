@@ -34,7 +34,7 @@ const createTestHistory = catchAsync(async (req: Request, res: Response) => {
 // });
 
 const getTestHistoryByID = catchAsync(async (req: Request, res: Response) => {
-    const result = await TestHistoryService.getTestHistoryByID(req.params.id);
+    const result = await TestHistoryService.getTestHistoryByID(req.params.id,req.user as TJWTDecodedUser,);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
