@@ -22,7 +22,7 @@ router
     )
     .get(
         '/course/:courseId',
-        auth(),
+        // auth(),
         assignmentController.getAllCourseAssignmentsWithLessons,
     )
     .get('/', assignmentController.getAllAssignments)
@@ -38,6 +38,9 @@ router
         },
         validateRequest(assignmentValidator.updateAssignmentValidationSchema),
         assignmentController.updateAssignment,
-    );
+    )
+    .put('/markAsComplete/:assignmentId',
+        // auth(),
+        assignmentController.assignmentCompletion);
 
 export const assignmentRoute = router;

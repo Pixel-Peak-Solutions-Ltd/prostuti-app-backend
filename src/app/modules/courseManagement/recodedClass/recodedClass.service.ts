@@ -32,7 +32,7 @@ const createRecodedClass = async (
         );
     }
 
-    // Check if the lesson belongs to of tah course
+    // Check if the lesson belongs to of that course
     const isLessonBelongsToCourse = await Lesson.findOne({
         _id: payload.lesson_id,
         course_id: payload.course_id,
@@ -117,7 +117,7 @@ const getAllCourseRecodedClassWithLessons = async (courseId: string) => {
             select: 'number name',
             model: Lesson,
         })
-        .select({ classVideoURL: 1, recodeClassName: 1, classDate: 1 });
+        .select({ classVideoURL: 1, recodeClassName: 1, classDate: 1, isCompleted: 1 });
 
     return recodedClasses;
 };
@@ -181,6 +181,24 @@ const updateRecodedClass = async (
     return updatedRecodedClass;
 };
 
+// mark record class as complete
+
+const markAsComplete = async (recordedClassId: string) => {
+    // Checking if the course exists
+    const existingRecodedClass = await RecodedClass.findById(recordedClassId);
+    if (!existingRecodedClass) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Course not found');
+    };
+
+    const completeWatchingRecordClass = await RecodedClass.findByIdAndUpdate(
+        recordedClassId,
+        { isCompleted: true },
+        { new: true },
+    )
+
+    return completeWatchingRecordClass;
+}
+
 // Delete Recoded Class By ID
 const deleteRecodedClassByID = async (recodedClassId: string) => {
     // Check if the course exists
@@ -195,6 +213,7 @@ const deleteRecodedClassByID = async (recodedClassId: string) => {
     return null;
 };
 
+
 export const recodedClassService = {
     createRecodedClass,
     getAllCourseRecodedClassWithLessons,
@@ -202,4 +221,5 @@ export const recodedClassService = {
     getRecodedClassByID,
     updateRecodedClass,
     deleteRecodedClassByID,
+    markAsComplete
 };

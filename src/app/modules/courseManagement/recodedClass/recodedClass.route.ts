@@ -36,6 +36,10 @@ router
             recodedClassValidation.updateRecodedClassValidationSchema,
         ),
         recodedClassController.updateRecodedClass,
-    );
+    )
+    .put('/markAsComplete/:recordedClassId',
+        auth(),
+        recodedClassController.updateRecordClassCompleteStatus
+    )
 
 export const recodedClassRoute = router;

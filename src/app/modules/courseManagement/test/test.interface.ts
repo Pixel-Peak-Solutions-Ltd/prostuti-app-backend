@@ -12,6 +12,7 @@ export type ITest = {
     questionList: Types.ObjectId[];
     createdBy: Types.ObjectId;
     updatedBy: Types.ObjectId;
+    isCompleted: boolean;
 };
 
 export type TestModel = Model<ITest, Record<string, unknown>>;

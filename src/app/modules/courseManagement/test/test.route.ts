@@ -10,10 +10,15 @@ import { TestValidation } from './test.validation';
 const router = express.Router();
 
 router
-    .post('/',auth(USER_ROLE.teacher),validateRequest(TestValidation.createTestSchema), TestController.createTest)
-    .get('/',auth(), TestController.getAllTests)
-    .get('/:id',auth(), TestController.getTestByID)
-    .delete('/:id',auth(), TestController.deleteTestByID)
-    .patch('/:id', TestController.updateTest);
+    .post('/', auth(USER_ROLE.teacher), validateRequest(TestValidation.createTestSchema), TestController.createTest)
+    .get(
+        '/',
+        auth(),
+        TestController.getAllTests
+    )
+    .get('/:id', auth(), TestController.getTestByID)
+    .delete('/:id', auth(), TestController.deleteTestByID)
+    .patch('/:id', TestController.updateTest)
+    .put('/markAsComplete/:testId', auth(), TestController.testCompletion);
 
 export const TestRoute = router;

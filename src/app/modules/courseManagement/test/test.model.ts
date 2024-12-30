@@ -36,14 +36,14 @@ const TestSchema = new Schema<ITest, TestModel>(
 
         questionList: {
             type: [
-                
-                    {
-                        type: Schema.Types.ObjectId,
-                        ref: 'Question',
-                        required: false,
-                    },
-                    
-                
+
+                {
+                    type: Schema.Types.ObjectId,
+                    ref: 'Question',
+                    required: false,
+                },
+
+
             ],
             required: [true, 'Question list is required'],
         },
@@ -60,6 +60,10 @@ const TestSchema = new Schema<ITest, TestModel>(
                 return this.createdBy;
             },
         },
+        isCompleted: {
+            type: Boolean,
+            default: false,
+        }
     },
     {
         timestamps: true,
