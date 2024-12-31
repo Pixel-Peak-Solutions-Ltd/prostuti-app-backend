@@ -1,6 +1,6 @@
 import { Types } from 'mongoose';
 
-export type TPriceType = 'Free'|'Paid'|'Subscription';
+export type TPriceType = 'Free' | 'Paid' | 'Subscription';
 
 export interface TImage {
     diskType: string;
@@ -21,4 +21,9 @@ export interface ICourse {
     isPending: boolean;
     isPublished: boolean;
     approvedBy: Types.ObjectId;
+    totalLessons?: number;
+    totalRecodedClasses?: number;
+    totalResources?: number;
+    totalAssignments?: number;
+    totalTests?: number;
 }

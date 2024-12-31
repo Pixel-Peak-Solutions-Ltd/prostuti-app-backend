@@ -123,7 +123,7 @@ const getAllCourseResourcesWithLessons = async (courseId: string) => {
             select: 'number name',
             model: Lesson,
         })
-        .select({ uploadFileResources: 1, name: 1, resourceDate: 1 });
+        .select({ uploadFileResources: 1, name: 1, resourceDate: 1, isCompleted: true });
 
     return resources;
 };
@@ -245,6 +245,23 @@ const updateResource = async (
     return result;
 };
 
+//mark resource as completed
+
+const markResourceAsCompleted = async (resourceId: string) => {
+    // Check if the resource exists
+    const existingResource = await Resource.findById(resourceId);
+    if (!existingResource) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Resource not found');
+    };
+
+    const markAsCompeted = await Resource.findByIdAndUpdate(
+        resourceId,
+        { isCompleted: true },
+        { new: true },
+    )
+
+    return markAsCompeted;
+}
 // Delete Resources By ID
 const deleteResourceByID = async (resourceId: string) => {
     // Check if the course exists
@@ -295,4 +312,5 @@ export const resourceService = {
     getResourceByID,
     updateResource,
     deleteResourceByID,
+    markResourceAsCompleted
 };

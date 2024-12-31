@@ -80,7 +80,12 @@ const assignmentSchema = new Schema<IAssignment>(
         uploadFileResources: {
             type: [resourceSchema],
         },
+        isCompleted: {
+            type: Boolean,
+            default: false,
+        }
     },
+
     {
         timestamps: true,
         versionKey: false,

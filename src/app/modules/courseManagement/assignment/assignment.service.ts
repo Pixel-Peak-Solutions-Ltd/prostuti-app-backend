@@ -123,7 +123,7 @@ const getAllCourseAssignmentsWithLessons = async (courseId: string) => {
             select: 'number name',
             model: Lesson,
         })
-        .select({ uploadFileResources: 1, assignmentNo: 1, unlockDate: 1 });
+        .select({ uploadFileResources: 1, assignmentNo: 1, unlockDate: 1, isCompleted: 1 });
 
     return assignments;
 };
@@ -242,6 +242,21 @@ const updateAssignment = async (
     return result;
 };
 
+const markAssignmentAsCompleted = async (assignmentId: string) => {
+    // Check if the resource exists
+    const existingAssignment = await Assignment.findById(assignmentId);
+    if (!existingAssignment) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Assignment not found');
+    };
+
+    const markAsCompeted = await Assignment.findByIdAndUpdate(
+        assignmentId,
+        { isCompleted: true },
+        { new: true },
+    )
+
+    return markAsCompeted;
+}
 const deleteAssignmentByID = async (assignmentId: string) => {
     // Check if the course exists
     const existingResource = await Assignment.findById(assignmentId);
@@ -291,4 +306,5 @@ export const assignmentService = {
     getAssignmentByID,
     updateAssignment,
     deleteAssignmentByID,
+    markAssignmentAsCompleted
 };

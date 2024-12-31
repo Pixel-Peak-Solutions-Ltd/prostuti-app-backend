@@ -81,12 +81,18 @@ const recodedClassSchema = new Schema<IRecodedClass>(
         classVideoURL: {
             type: videoSchema,
         },
+        isCompleted: {
+            type: Boolean,
+            default: false,
+
+        }
     },
     {
         timestamps: true,
         versionKey: false,
         toObject: { virtuals: true },
     },
+
 );
 
 recodedClassSchema.index(

@@ -58,6 +58,11 @@ const resourcesSchema = new Schema<IResources>(
                 message: 'Invalid date format',
             },
         },
+        // added a new field to check whether student engagement
+        isCompleted: {
+            type: Boolean,
+            default: false,
+        },
         uploadFileResources: [resourceSchema],
     },
     {

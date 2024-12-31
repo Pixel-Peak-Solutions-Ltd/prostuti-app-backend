@@ -15,4 +15,5 @@ export interface IRecodedClass {
     classDate: Date;
     classDetails: string;
     classVideoURL: TVideo;
+    isCompleted: boolean;
 }

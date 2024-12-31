@@ -17,9 +17,9 @@ const createTest = async (
     userInfo: TJWTDecodedUser,
     payload: any,
 ): Promise<any> => {
-    
- 
-    const {  questionList } = payload;
+
+
+    const { questionList } = payload;
 
     // // Check if the course exist
     const checkCourse = await Course.findById(payload.course_id);
@@ -30,7 +30,7 @@ const createTest = async (
         );
     }
 
-        // Check if the course exist
+    // Check if the course exist
     const isLessonExist = await Lesson.findById(payload.lesson_id);
     if (!isLessonExist) {
         throw new AppError(
@@ -62,7 +62,7 @@ const createTest = async (
             }
             allQuestionIds.push(existingQuestion._id.toString());
         } else if (item.newQuestion) {
-            
+
             const questionToSave = new Question({
                 ...item.newQuestion,
                 category_id: checkCourse.category_id,
@@ -192,7 +192,7 @@ const getTestByID = async (id: string): Promise<any> => {
             path: 'lesson_id',
         })
         .populate({
-            path: 'questionList', 
+            path: 'questionList',
         });
     if (!data) {
         throw new AppError(StatusCodes.NOT_FOUND, 'Test not found.');
@@ -204,6 +204,24 @@ const getTestByID = async (id: string): Promise<any> => {
 const updateTest = async () => {
     return 'updateTest service';
 };
+
+//mark Test as completed
+
+const markTestAsCompleted = async (testId: string) => {
+    // Check if the Test exists
+    const existingTest = await Test.findById(testId);
+    if (!existingTest) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Test not found');
+    };
+
+    const markAsCompeted = await Test.findByIdAndUpdate(
+        testId,
+        { isCompleted: true },
+        { new: true },
+    )
+
+    return markAsCompeted;
+}
 
 const deleteTestByID = async (
     id: string,
@@ -239,4 +257,5 @@ export const TestService = {
     getTestByID,
     updateTest,
     deleteTestByID,
+    markTestAsCompleted
 };
