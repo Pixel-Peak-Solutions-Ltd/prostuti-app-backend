@@ -14,5 +14,5 @@ export interface IResources {
     name: string;
     resourceDate: Date;
     uploadFileResources: TResource[];
-    isCompleted: boolean;
+    isCompleted?: boolean;
 }
