@@ -16,5 +16,5 @@ export interface IAssignment {
     unlockDate: Date;
     details: string;
     uploadFileResources: TResource[];
-    isCompleted: boolean;
+    isCompleted?: boolean;
 }
