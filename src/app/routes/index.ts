@@ -19,6 +19,7 @@ import { userRoute } from '../modules/user/user.route';
 import { EnrolledCourseRoute } from '../modules/enrolledCourse/enrolledCourse.route';
 import { PaymentRoute } from '../modules/payment/payment.route';
 import { TestHistoryRoute } from '../modules/courseManagement/test-history/testHistory.route';
+import { ProgressRoute } from '../modules/progress/progress.route';
 
 
 const globalRoute = Router();
@@ -43,6 +44,7 @@ const routes = [
     { path: '/routine', route: RoutineRoute },
     { path: '/enroll-course', route: EnrolledCourseRoute },
     { path: '/payment', route: PaymentRoute },
+    { path: '/progress', route: ProgressRoute }
 ];
 
 routes.forEach((route) => globalRoute.use(route.path, route.route));
