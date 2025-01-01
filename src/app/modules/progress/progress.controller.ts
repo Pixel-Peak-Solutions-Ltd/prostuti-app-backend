@@ -107,11 +107,11 @@ const courseProgress = catchAsync(async (req, res) => {
         enrolledCourseIds = [...userEnrolledCourses.map((course) => String(course?.course_id._id))];
     }
 
-    const percentagePerCourseId: any = {};
+    const percentagePerCourseId: number[] = [];
 
     for (const key of enrolledCourseIds) {
         // console.log('sent ids:', key, userId);
-        let completedStudentMaterialsId: any = [];
+        let completedStudentMaterialsId: string[] = [];
         const course = await courseService.getCoursePreview(key.toString());
 
         // step 4: saving the total number of materials of a course enrolled by the student via course preview api call
@@ -130,17 +130,17 @@ const courseProgress = catchAsync(async (req, res) => {
 
         // step 6: calculating the percentage of completed materials 
         if (completedStudentMaterialsId.length > 0) {
-            percentagePerCourseId[key] = (Math.floor((completedStudentMaterialsId.length * 100) / totalMaterials));
+            percentagePerCourseId.push(Number((completedStudentMaterialsId.length / totalMaterials).toFixed(3)));
         } else {
             // storing 0 as a percentage value for non existent completed materials
-            percentagePerCourseId[key] = 0;
+            percentagePerCourseId.push(0);
         }
 
     }
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
-        message: `Completed Progress`,
+        message: `All Course Progress Retrieved`,
         data: percentagePerCourseId,
     });
 })
