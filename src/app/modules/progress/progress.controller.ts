@@ -88,62 +88,98 @@ const getProgressByStudentAndCourseId = catchAsync(async (req, res) => {
 })
 
 
+// const courseProgress = catchAsync(async (req, res) => {
+//     const { userId } = req.user;
+
+//     // step 1 : narrowing down the student's id from student database with userId
+//     const student = await Student.findOne({ user_id: userId });
+
+//     // step 2: getting all the enrolled course by the student via student id
+
+//     const userEnrolledCourses = await EnrolledCourse.find(
+//         { student_id: student?._id }
+//     )
+
+//     // step 3: storing all the enrolled course Ids in an array
+//     let enrolledCourseIds: string[] = [];
+
+//     if (userEnrolledCourses.length > 0) {
+//         enrolledCourseIds = [...userEnrolledCourses.map((course) => String(course?.course_id._id))];
+//     }
+
+//     const percentagePerCourseId: number[] = [];
+
+//     for (const key of enrolledCourseIds) {
+//         // console.log('sent ids:', key, userId);
+//         let completedStudentMaterialsId: string[] = [];
+//         const course = await courseService.getCoursePreview(key.toString());
+
+//         // step 4: saving the total number of materials of a course enrolled by the student via course preview api call
+//         const totalMaterials = (course?.totalRecodedClasses as number) + (course?.totalResources as number) + (course?.totalAssignments as number) + (course?.totalTests as number);
+
+//         // step 5: fetching the completed course materials from student progress collection
+
+//         const completedStudentMaterials = await progressService.getProgressByStudentIdFromDB(userId, key);
+
+
+//         // checking whether completed course material object has data
+//         if (completedStudentMaterials.length > 0 || !completedStudentMaterials) {
+//             // extracting only ids of completed course materials and storing them in an array
+//             completedStudentMaterialsId = [...completedStudentMaterials.map((material) => String(material.material_id))];
+//         }
+
+//         // step 6: calculating the percentage of completed materials
+//         if (completedStudentMaterialsId.length > 0) {
+//             percentagePerCourseId.push(Number((completedStudentMaterialsId.length / totalMaterials).toFixed(3)));
+//         } else {
+//             // storing 0 as a percentage value for non existent completed materials
+//             percentagePerCourseId.push(0);
+//         }
+
+//     }
+
+//     sendSuccessResponse(res, {
+//         statusCode: StatusCodes.OK,
+//         message: `All Course Progress Retrieved`,
+//         data: percentagePerCourseId,
+//     });
+// })
+
 const courseProgress = catchAsync(async (req, res) => {
     const { userId } = req.user;
 
-    // step 1 : narrowing down the student's id from student database with userId 
-    const student = await Student.findOne({ user_id: userId });
+    // Step 1: Fetch student ID (with indexing)
+    const student = await Student.findOne({ user_id: userId }).select('_id');
+    if (!student) throw new Error("Student not found");
 
-    // step 2: getting all the enrolled course by the student via student id
+    // Step 2: Fetch enrolled courses
+    const userEnrolledCourses = await EnrolledCourse.find({ student_id: student._id }).select('course_id');
+    const enrolledCourseIds = userEnrolledCourses.map((course) => String(course.course_id));
 
-    const userEnrolledCourses = await EnrolledCourse.find(
-        { student_id: student?._id }
-    )
+    // Step 3: Fetch course previews and progress in parallel
+    const [coursePreviews, completedMaterialsByCourse] = await Promise.all([
+        Promise.all(enrolledCourseIds.map((id) => courseService.getCoursePreview(id))),
+        Promise.all(enrolledCourseIds.map((id) => progressService.getProgressByStudentIdFromDB(userId, id))),
+    ]);
 
-    // step 3: storing all the enrolled course Ids in an array
-    let enrolledCourseIds: string[] = [];
+    // Step 4: Calculate progress percentages
+    const percentagePerCourseId = coursePreviews.map((course, index) => {
+        const totalMaterials = (course?.totalRecodedClasses ?? 0) +
+            (course?.totalResources ?? 0) +
+            (course?.totalAssignments ?? 0) +
+            (course?.totalTests ?? 0);
 
-    if (userEnrolledCourses.length > 0) {
-        enrolledCourseIds = [...userEnrolledCourses.map((course) => String(course?.course_id._id))];
-    }
+        const completedMaterials = completedMaterialsByCourse[index] || [];
+        return totalMaterials > 0 ? Number((completedMaterials.length / totalMaterials).toFixed(3)) : 0;
+    });
 
-    const percentagePerCourseId: number[] = [];
-
-    for (const key of enrolledCourseIds) {
-        // console.log('sent ids:', key, userId);
-        let completedStudentMaterialsId: string[] = [];
-        const course = await courseService.getCoursePreview(key.toString());
-
-        // step 4: saving the total number of materials of a course enrolled by the student via course preview api call
-        const totalMaterials = (course?.totalRecodedClasses as number) + (course?.totalResources as number) + (course?.totalAssignments as number) + (course?.totalTests as number);
-
-        // step 5: fetching the completed course materials from student progress collection
-
-        const completedStudentMaterials = await progressService.getProgressByStudentIdFromDB(userId, key);
-
-
-        // checking whether completed course material object has data
-        if (completedStudentMaterials.length > 0 || !completedStudentMaterials) {
-            // extracting only ids of completed course materials and storing them in an array
-            completedStudentMaterialsId = [...completedStudentMaterials.map((material) => String(material.material_id))];
-        }
-
-        // step 6: calculating the percentage of completed materials 
-        if (completedStudentMaterialsId.length > 0) {
-            percentagePerCourseId.push(Number((completedStudentMaterialsId.length / totalMaterials).toFixed(3)));
-        } else {
-            // storing 0 as a percentage value for non existent completed materials
-            percentagePerCourseId.push(0);
-        }
-
-    }
-
+    // Step 5: Send response
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
         message: `All Course Progress Retrieved`,
         data: percentagePerCourseId,
     });
-})
+});
 
 export const progressController = {
     createProgress,
