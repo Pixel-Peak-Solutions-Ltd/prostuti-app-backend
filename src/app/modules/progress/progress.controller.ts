@@ -148,36 +148,44 @@ const getProgressByStudentAndCourseId = catchAsync(async (req, res) => {
 const courseProgress = catchAsync(async (req, res) => {
     const { userId } = req.user;
 
-    // Step 1: Fetch student ID (with indexing)
-    const student = await Student.findOne({ user_id: userId }).select('_id');
+    // Step 1: Find student by user ID
+    const student = await Student.findOne({ user_id: userId });
     if (!student) throw new Error("Student not found");
 
-    // Step 2: Fetch enrolled courses
-    const userEnrolledCourses = await EnrolledCourse.find({ student_id: student._id }).select('course_id');
-    const enrolledCourseIds = userEnrolledCourses.map((course) => String(course.course_id));
+    // Step 2: Get all enrolled courses by student ID
+    const userEnrolledCourses = await EnrolledCourse.find({ student_id: student._id });
+    const enrolledCourseIds = userEnrolledCourses.map((course) => ({
+        course_id: String(course.course_id._id),
+    }));
 
     // Step 3: Fetch course previews and progress in parallel
     const [coursePreviews, completedMaterialsByCourse] = await Promise.all([
-        Promise.all(enrolledCourseIds.map((id) => courseService.getCoursePreview(id))),
-        Promise.all(enrolledCourseIds.map((id) => progressService.getProgressByStudentIdFromDB(userId, id))),
+        Promise.all(enrolledCourseIds.map(({ course_id }) => courseService.getCoursePreview(course_id))),
+        Promise.all(enrolledCourseIds.map(({ course_id }) => progressService.getProgressByStudentIdFromDB(userId, course_id))),
     ]);
 
     // Step 4: Calculate progress percentages
-    const percentagePerCourseId = coursePreviews.map((course, index) => {
+    const data = enrolledCourseIds.map(({ course_id }, index) => {
+        const course = coursePreviews[index];
+        const completedMaterials = completedMaterialsByCourse[index] || [];
+
         const totalMaterials = (course?.totalRecodedClasses ?? 0) +
             (course?.totalResources ?? 0) +
             (course?.totalAssignments ?? 0) +
             (course?.totalTests ?? 0);
 
-        const completedMaterials = completedMaterialsByCourse[index] || [];
-        return totalMaterials > 0 ? Number((completedMaterials.length / totalMaterials).toFixed(3)) : 0;
+        const completedCount = completedMaterials.length;
+
+        const completed = totalMaterials > 0 ? Number((completedCount / totalMaterials).toFixed(3)) : 0;
+
+        return { course_id, completed };
     });
 
-    // Step 5: Send response
+    // Step 5: Send success response
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
-        message: `All Course Progress Retrieved`,
-        data: percentagePerCourseId,
+        message: "All Course Progress Retrieved",
+        data,
     });
 });
 
