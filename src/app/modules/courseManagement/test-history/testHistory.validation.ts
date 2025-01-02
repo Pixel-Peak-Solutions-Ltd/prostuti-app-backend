@@ -31,7 +31,6 @@ const createTestHistorySchema = z.object({
                     }),
                 selectedOption: z
                     .string()
-                    .min(1, 'selectedOption cannot be empty'),
             }),
         ).min(1, 'At least one answer is required'),
         timeTaken: z
