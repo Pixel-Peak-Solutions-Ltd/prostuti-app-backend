@@ -21,22 +21,23 @@ const createTestHistorySchema = z.object({
             .refine((val) => Types.ObjectId.isValid(val), {
                 message: 'Invalid MongoDB ObjectId for test_id',
             }),
-        answers: z.array(
-            z.object({
-                question_id: z
-                    .string()
-                    .length(24, 'Invalid question_id')
-                    .refine((val) => Types.ObjectId.isValid(val), {
-                        message: 'Invalid MongoDB ObjectId for question_id',
-                    }),
-                selectedOption: z
-                    .string()
-            }),
-        ).min(1, 'At least one answer is required'),
+        answers: z
+            .array(
+                z.object({
+                    question_id: z
+                        .string()
+                        .length(24, 'Invalid question_id')
+                        .refine((val) => Types.ObjectId.isValid(val), {
+                            message: 'Invalid MongoDB ObjectId for question_id',
+                        }),
+                    selectedOption: z.string(),
+                }),
+            )
+            .min(1, 'At least one answer is required'),
         timeTaken: z
             .number()
             .min(0, 'timeTaken must be a positive number')
             .int('timeTaken must be an integer'),
     }),
-}).strict();
+});
 export const TestHistoryValidation = { createTestHistorySchema };
