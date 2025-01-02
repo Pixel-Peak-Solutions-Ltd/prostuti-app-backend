@@ -68,7 +68,7 @@ const createTestHistory = async (
         );
     }
 
-    let score:number = 0;
+    let score:number = 0.0;
     let wrongScore = 0;
     let rightScore = 0;
 
@@ -84,7 +84,7 @@ const createTestHistory = async (
             throw new AppError(StatusCodes.NOT_FOUND, 'Question not found.');
         }
         if (question.correctOption === answer.selectedOption) {
-            score += 1;
+            score += 1.0;
             rightScore += 1;
         } else {
             score -= 0.5;
@@ -102,7 +102,7 @@ const createTestHistory = async (
         lesson_id,
         test_id,
         student_id: studentDetails._id,
-        score:score<0?0:score,
+        score:score<0.0?0.0:score,
         totalScore,
         rightScore,
         wrongScore,
