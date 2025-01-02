@@ -29,9 +29,9 @@ const TestHistorySchema = new Schema<ITestHistory, TestHistoryModel>(
             default: Date.now,
         },
         score: {
-            type: Number,
+            type:Schema.Types.Number,
             required: true,
-            min: 0,
+            min:0
         },
         totalScore: {
             type: Number,

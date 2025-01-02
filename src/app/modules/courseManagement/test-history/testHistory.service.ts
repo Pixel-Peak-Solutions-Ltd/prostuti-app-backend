@@ -15,6 +15,34 @@ const createTestHistory = async (
     payload: any,
 ): Promise<any> => {
     const { course_id, lesson_id, test_id, answers, timeTaken } = payload;
+    // Get student details
+    const studentDetails = await Student.findOne({ user_id: userInfo.userId });
+    if (!studentDetails) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Student does not exist');
+    }
+    //check if the student is already have test history for this course
+    const checkTestHistory = await TestHistory.findOne({
+        test_id,
+        student_id: studentDetails._id,
+    });
+    if (checkTestHistory) {
+        throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            'You have already attempted this test.',
+        );
+    }
+
+    // Check if student is enrolled in the course
+    const checkEnrolled = await EnrolledCourse.findOne({
+        course_id: course_id,
+        student_id: studentDetails._id,
+    });
+    if (!checkEnrolled) {
+        throw new AppError(
+            StatusCodes.NOT_FOUND,
+            'You have not enrolled in this course.',
+        );
+    }
     //check if the course exists or not
     const checkCourse = await Course.findById(course_id);
     if (!checkCourse) {
@@ -36,23 +64,6 @@ const createTestHistory = async (
         throw new AppError(StatusCodes.NOT_FOUND, 'Test not found.');
     }
 
-    // Get student details
-    const studentDetails = await Student.findOne({ user_id: userInfo.userId });
-    if (!studentDetails) {
-        throw new AppError(StatusCodes.NOT_FOUND, 'Student does not exist');
-    }
-    // Check if student is enrolled in the course
-    const checkEnrolled = await EnrolledCourse.findOne({
-        course_id: course_id,
-        student_id: studentDetails._id,
-    });
-    if (!checkEnrolled) {
-        throw new AppError(
-            StatusCodes.NOT_FOUND,
-            'You have not enrolled in this course.',
-        );
-    }
-
     //get total score of the test
     const totalScore = checkTest.questionList.length;
 
@@ -68,7 +79,7 @@ const createTestHistory = async (
         );
     }
 
-    let score:number = 0.0;
+    let score: number = 0.0;
     let wrongScore = 0;
     let rightScore = 0;
 
@@ -102,7 +113,7 @@ const createTestHistory = async (
         lesson_id,
         test_id,
         student_id: studentDetails._id,
-        score:score<0.0?0.0:score,
+        score: score < 0.0 ? 0.0 : score,
         totalScore,
         rightScore,
         wrongScore,
@@ -134,7 +145,10 @@ const getTestHistoryByID = async (
             path: 'answers.question_id',
         });
     if (!data) {
-        throw new AppError(StatusCodes.NOT_FOUND, 'TestHistory not found for this student.');
+        throw new AppError(
+            StatusCodes.NOT_FOUND,
+            'TestHistory not found for this student.',
+        );
     }
 
     return data;
