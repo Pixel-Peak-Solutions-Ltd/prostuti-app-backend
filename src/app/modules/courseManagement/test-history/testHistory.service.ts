@@ -68,7 +68,7 @@ const createTestHistory = async (
         );
     }
 
-    let score = 0;
+    let score:number = 0;
     let wrongScore = 0;
     let rightScore = 0;
 
@@ -102,7 +102,7 @@ const createTestHistory = async (
         lesson_id,
         test_id,
         student_id: studentDetails._id,
-        score,
+        score:score<0?0:score,
         totalScore,
         rightScore,
         wrongScore,

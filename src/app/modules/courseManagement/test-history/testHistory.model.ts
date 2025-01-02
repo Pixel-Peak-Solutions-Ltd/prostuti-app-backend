@@ -1,7 +1,6 @@
 import { Schema, model } from 'mongoose';
 import { ITestHistory, TestHistoryModel } from './testHistory.interface';
 
-
 const TestHistorySchema = new Schema<ITestHistory, TestHistoryModel>(
     {
         course_id: {
@@ -76,5 +75,9 @@ const TestHistorySchema = new Schema<ITestHistory, TestHistoryModel>(
         timestamps: true,
     },
 );
+TestHistorySchema.index({ test_id: 1, student_id: 1 }, { unique: true });
 
-export const TestHistory = model<ITestHistory, TestHistoryModel>('TestHistory', TestHistorySchema);
+export const TestHistory = model<ITestHistory, TestHistoryModel>(
+    'TestHistory',
+    TestHistorySchema,
+);

@@ -30,7 +30,7 @@ const createTestHistorySchema = z.object({
                         .refine((val) => Types.ObjectId.isValid(val), {
                             message: 'Invalid MongoDB ObjectId for question_id',
                         }),
-                    selectedOption: z.string(),
+                    selectedOption: z.string().optional(),
                 }),
             )
             .min(1, 'At least one answer is required'),
