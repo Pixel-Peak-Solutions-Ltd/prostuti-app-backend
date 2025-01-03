@@ -101,17 +101,8 @@ const updateNotice = async (noticeId: string, payload: INotice) => {
 
     // Create the updated payload
     const updatedPayload: Partial<INotice> = {
-        ...(payload.course_id && { course_id: payload.course_id }),
         ...(payload.notice && { notice: payload.notice }),
     };
-
-    // Check if the course exists
-    if (updatedPayload.course_id) {
-        const existingCourse = await Course.findById(updatedPayload.course_id);
-        if (!existingCourse) {
-            throw new AppError(StatusCodes.NOT_FOUND, 'Course not found');
-        }
-    }
 
     // Update the course
     const result = await Notice.findByIdAndUpdate(noticeId, updatedPayload, {

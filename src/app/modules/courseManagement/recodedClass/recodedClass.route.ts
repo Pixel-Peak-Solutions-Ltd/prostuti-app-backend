@@ -32,14 +32,21 @@ router
     .delete('/:recodedClassId', recodedClassController.deleteRecodedClassByID)
     .patch(
         '/:recodedClassId',
+        auth(USER_ROLE.teacher),
+        upload.single('file'),
+        (req: Request, res: Response, next: NextFunction) => {
+            req.body = JSON.parse(req.body.data);
+            next();
+        },
         validateRequest(
             recodedClassValidation.updateRecodedClassValidationSchema,
         ),
         recodedClassController.updateRecodedClass,
     )
-    .put('/markAsComplete/:recordedClassId',
+    .put(
+        '/markAsComplete/:recordedClassId',
         auth(),
-        recodedClassController.updateRecordClassCompleteStatus
-    )
+        recodedClassController.updateRecordClassCompleteStatus,
+    );
 
 export const recodedClassRoute = router;
