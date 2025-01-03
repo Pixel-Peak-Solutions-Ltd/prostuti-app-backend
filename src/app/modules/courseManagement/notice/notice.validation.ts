@@ -24,12 +24,6 @@ const createNoticeValidationSchema = z.object({
 
 const updateNoticeValidationSchema = z.object({
     body: z.object({
-        course_id: z
-            .string()
-            .refine((value) => Types.ObjectId.isValid(value), {
-                message: 'Course ID must be a valid MongoDB ObjectId',
-            })
-            .optional(),
         notice: z
             .string()
             .min(2, { message: 'Notice must be at least 2 characters long' })

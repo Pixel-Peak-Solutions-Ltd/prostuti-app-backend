@@ -1,6 +1,5 @@
-import { z } from 'zod';
-import { validDomains } from './recodedClass.constant';
 import { Types } from 'mongoose';
+import { z } from 'zod';
 
 const createRecodedClassValidationSchema = z.object({
     body: z.object({
@@ -45,19 +44,6 @@ const createRecodedClassValidationSchema = z.object({
 
 const updateRecodedClassValidationSchema = z.object({
     body: z.object({
-        course_id: z
-            .string()
-            .refine((val) => Types.ObjectId.isValid(val), {
-                message: 'Invalid MongoDB ObjectId',
-            })
-            .optional(),
-        lesson_id: z
-            .string()
-            .refine((val) => Types.ObjectId.isValid(val), {
-                message: 'Invalid MongoDB ObjectId',
-            })
-            .optional(),
-
         recodeClassName: z
             .string({
                 required_error: 'Recode class name is required',
@@ -90,40 +76,6 @@ const updateRecodedClassValidationSchema = z.object({
             .min(10, 'Class details must be at least 10 characters long')
             .max(5000, 'Class details cannot exceed 5000 characters')
             .trim()
-            .optional(),
-
-        classVideoURL: z
-            .array(
-                z
-                    .string({
-                        required_error: 'Video URL is required',
-                        invalid_type_error: 'Video URL must be a string',
-                    })
-                    .url('Invalid video URL format')
-                    .refine(
-                        (url) => {
-                            return validDomains.some((domain) =>
-                                url.includes(domain),
-                            );
-                        },
-                        {
-                            message:
-                                'Only YouTube, Vimeo, or Google Drive URLs are allowed',
-                        },
-                    ),
-            )
-            .min(1, 'At least one video URL is required')
-            .max(10, 'Cannot exceed 10 video URLs per class')
-            .refine(
-                (urls) => {
-                    // Check for duplicate URLs
-                    const uniqueUrls = new Set(urls);
-                    return uniqueUrls.size === urls.length;
-                },
-                {
-                    message: 'Duplicate video URLs are not allowed',
-                },
-            )
             .optional(),
     }),
 });
