@@ -5,7 +5,7 @@ import { StudentProgress } from "./progress.model"
 
 const createProgressToDB = async (payload: IStudentProgress) => {
     const existingStudentProgress = await StudentProgress.find(
-        { material_id: payload.material_id }
+        { user_id: payload.user_id, material_id: payload.material_id }
     );
 
     console.log('from service', existingStudentProgress);
