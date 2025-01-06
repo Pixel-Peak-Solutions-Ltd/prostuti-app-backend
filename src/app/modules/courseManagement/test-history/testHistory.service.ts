@@ -84,7 +84,7 @@ const createTestHistory = async (
     let rightScore = 0;
 
     for (const answer of answers) {
-        if (answer.selectedOption === '') {
+        if (answer.selectedOption === 'null') {
             continue;
         }
 
