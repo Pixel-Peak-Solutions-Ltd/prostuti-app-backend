@@ -13,6 +13,8 @@ import { Course } from './course.model';
 import { Express } from 'express';
 import { USER_ROLE } from '../../user/user.constant';
 import { Student } from '../../student/student.model';
+import { Teacher } from '../../teacher/teacher.model';
+import { User } from '../../user/user.model';
 
 // Create Course
 const createCourse = async (
@@ -224,6 +226,14 @@ const getCourseByID = async (courseId: string) => {
     return courses;
 };
 
+const getCourseByTeacherID = async (user_id: string) => {
+    const teacherId = await User.findById({ _id: user_id }).select('teacherId');
+
+    const courses = await Course.find({ teacher_id: teacherId });
+
+    return courses;
+}
+
 // Update Course
 const updateCourse = async (
     courseId: string,
@@ -378,4 +388,5 @@ export const courseService = {
     updateCourse,
     deleteCourseByID,
     approvedCourse,
+    getCourseByTeacherID
 };
