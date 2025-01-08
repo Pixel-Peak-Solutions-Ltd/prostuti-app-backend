@@ -24,6 +24,17 @@ const sendVerificationCode = async (
         }
     }
 
+    // Check if the phone number exists in the database for account creation
+    if (phoneVerificationType === PHONE_VERIFICATION_TYPE.ACCOUNT_CREATION) {
+        const userExists = await User.exists({
+            phone: formatPhoneNumber(phoneNumber),
+        });
+
+        if (userExists) {
+            throw new AppError(404, 'User already exists with this phone number');
+        }
+    }
+
     const otpCode = generateOTP();
     const apiKey = process.env.ALPHA_SMS_API_KEY;
     const message = `Your Prostuti verification code is: ${otpCode}`;
