@@ -12,4 +12,8 @@ router.post("/subscription/success",PaymentController.createSubscriptionPaymentS
 router.post("/subscription/failed",PaymentController.createSubscriptionPaymentFailed)
 router.post("/subscription/canceled",PaymentController.createSubscriptionPaymentCanceled)
 
+
+router.get("/all-payment",auth(),PaymentController.getAllPayments)
+router.get("/:id",auth(),PaymentController.getPaymentByID)
+
 export const PaymentRoute = router;

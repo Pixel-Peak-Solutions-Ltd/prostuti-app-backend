@@ -5,11 +5,18 @@ import { TJWTDecodedUser } from '../../interfaces/jwt/jwt.type';
 import { v4 as uuidv4 } from 'uuid';
 // @ts-ignore
 import SSLCommerzPayment from 'sslcommerz-lts';
+import { SortOrder } from 'mongoose';
 import config from '../../config';
+import { calculatePagination } from '../../helpers/pagenationHelper';
+import { IPaginationOptions } from '../../interfaces/common';
 import { Student } from '../student/student.model';
-import { subscriptionPlansDetails } from './payment.constant';
-import { Payment } from './payment.model';
 import { Subscription } from '../subscription/subscription.model';
+import {
+    PaymentSearchableFields,
+    subscriptionPlansDetails,
+} from './payment.constant';
+import { IPaymentFilters } from './payment.interface';
+import { Payment } from './payment.model';
 
 const store_id = 'bakin62b84b547d1c3';
 const store_passwd = 'bakin62b84b547d1c3@ssl';
@@ -174,9 +181,132 @@ const createSubscriptionPaymentCanceled = async (trans_id: string) => {
     }
 };
 
+const getAllPayments = async (
+    filters: IPaymentFilters,
+    paginationOptions: IPaginationOptions,
+): Promise<any> => {
+    const { searchTerm, createdDate, expireDate, amount, ...filtersData } =
+        filters;
+    const { page, limit, skip, sortBy, sortOrder } =
+        calculatePagination(paginationOptions);
+
+    const andConditions = [];
+    if (searchTerm) {
+        andConditions.push({
+            $or: PaymentSearchableFields.map((field) => ({
+                [field]: {
+                    $regex: searchTerm,
+                    $options: 'i',
+                },
+            })),
+        });
+    }
+
+    if (createdDate) {
+        const checkDate = new Date(createdDate);
+        if (isNaN(checkDate.getTime())) {
+            throw new AppError(
+                StatusCodes.NOT_ACCEPTABLE,
+                'Invalid date format!!!',
+            );
+        }
+        checkDate.setHours(0, 0, 0, 0);
+
+        andConditions.push({
+            createdDate: {
+                $gte: checkDate,
+                $lt: new Date(
+                    checkDate.getFullYear(),
+                    checkDate.getMonth(),
+                    checkDate.getDate() + 1,
+                ),
+            },
+        });
+    }
+    if (expireDate) {
+        const checkDate = new Date(expireDate);
+        if (isNaN(checkDate.getTime())) {
+            throw new AppError(
+                StatusCodes.NOT_ACCEPTABLE,
+                'Invalid date format!!!',
+            );
+        }
+        checkDate.setHours(0, 0, 0, 0);
+
+        andConditions.push({
+            expireDate: {
+                $gte: checkDate,
+                $lt: new Date(
+                    checkDate.getFullYear(),
+                    checkDate.getMonth(),
+                    checkDate.getDate() + 1,
+                ),
+            },
+        });
+    }
+    if (amount) {
+        const parsedAmount = Number(amount);
+        if (isNaN(parsedAmount)) {
+            throw new AppError(
+                StatusCodes.NOT_ACCEPTABLE,
+                'Invalid amount value!',
+            );
+        }
+        andConditions.push({
+            amount: { $lte: parsedAmount },
+        });
+    }
+    // filtering data
+    if (Object.keys(filtersData).length) {
+        andConditions.push({
+            $and: Object.entries(filtersData).map(([field, value]) => ({
+                [field]: value,
+            })),
+        });
+    }
+
+    const sortConditions: { [key: string]: SortOrder } = {};
+
+    if (sortBy && sortOrder) {
+        sortConditions[sortBy] = sortOrder;
+    }
+
+    const whereConditions =
+        andConditions.length > 0 ? { $and: andConditions } : {};
+
+    const count = await Payment.countDocuments(whereConditions);
+    const result = await Payment.find(whereConditions)
+        .sort(sortConditions)
+        .skip(skip)
+        .limit(limit)
+        .populate({
+            path: 'student_id',
+        });
+
+    return {
+        meta: {
+            page,
+            limit: limit === 0 ? count : limit,
+            count,
+        },
+        data: result,
+    };
+};
+
+const getPaymentByID = async (id: string): Promise<any> => {
+    const data = await Payment.findById(id).populate('student_id');
+
+    if (!data) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Payment not found');
+    }
+    return data;
+};
+
 export const PaymentService = {
     createSubscriptionPayment,
     createSubscriptionPaymentSuccess,
     createSubscriptionPaymentFailed,
     createSubscriptionPaymentCanceled,
+    getAllPayments,
+    getPaymentByID,
 };
