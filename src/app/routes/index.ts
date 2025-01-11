@@ -22,6 +22,7 @@ import { studentRoute } from '../modules/student/student.route';
 import { teacherRoute } from '../modules/teacher/teacher.route';
 import { userRoute } from '../modules/user/user.route';
 import { assignmentSubmissionRoute } from '../modules/assignmentSubmission/assignmentSubmission.route';
+import { SubscriptionRoute } from '../modules/subscription/subscription.route';
 
 const globalRoute = Router();
 
@@ -45,6 +46,7 @@ const routes = [
     { path: '/routine', route: RoutineRoute },
     { path: '/enroll-course', route: EnrolledCourseRoute },
     { path: '/payment', route: PaymentRoute },
+    { path: '/subscription', route: SubscriptionRoute },
     { path: '/progress', route: ProgressRoute },
     { path: '/admin', route: adminRoute },
     { path: '/assignment-submission', route: assignmentSubmissionRoute },
