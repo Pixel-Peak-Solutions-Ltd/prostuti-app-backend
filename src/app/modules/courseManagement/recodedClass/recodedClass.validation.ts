@@ -63,9 +63,6 @@ const updateRecodedClassValidationSchema = z.object({
                 message:
                     'Invalid date format. Please provide a valid ISO date string',
             })
-            .refine((date) => new Date(date) >= new Date(), {
-                message: 'Class date cannot be in the past',
-            })
             .optional(),
 
         classDetails: z
