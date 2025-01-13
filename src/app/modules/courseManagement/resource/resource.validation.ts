@@ -62,9 +62,6 @@ const updateResourceValidationSchema = z.object({
                 message:
                     'Invalid date format. Please provide a valid ISO date string',
             })
-            .refine((date) => new Date(date) >= new Date(), {
-                message: 'resourceDate cannot be in the past',
-            })
             .optional(),
 
         canceledResources: z.array(TResourceSchema).optional(),
