@@ -1,6 +1,6 @@
 import { Schema, model } from 'mongoose';
+import { VoucherDiscountType } from './voucher.constant';
 import { IVoucher, VoucherModel } from './voucher.interface';
-import { VoucherDiscountType, VoucherType } from './voucher.constant';
 
 const VoucherSchema = new Schema<IVoucher, VoucherModel>(
     {
@@ -18,12 +18,17 @@ const VoucherSchema = new Schema<IVoucher, VoucherModel>(
             required: true,
             min: 0,
         },
-        type: {
-            type: String,
-            enum: VoucherType,
-            required: true,
-            default: 'Active',
+        isActive:{
+            type:Boolean,
+            required:[true,"Activity Status is required"],
+            default:true,
         },
+        isExpired:{
+            type:Boolean,
+            required:[true,"Expired Status is required"],
+            default:false,
+        },
+        
         startDate: {
             type: Date,
             required: true,
