@@ -8,7 +8,7 @@ import { VoucherValidation } from './voucher.validation';
 const router = express.Router();
 
 router.post('/create-voucher',auth(USER_ROLE.admin),validateRequest(VoucherValidation.createVoucherSchema), VoucherController.createVoucher);
-router.get('/', VoucherController.getAllVouchers);
+router.get('/all-voucher', VoucherController.getAllVouchers);
 router.get('/:id', VoucherController.getVoucherByID);
 router.delete('/:id', VoucherController.deleteVoucherByID);
 router.patch('/:id', VoucherController.updateVoucher);

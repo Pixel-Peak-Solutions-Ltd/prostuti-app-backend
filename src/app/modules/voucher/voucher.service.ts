@@ -1,11 +1,14 @@
 import { StatusCodes } from 'http-status-codes';
 import AppError from '../../classes/errorClasses/AppError';
 import { TJWTDecodedUser } from '../../interfaces/jwt/jwt.type';
-import { IVoucher } from './voucher.interface';
+import { IVoucher, IVoucherFilters } from './voucher.interface';
 import { Voucher } from './voucher.model';
 import { User } from '../user/user.model';
 import { Student } from '../student/student.model';
-import { Types } from 'mongoose';
+import { SortOrder, Types } from 'mongoose';
+import { IPaginationOptions } from '../../interfaces/common';
+import { calculatePagination } from '../../helpers/pagenationHelper';
+import { VoucherSearchableFields } from './voucher.constant';
 
 const createVoucher = async (
     userInfo: TJWTDecodedUser,
@@ -55,12 +58,75 @@ const createVoucher = async (
     return newVoucher;
 };
 
-const getAllVouchers = async () => {
-    return 'getAllVouchers service';
+const getAllVouchers = async (
+    filters: IVoucherFilters,
+    paginationOptions: IPaginationOptions,
+) => {
+    const { searchTerm, ...filtersData } = filters;
+    const { page, limit, skip, sortBy, sortOrder } =
+        calculatePagination(paginationOptions);
+
+    const andConditions = [];
+    if (searchTerm) {
+        andConditions.push({
+            $or: VoucherSearchableFields.map((field) => ({
+                [field]: {
+                    $regex: searchTerm,
+                    $options: 'i',
+                },
+            })),
+        });
+    }
+
+    // filtering data
+    if (Object.keys(filtersData).length) {
+        andConditions.push({
+            $and: Object.entries(filtersData).map(([field, value]) => ({
+                [field]: value,
+            })),
+        });
+    }
+
+    const sortConditions: { [key: string]: SortOrder } = {};
+
+    if (sortBy && sortOrder) {
+        sortConditions[sortBy] = sortOrder;
+    }
+
+    const whereConditions =
+        andConditions.length > 0 ? { $and: andConditions } : {};
+
+    const count = await Voucher.countDocuments(whereConditions);
+    const result = await Voucher.find(whereConditions)
+        .sort(sortConditions)
+        .skip(skip)
+        .limit(limit)
+        .populate({
+            path: 'student_id',
+        })
+        .populate({
+            path: 'createdBy',
+        });
+
+    return {
+        meta: {
+            page,
+            limit: limit === 0 ? count : limit,
+            count,
+        },
+        data: result,
+    };
 };
 
-const getVoucherByID = async () => {
-    return 'getVoucherByID service';
+const getVoucherByID = async (id:string) => {
+    const data = await Voucher.findById(id)
+        .populate('student_id')
+        .populate('createdBy')
+        ;
+    if (!data) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Voucher not found');
+    }
+    return data;
 };
 
 const updateVoucher = async () => {
