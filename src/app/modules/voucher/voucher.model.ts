@@ -38,6 +38,11 @@ const VoucherSchema = new Schema<IVoucher, VoucherModel>(
                 message: 'End date must be after the start date.',
             },
         },
+        student_id:{
+            type:Schema.Types.ObjectId,
+            required:false,
+            ref:"Student"
+        },
         createdBy: {
             type: Schema.Types.ObjectId,
             required: true,

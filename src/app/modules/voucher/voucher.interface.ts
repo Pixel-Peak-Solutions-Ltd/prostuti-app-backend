@@ -8,6 +8,7 @@ export type IVoucher={
     type: VoucherType;
     startDate: Date;
     endDate: Date;
+    student_id?:Types.ObjectId
     createdBy:Types.ObjectId,
     updatedBy:Types.ObjectId
   }
