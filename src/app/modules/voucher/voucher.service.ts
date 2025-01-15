@@ -118,19 +118,38 @@ const getAllVouchers = async (
     };
 };
 
-const getVoucherByID = async (id:string) => {
+const getVoucherByID = async (id: string) => {
     const data = await Voucher.findById(id)
         .populate('student_id')
-        .populate('createdBy')
-        ;
+        .populate('createdBy');
     if (!data) {
         throw new AppError(StatusCodes.NOT_FOUND, 'Voucher not found');
     }
     return data;
 };
 
-const updateVoucher = async () => {
-    return 'updateVoucher service';
+const updateVoucher = async (id: string) => {
+    const voucher = await Voucher.findById(id);
+    if (!voucher) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Voucher not found');
+    }
+
+    const updatedVoucher = await Voucher.findByIdAndUpdate(
+        id,
+        { isActive: !voucher.isActive },
+        { new: true },
+    )
+        .populate('student_id')
+        .populate('createdBy');
+
+    if (!updatedVoucher) {
+        throw new AppError(
+            StatusCodes.NOT_FOUND,
+            'Failed to update the voucher',
+        );
+    }
+
+    return updatedVoucher;
 };
 
 const deleteVoucherByID = async () => {

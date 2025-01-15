@@ -42,7 +42,7 @@ const getVoucherByID = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateVoucher = catchAsync(async (req: Request, res: Response) => {
-    const result = await VoucherService.updateVoucher();
+    const result = await VoucherService.updateVoucher(req.params.id);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
