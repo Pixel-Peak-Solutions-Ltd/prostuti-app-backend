@@ -12,6 +12,8 @@ const router = express.Router();
 
 router
     .post('/submit-test',auth(USER_ROLE.student),validateRequest(TestHistoryValidation.createTestHistorySchema), TestHistoryController.createTestHistory)
+    .post('/submit-written-test',auth(USER_ROLE.student),validateRequest(TestHistoryValidation.createWrittenTestHistorySchema), TestHistoryController.createWrittenTestHistory)
+    .patch('/preview-written-test',auth(USER_ROLE.teacher),validateRequest(TestHistoryValidation.previewWrittenTestHistorySchema), TestHistoryController.previewWrittenTestHistory)
     // .get('/',auth(), TestHistoryController.getAllTestHistorys)
     .get('/:id',auth(USER_ROLE.student), TestHistoryController.getTestHistoryByID)
     // .delete('/:id',auth(), TestHistoryController.deleteTestHistoryByID)

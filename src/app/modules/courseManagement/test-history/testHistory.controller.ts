@@ -19,6 +19,28 @@ const createTestHistory = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+
+const createWrittenTestHistory = catchAsync(async (req: Request, res: Response) => {
+    const result = await TestHistoryService.createWrittenTestHistory(req.user as TJWTDecodedUser,req.body);
+
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'TestHistory submitted successfully',
+        data: result,
+    });
+});
+
+
+const previewWrittenTestHistory = catchAsync(async (req: Request, res: Response) => {
+    const result = await TestHistoryService.previewWrittenTestHistory(req.user as TJWTDecodedUser,req.body);
+
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'TestHistory checked successfully',
+        data: result,
+    });
+});
+
 // const getAllTestHistorys = catchAsync(async (req: Request, res: Response) => {
 //     const filters = pick(req.query, TestHistoryFilterableFields);
 //     const paginationOptions = pick(req.query, paginationFields);
@@ -64,5 +86,5 @@ const getTestHistoryByID = catchAsync(async (req: Request, res: Response) => {
 // });
 
 export const TestHistoryController = {
-    createTestHistory,getTestHistoryByID
+    createTestHistory,createWrittenTestHistory,previewWrittenTestHistory,getTestHistoryByID
 };
