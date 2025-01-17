@@ -219,6 +219,7 @@ const createWrittenTestHistory = async (
         wrongScore,
         answers,
         isPassed,
+        isChecked:false,
         timeTaken,
     });
 
