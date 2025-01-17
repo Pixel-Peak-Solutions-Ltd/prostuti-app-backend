@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-console */
 /* eslint-disable no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unused-vars */
@@ -232,7 +233,7 @@ const getCourseByTeacherID = async (user_id: string) => {
     const courses = await Course.find({ teacher_id: teacherId });
 
     return courses;
-}
+};
 
 // Update Course
 const updateCourse = async (
@@ -379,6 +380,29 @@ const approvedCourse = async (
     return updatedCourse;
 };
 
+// Get Courses Admin end
+const getCoursesForAdmins = async (query: Record<string, any>) => {
+    const { isPending, isPublished } = query;
+
+    const queryConditions: Record<string, any> = {};
+
+    // Add conditions based on query parameters
+    if (isPending !== undefined) {
+        queryConditions.isPending = true;
+    }
+
+    if (isPublished !== undefined) {
+        queryConditions.isPublished = true;
+    }
+
+    const courses = await Course.find(queryConditions).sort({ createdAt: -1 });
+
+    // Get total count of documents matching the query
+    const totalCount = await Course.countDocuments(queryConditions);
+
+    return { totalCount, courses };
+};
+
 export const courseService = {
     createCourse,
     getCoursePreview,
@@ -388,5 +412,6 @@ export const courseService = {
     updateCourse,
     deleteCourseByID,
     approvedCourse,
-    getCourseByTeacherID
+    getCourseByTeacherID,
+    getCoursesForAdmins,
 };
