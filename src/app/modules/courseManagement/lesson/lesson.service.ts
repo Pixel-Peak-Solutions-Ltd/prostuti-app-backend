@@ -19,6 +19,7 @@ const createLesson = async (payload: {
 
     // Check for duplicate lesson numbers within the same course
     const lessonNumbers = lessons.map((l) => l!.number);
+
     const duplicateWithinInput = lessonNumbers.some(
         (number, index) => lessonNumbers.indexOf(number) !== index,
     );
@@ -48,7 +49,7 @@ const createLesson = async (payload: {
         lessons.map((l) => ({
             number: l!.number,
             name: l!.name,
-            course_id,
+            course_id: course_id,
         })),
     );
 

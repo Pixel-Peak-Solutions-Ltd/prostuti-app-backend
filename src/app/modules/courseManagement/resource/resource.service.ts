@@ -198,6 +198,27 @@ const updateResource = async (
         }),
     };
 
+    if (files.length === 0 && payload.canceledResources.length > 0) {
+        // Combine existing and new upload resources
+        // Extract the fieldIds from deletedFields
+        const canceledAssignmentsFileIds = payload.canceledResources.map(
+            (item) => item.fileId,
+        );
+
+        // Filter out objects
+        const newResources = isResourceExist.uploadFileResources.filter(
+            (item) => !canceledAssignmentsFileIds.includes(item.fileId),
+        );
+
+        // Combine existing and new upload resources
+        updatedPayload.uploadFileResources = [...(newResources || [])];
+
+        // Delete Canceled Assignments from backblaze
+        for (const value of payload.canceledResources) {
+            await deleteFromB2(value.fileId, value.modifiedName, 'resources');
+        }
+    }
+
     // Handle file uploads if present
     if (files.length > 0) {
         try {

@@ -195,6 +195,27 @@ const updateAssignment = async (
         ...(payload.details && { details: payload.details }),
     };
 
+    if (files.length === 0 && payload.canceledAssignments.length > 0) {
+        // Combine existing and new upload resources
+        // Extract the fieldIds from deletedFields
+        const canceledAssignmentsFileIds = payload.canceledAssignments.map(
+            (item) => item.fileId,
+        );
+
+        // Filter out objects
+        const newAssignments = existingResource.uploadFileResources.filter(
+            (item) => !canceledAssignmentsFileIds.includes(item.fileId),
+        );
+
+        // Combine existing and new upload resources
+        updatedPayload.uploadFileResources = [...(newAssignments || [])];
+
+        // Delete Canceled Assignments from backblaze
+        for (const value of payload.canceledAssignments) {
+            await deleteFromB2(value.fileId, value.modifiedName, 'resources');
+        }
+    }
+
     // Handle file uploads if present
     if (files.length > 0) {
         try {
