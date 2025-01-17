@@ -29,9 +29,9 @@ const TestHistorySchema = new Schema<ITestHistory, TestHistoryModel>(
             default: Date.now,
         },
         score: {
-            type:Schema.Types.Number,
+            type: Schema.Types.Number,
             required: true,
-            min:0
+            min: 0,
         },
         totalScore: {
             type: Number,
@@ -60,11 +60,20 @@ const TestHistorySchema = new Schema<ITestHistory, TestHistoryModel>(
                     type: String,
                     required: true,
                 },
+
+                mark: {
+                    type: Number,
+                },
             },
         ],
         isPassed: {
             type: Boolean,
             required: true,
+        },
+        isChecked: {
+            type: Boolean,
+            required: true,
+            default: true,
         },
         timeTaken: {
             type: Number,

@@ -1,13 +1,13 @@
 import { StatusCodes } from 'http-status-codes';
-import { Types } from 'mongoose';
 import AppError from '../../../classes/errorClasses/AppError';
 import { TJWTDecodedUser } from '../../../interfaces/jwt/jwt.type';
+import { EnrolledCourse } from '../../enrolledCourse/enrolledCourse.model';
 import { Question } from '../../question/question.model';
+import { Student } from '../../student/student.model';
+import { Teacher } from '../../teacher/teacher.model';
 import { Course } from '../course/course.model';
 import { Lesson } from '../lesson/lesson.model';
 import { Test } from '../test/test.model';
-import { Student } from '../../student/student.model';
-import { EnrolledCourse } from '../../enrolledCourse/enrolledCourse.model';
 import { TestHistory } from './testHistory.model';
 
 const createTestHistory = async (
@@ -60,8 +60,8 @@ const createTestHistory = async (
         lesson_id: lesson_id,
         course_id: course_id,
     });
-    if (!checkTest) {
-        throw new AppError(StatusCodes.NOT_FOUND, 'Test not found.');
+    if (!checkTest || checkTest.type !== 'MCQ') {
+        throw new AppError(StatusCodes.NOT_FOUND, 'MCQ Test not found.');
     }
 
     //get total score of the test
@@ -123,6 +123,222 @@ const createTestHistory = async (
     });
 
     return data;
+};
+
+const createWrittenTestHistory = async (
+    userInfo: TJWTDecodedUser,
+    payload: any,
+): Promise<any> => {
+    const { course_id, lesson_id, test_id, answers, timeTaken } = payload;
+    // Get student details
+    const studentDetails = await Student.findOne({ user_id: userInfo.userId });
+    if (!studentDetails) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Student does not exist');
+    }
+    //check if the student is already have test history for this course
+    const checkTestHistory = await TestHistory.findOne({
+        test_id,
+        student_id: studentDetails._id,
+    });
+    if (checkTestHistory) {
+        throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            'You have already attempted this test.',
+        );
+    }
+
+    // Check if student is enrolled in the course
+    const checkEnrolled = await EnrolledCourse.findOne({
+        course_id: course_id,
+        student_id: studentDetails._id,
+    });
+    if (!checkEnrolled) {
+        throw new AppError(
+            StatusCodes.NOT_FOUND,
+            'You have not enrolled in this course.',
+        );
+    }
+    //check if the course exists or not
+    const checkCourse = await Course.findById(course_id);
+    if (!checkCourse) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Course not found.');
+    }
+    //check if the lesson exists or not
+    const checkLesson = await Lesson.findById(lesson_id);
+    if (!checkLesson) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Lesson not found.');
+    }
+
+    //check if the test exists or not
+    const checkTest = await Test.findOne({
+        _id: test_id,
+        lesson_id: lesson_id,
+        course_id: course_id,
+    });
+    if (!checkTest || checkTest.type !== 'Written') {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Written Test not found.');
+    }
+
+    //get total score of the test
+    const totalScore = 0;
+
+    //get the score of the test
+    const questions = await Question.find({
+        _id: { $in: checkTest.questionList },
+    });
+
+    if (!questions || questions.length === 0) {
+        throw new AppError(
+            StatusCodes.NOT_FOUND,
+            'No questions found for this test.',
+        );
+    }
+
+    let score: number = 0.0;
+    let wrongScore = 0;
+    let rightScore = 0;
+
+    for (const answer of answers) {
+        const question = questions.find(
+            (q) => q._id.toString() === answer.question_id.toString(),
+        );
+        if (!question) {
+            throw new AppError(StatusCodes.NOT_FOUND, 'Question not found.');
+        }
+    }
+    let isPassed = false;
+
+    const data = await TestHistory.create({
+        course_id,
+        lesson_id,
+        test_id,
+        student_id: studentDetails._id,
+        score: score,
+        totalScore,
+        rightScore,
+        wrongScore,
+        answers,
+        isPassed,
+        timeTaken,
+    });
+
+    return data;
+};
+
+const previewWrittenTestHistory = async (
+    userInfo: TJWTDecodedUser,
+    payload: any,
+): Promise<any> => {
+    const { test_id, test_history_id, answers } = payload;
+
+    // Get teacher details
+    const teacherDetails = await Teacher.findOne({ user_id: userInfo.userId });
+    if (!teacherDetails) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Teacher does not exist');
+    }
+
+    //check if the test exists or not
+    const checkTest = await Test.findById(test_id);
+    if (!checkTest || checkTest.type !== 'Written') {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Written Test not found.');
+    }
+
+    //check the teacher created the course or not
+    const checkCourse = await Course.findById(checkTest.course_id);
+    if (!checkCourse) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Course not found.');
+    }
+
+    if (checkCourse.teacher_id.toString() !== teacherDetails._id.toString()) {
+        throw new AppError(
+            StatusCodes.UNAUTHORIZED,
+            'You have no access to preview this test history',
+        );
+    }
+
+    //check test TestHistory
+    const testHistory = await TestHistory.findById(test_history_id);
+    if (!testHistory) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Test history not found ');
+    }
+    if (testHistory.test_id.toString() !== test_id.toString()) {
+        throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            'Test history is not for the given test',
+        );
+    }
+    if (testHistory.isChecked === true) {
+        throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            'Test history has already been checked by teacher',
+        );
+    }
+
+    //get total score of the test
+    const totalScore = checkTest.questionList.length;
+
+    //get the score of the test
+    const questions = await Question.find({
+        _id: { $in: checkTest.questionList },
+    });
+
+    if (!questions || questions.length === 0) {
+        throw new AppError(
+            StatusCodes.NOT_FOUND,
+            'No questions found for this test.',
+        );
+    }
+
+    let score: number = 0.0;
+    let wrongScore = 0;
+    let rightScore = 0;
+
+    for (const answer of answers) {
+        if (answer.selectedOption === 'null') {
+            continue;
+        }
+
+        const question = questions.find(
+            (q) => q._id.toString() === answer.question_id.toString(),
+        );
+        if (!question) {
+            throw new AppError(StatusCodes.NOT_FOUND, 'Question not found.');
+        }
+        if (answer.mark === 0) {
+            wrongScore += 1;
+        } else {
+            score += answer.mark;
+            rightScore += 1;
+        }
+    }
+    //check if the student has passed the test or not
+    let isPassed = false;
+    if (score >= totalScore * 0.4) {
+        isPassed = true;
+    }
+
+    const updatedTestHistory = await TestHistory.findByIdAndUpdate(
+        test_history_id,
+        {
+            score: score < 0.0 ? 0.0 : score,
+            totalScore,
+            rightScore,
+            wrongScore,
+            answers,
+            isPassed,
+            isChecked: true,
+        },
+        { new: true },
+    );
+
+    if (!updatedTestHistory) {
+        throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            'Failed to update test history',
+        );
+    }
+
+    return updatedTestHistory;
 };
 
 const getTestHistoryByID = async (
@@ -280,5 +496,7 @@ const getTestHistoryByID = async (
 
 export const TestHistoryService = {
     createTestHistory,
+    createWrittenTestHistory,
+    previewWrittenTestHistory,
     getTestHistoryByID,
 };

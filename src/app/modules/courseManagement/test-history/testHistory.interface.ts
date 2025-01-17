@@ -1,6 +1,5 @@
 import { Model, Types } from 'mongoose';
 
-
 export type ITestHistory = {
     course_id: Types.ObjectId;
     lesson_id: Types.ObjectId;
@@ -14,8 +13,10 @@ export type ITestHistory = {
     answers: {
         question_id: Types.ObjectId;
         selectedOption: string;
+        mark?: number;
     }[];
     isPassed: boolean;
+    isChecked: boolean;
     timeTaken: number;
 };
 
