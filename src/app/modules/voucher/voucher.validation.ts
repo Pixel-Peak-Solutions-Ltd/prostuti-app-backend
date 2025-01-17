@@ -4,7 +4,10 @@ import { VoucherDiscountType } from './voucher.constant';
 const createVoucherSchema = z.object({
     body: z
         .object({
-            title: z.string().min(1, 'Title is required'),
+            title: z
+                .string()
+                .min(1, 'Title is required')
+                .regex(/^\S+$/, 'Title should not contain spaces'),
             discountType: z.enum(
                 [...VoucherDiscountType] as [string, ...string[]],
                 {
@@ -22,9 +25,7 @@ const createVoucherSchema = z.object({
                 .string()
                 .datetime({ message: 'Invalid date format' })
                 .min(1, 'End date is required'),
-            student_id: z
-                .string()
-                .optional()
+            student_id: z.string().optional(),
         })
         .strict(),
 });

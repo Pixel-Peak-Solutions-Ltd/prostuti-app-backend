@@ -7,6 +7,7 @@ const VoucherSchema = new Schema<IVoucher, VoucherModel>(
         title: {
             type: String,
             required: [true, 'Title is required'],
+            trim:true
         },
         discountType: {
             type: String,
