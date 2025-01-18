@@ -24,4 +24,10 @@ export type TestHistoryModel = Model<ITestHistory, Record<string, unknown>>;
 
 export type ITestHistoryFilters = {
     searchTerm?: string;
+    course_id?:string,
+    lesson_id?:string,
+    test_id?:string,
+    student_id?:string,
+    isPassed?:string,
+    isChecked?:string,
 };

@@ -6,6 +6,7 @@ import { TJWTDecodedUser } from '../../../interfaces/jwt/jwt.type';
 import catchAsync from '../../../utils/catchAsync';
 import sendSuccessResponse from '../../../utils/sendSuccessResponse';
 import { TestHistoryService } from './testHistory.service';
+import { TestHistoryFilterableFields } from './testHistory.constant';
 
 
 
@@ -41,19 +42,19 @@ const previewWrittenTestHistory = catchAsync(async (req: Request, res: Response)
     });
 });
 
-// const getAllTestHistorys = catchAsync(async (req: Request, res: Response) => {
-//     const filters = pick(req.query, TestHistoryFilterableFields);
-//     const paginationOptions = pick(req.query, paginationFields);
-//     const result = await TestHistoryService.getAllTestHistorys(filters,
-//         paginationOptions,
-//         req.user as TJWTDecodedUser);
+const getAllTestHistories = catchAsync(async (req: Request, res: Response) => {
+    const filters = pick(req.query, TestHistoryFilterableFields);
+    const paginationOptions = pick(req.query, paginationFields);
+    const result = await TestHistoryService.getAllTestHistories(filters,
+        paginationOptions,
+        req.user as TJWTDecodedUser);
 
-//     sendSuccessResponse(res, {
-//         statusCode: StatusCodes.OK,
-//         message: 'TestHistorys are retrieved successfully',
-//         data: result,
-//     });
-// });
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'TestHistorys are retrieved successfully',
+        data: result,
+    });
+});
 
 const getTestHistoryByID = catchAsync(async (req: Request, res: Response) => {
     const result = await TestHistoryService.getTestHistoryByID(req.params.id,req.user as TJWTDecodedUser,);
@@ -86,5 +87,5 @@ const getTestHistoryByID = catchAsync(async (req: Request, res: Response) => {
 // });
 
 export const TestHistoryController = {
-    createTestHistory,createWrittenTestHistory,previewWrittenTestHistory,getTestHistoryByID
+    createTestHistory,createWrittenTestHistory,previewWrittenTestHistory,getTestHistoryByID,getAllTestHistories
 };

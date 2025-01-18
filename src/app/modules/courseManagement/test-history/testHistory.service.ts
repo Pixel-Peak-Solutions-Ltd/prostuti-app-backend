@@ -9,6 +9,11 @@ import { Course } from '../course/course.model';
 import { Lesson } from '../lesson/lesson.model';
 import { Test } from '../test/test.model';
 import { TestHistory } from './testHistory.model';
+import { ITestHistoryFilters } from './testHistory.interface';
+import { IPaginationOptions } from '../../../interfaces/common';
+import { calculatePagination } from '../../../helpers/pagenationHelper';
+import { TestHistorySearchableFields } from './testHistory.constant';
+import { SortOrder } from 'mongoose';
 
 const createTestHistory = async (
     userInfo: TJWTDecodedUser,
@@ -371,97 +376,72 @@ const getTestHistoryByID = async (
     return data;
 };
 
-// const getAllTestHistorys = async (
-//     filters: ITestHistoryFilters,
-//     paginationOptions: IPaginationOptions,
-//     userInfo: TJWTDecodedUser,
-// ): Promise<any> => {
-//     const { searchTerm, ownTestHistory, date, ...filtersData } = filters;
-//     const { page, limit, skip, sortBy, sortOrder } =
-//         calculatePagination(paginationOptions);
+const getAllTestHistories = async (
+    filters: ITestHistoryFilters,
+    paginationOptions: IPaginationOptions,
+    userInfo: TJWTDecodedUser,
+): Promise<any> => {
+    const { searchTerm,...filtersData } = filters;
+    const { page, limit, skip, sortBy, sortOrder } =
+        calculatePagination(paginationOptions);
 
-//     const andConditions = [];
-//     if (searchTerm) {
-//         andConditions.push({
-//             $or: TestHistorySearchableFields.map((field) => ({
-//                 [field]: {
-//                     $regex: searchTerm,
-//                     $options: 'i',
-//                 },
-//             })),
-//         });
-//     }
-//     //only returns the TestHistory that is created by the requested user
-//     if (ownTestHistory === 'true') {
-//         andConditions.push({
-//             createdBy: new mongoose.Types.ObjectId(userInfo.userId),
-//         });
-//     }
+    const andConditions = [];
+    if (searchTerm) {
+        andConditions.push({
+            $or: TestHistorySearchableFields.map((field) => ({
+                [field]: {
+                    $regex: searchTerm,
+                    $options: 'i',
+                },
+            })),
+        });
+    }
+    
+    
+    // filtering data
+    if (Object.keys(filtersData).length) {
+        andConditions.push({
+            $and: Object.entries(filtersData).map(([field, value]) => ({
+                [field]: value,
+            })),
+        });
+    }
 
-//     //only return the TestHistory those will be published that date
-//     if (date) {
-//         const checkDate = new Date(date);
-//         if (isNaN(checkDate.getTime())) {
-//             throw new AppError(
-//                 StatusCodes.NOT_ACCEPTABLE,
-//                 'Invalid date format!!!',
-//             );
-//         }
-//         checkDate.setHours(0, 0, 0, 0);
+    const sortConditions: { [key: string]: SortOrder } = {};
 
-//         andConditions.push({
-//             publishDate: {
-//                 $gte: checkDate,
-//                 $lt: new Date(
-//                     checkDate.getFullYear(),
-//                     checkDate.getMonth(),
-//                     checkDate.getDate() + 1,
-//                 ),
-//             },
-//         });
-//     }
-//     // filtering data
-//     if (Object.keys(filtersData).length) {
-//         andConditions.push({
-//             $and: Object.entries(filtersData).map(([field, value]) => ({
-//                 [field]: value,
-//             })),
-//         });
-//     }
+    if (sortBy && sortOrder) {
+        sortConditions[sortBy] = sortOrder;
+    }
 
-//     const sortConditions: { [key: string]: SortOrder } = {};
+    const whereConditions =
+        andConditions.length > 0 ? { $and: andConditions } : {};
 
-//     if (sortBy && sortOrder) {
-//         sortConditions[sortBy] = sortOrder;
-//     }
+    const count = await TestHistory.countDocuments(whereConditions);
+    const result = await TestHistory.find(whereConditions)
+        .sort(sortConditions)
+        .skip(skip)
+        .limit(limit)
+        .populate({
+            path: 'course_id',
+        })
+        .populate({
+            path: 'lesson_id',
+        })
+        .populate({
+            path: 'test_id',
+        }).populate({
+            path:"student_id"
+        })
 
-//     const whereConditions =
-//         andConditions.length > 0 ? { $and: andConditions } : {};
-
-//     const count = await TestHistory.countDocuments(whereConditions);
-//     const result = await TestHistory.find(whereConditions)
-//         .sort(sortConditions)
-//         .skip(skip)
-//         .limit(limit)
-//         .populate({
-//             path: 'course_id',
-//         })
-//         .populate({
-//             path: 'lesson_id',
-//         })
-//         .populate({
-//             path: 'questionList',
-//         });
-
-//     return {
-//         meta: {
-//             page,
-//             limit: limit === 0 ? count : limit,
-//             count,
-//         },
-//         data: result,
-//     };
-// };
+    return {
+        meta: {
+            page,
+            limit: limit === 0 ? count : limit,
+            count,
+        },
+        data: result,
+    };
+};
 
 // const updateTestHistory = async () => {
 //     return 'updateTestHistory service';
@@ -499,5 +479,5 @@ export const TestHistoryService = {
     createTestHistory,
     createWrittenTestHistory,
     previewWrittenTestHistory,
-    getTestHistoryByID,
+    getTestHistoryByID,getAllTestHistories
 };
