@@ -18,7 +18,7 @@ router
     )
     .get('/:id', auth(), TestController.getTestByID)
     .delete('/:id', auth(), TestController.deleteTestByID)
-    .patch('/:id', TestController.updateTest)
+    .patch('/:id',auth("teacher"),validateRequest(TestValidation.updateTestSchema), TestController.updateTest)
     .put('/markAsComplete/:testId', auth(), TestController.testCompletion);
 
 export const TestRoute = router;

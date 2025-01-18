@@ -18,7 +18,7 @@ const createQuestion = async (
         throw new AppError(StatusCodes.BAD_REQUEST, 'No questions provided');
     }
     const categoryId = payload[0].category_id;
-    const category = await Category.findById(categoryId)
+    const category = await Category.findById(categoryId);
     if (!category) {
         throw new AppError(
             StatusCodes.NOT_FOUND,
@@ -78,7 +78,6 @@ const getAllQuestions = async (
     if (Object.keys(filtersData).length) {
         andConditions.push({
             $and: Object.entries(filtersData).map(([field, value]) => {
-                
                 if (field === 'type') {
                     return { [field]: value };
                 } else if (field === 'categoryType') {
@@ -146,8 +145,40 @@ const getQuestionByID = async (id: string): Promise<any> => {
     return data;
 };
 
-const updateQuestion = async () => {
-    return 'updateQuestion service';
+const updateQuestion = async (
+    userInfo: TJWTDecodedUser,
+    id: string,
+    payload:Partial<IQuestion>
+): Promise<any> => {
+    const checkUser = await User.findById(userInfo.userId);
+    if (!checkUser) {
+        throw new AppError(StatusCodes.BAD_REQUEST, 'Something went wrong');
+    }
+
+    const checkQuestion = await Question.findById(id);
+    if (!checkQuestion) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Question not found.');
+    }
+
+    if (checkUser._id.toString() !== checkQuestion.createdBy.toString()) {
+        throw new AppError(StatusCodes.UNAUTHORIZED, 'You can not update this question');
+    }
+     // Find and update the question
+     const updatedQuestion = await Question.findByIdAndUpdate(
+        id,
+        {
+            ...(payload.title && { title: payload.title }),
+            ...(payload.description && { description: payload.description }),
+            ...(payload.options && { options: payload.options }),
+            ...(payload.correctOption && { correctOption: payload.correctOption }),
+        },
+        { new: true, runValidators: true },
+    );
+
+    if (!updatedQuestion) {
+        throw new AppError(StatusCodes.BAD_REQUEST, 'Failed to update question');
+    }
+    return updatedQuestion
 };
 
 const deleteQuestionByID = async (

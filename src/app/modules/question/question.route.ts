@@ -13,6 +13,6 @@ router
     .get('/',auth(), QuestionController.getAllQuestions)
     .get('/:id',auth(), QuestionController.getQuestionByID)
     .delete('/:id',auth("teacher"), QuestionController.deleteQuestionByID)
-    .patch('/:id', QuestionController.updateQuestion);
+    .patch('/:id',auth("teacher"),validateRequest(QuestionValidation.updateQuestion), QuestionController.updateQuestion);
 
 export const QuestionRoute = router;
