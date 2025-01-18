@@ -89,4 +89,27 @@ const createTestSchema = z.object({
             .min(1, 'At least one question is required'),
     }),
 });
-export const TestValidation = { createTestSchema };
+
+const updateTestSchema = z.object({
+    body: z.object({
+      name: z.string().min(1, 'Test name is required').optional(),
+      time: z
+        .number()
+        .int()
+        .positive('Time must be a positive integer')
+        .optional(),
+      publishDate: z
+        .string()
+        .datetime({ message: 'Invalid date format' })
+        .optional(),
+      questionList: z
+        .array(questionListItemSchema)
+        .optional(),
+      removeQuestions: z
+        .array(z.string().refine((id) => Types.ObjectId.isValid(id), {
+          message: 'Invalid question ID',
+        }))
+        .optional(),
+    }),
+  });
+export const TestValidation = { createTestSchema ,updateTestSchema};

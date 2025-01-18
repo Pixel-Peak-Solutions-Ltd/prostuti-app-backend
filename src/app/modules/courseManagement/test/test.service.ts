@@ -17,8 +17,6 @@ const createTest = async (
     userInfo: TJWTDecodedUser,
     payload: any,
 ): Promise<any> => {
-
-
     const { questionList } = payload;
 
     // // Check if the course exist
@@ -56,13 +54,17 @@ const createTest = async (
     for (const item of questionList) {
         if (item.questionId) {
             // Validate existing question ID
-            const existingQuestion = await Question.findById(item.questionId).select('_id');
+            const existingQuestion = await Question.findById(
+                item.questionId,
+            ).select('_id');
             if (!existingQuestion) {
-                throw new AppError(StatusCodes.NOT_FOUND, `Question ID ${item.questionId} does not exist.`);
+                throw new AppError(
+                    StatusCodes.NOT_FOUND,
+                    `Question ID ${item.questionId} does not exist.`,
+                );
             }
             allQuestionIds.push(existingQuestion._id.toString());
         } else if (item.newQuestion) {
-
             const questionToSave = new Question({
                 ...item.newQuestion,
                 category_id: checkCourse.category_id,
@@ -72,7 +74,6 @@ const createTest = async (
             allQuestionIds.push(savedQuestion._id.toString());
         }
     }
-
 
     //create new test
     const newTest = new Test({
@@ -201,9 +202,106 @@ const getTestByID = async (id: string): Promise<any> => {
     return data;
 };
 
-const updateTest = async () => {
-    return 'updateTest service';
+const updateTest = async (
+    userInfo: TJWTDecodedUser,
+    id: string, // test ID
+    payload: any
+): Promise<any> => {
+    const checkUser = await User.findById(userInfo.userId);
+    if (!checkUser) {
+        throw new AppError(StatusCodes.BAD_REQUEST, 'Something went wrong');
+    }
+
+    const checkTest = await Test.findById(id);
+    if (!checkTest) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Test not found.');
+    }
+
+    if (checkUser._id.toString() !== checkTest.createdBy.toString()) {
+        throw new AppError(StatusCodes.UNAUTHORIZED, 'You cannot update this test');
+    }
+
+    // Fetch course to get category_id for new questions
+    const course = await Course.findById(checkTest.course_id);
+    if (!course) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Course not found');
+    }
+
+    // Prepare the fields to be updated
+    const updateFields: any = {};
+
+    // Update test name if provided
+    if (payload.name) {
+        updateFields.name = payload.name;
+    }
+
+    // Update test time if provided
+    if (payload.time) {
+        updateFields.time = payload.time;
+    }
+
+    // Update test publishDate if provided
+    if (payload.publishDate) {
+        updateFields.publishDate = new Date(payload.publishDate);
+    }
+
+    if (payload.questionList || payload.removeQuestions) {
+        // Initialize the updated question list as the current test's question list
+        let updatedQuestionList = [...checkTest.questionList];
+
+        // Handle new questions to add to the list
+        if (payload.questionList) {
+            for (const item of payload.questionList) {
+                if (item.questionId) {
+                    // Validate existing question ID
+                    const existingQuestion = await Question.findById(item.questionId);
+                    if (!existingQuestion) {
+                        throw new AppError(
+                            StatusCodes.NOT_FOUND,
+                            `Question ID ${item.questionId} does not exist.`
+                        );
+                    }
+                    // Add existing question ID to the list (correcting to ObjectId type)
+                    updatedQuestionList.push(new Types.ObjectId(existingQuestion._id.toString()));
+                } else if (item.newQuestion) {
+                    // Create new question with category_id from the course
+                    const newQuestion = new Question({
+                        ...item.newQuestion,
+                        category_id: course.category_id, // Use category_id from the course
+                        createdBy: new Types.ObjectId(userInfo.userId),
+                    });
+                    const savedQuestion = await newQuestion.save();
+                    // Add new question ID to the list
+                    updatedQuestionList.push(new Types.ObjectId(savedQuestion._id.toString()));
+                }
+            }
+        }
+
+        // Handle removing questions if provided
+        if (payload.removeQuestions && payload.removeQuestions.length > 0) {
+            // Remove questions from the test's current question list
+            updatedQuestionList = updatedQuestionList.filter(
+                (id: any) => !payload.removeQuestions.includes(id)
+            );
+        }
+
+        // Add updated question list to the fields to be updated
+        updateFields.questionList = updatedQuestionList;
+    }
+
+    // Update the test
+    const updatedTest = await Test.findByIdAndUpdate(id, updateFields, {
+        new: true,
+        runValidators: true,
+    });
+
+    if (!updatedTest) {
+        throw new AppError(StatusCodes.BAD_REQUEST, 'Failed to update test');
+    }
+
+    return updatedTest;
 };
+
 
 //mark Test as completed
 
@@ -212,16 +310,16 @@ const markTestAsCompleted = async (testId: string) => {
     const existingTest = await Test.findById(testId);
     if (!existingTest) {
         throw new AppError(StatusCodes.NOT_FOUND, 'Test not found');
-    };
+    }
 
     const markAsCompeted = await Test.findByIdAndUpdate(
         testId,
         { isCompleted: true },
         { new: true },
-    )
+    );
 
     return markAsCompeted;
-}
+};
 
 const deleteTestByID = async (
     id: string,
@@ -257,5 +355,5 @@ export const TestService = {
     getTestByID,
     updateTest,
     deleteTestByID,
-    markTestAsCompleted
+    markTestAsCompleted,
 };
