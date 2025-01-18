@@ -45,7 +45,7 @@ const getQuestionByID = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateQuestion = catchAsync(async (req: Request, res: Response) => {
-    const result = await QuestionService.updateQuestion();
+    const result = await QuestionService.updateQuestion(req.user,req.params.id,req.body);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
