@@ -1,5 +1,6 @@
 import { Model, Types } from "mongoose";
 import { QuestionType } from "./question.constant";
+import { TImage } from "../../interfaces/common";
 
 
 export type IQuestion={
@@ -7,6 +8,8 @@ export type IQuestion={
     category_id:Types.ObjectId,
     title:string,
     description:string,
+    hasImage:boolean,
+    image?:TImage
     options?:string[],
     correctOption?:string,
     createdBy:Types.ObjectId,
@@ -30,5 +33,6 @@ export type IQuestionFilters = {
   unit?: string;
   type?:string,
   ownQuestion?: string;
+  hasImage?:string
 
 };

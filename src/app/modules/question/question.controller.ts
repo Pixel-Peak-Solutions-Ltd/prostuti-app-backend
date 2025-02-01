@@ -11,7 +11,7 @@ import { TJWTDecodedUser } from '../../interfaces/jwt/jwt.type';
 
 
 const createQuestion = catchAsync(async (req: Request, res: Response) => {
-    const result = await QuestionService.createQuestion(req.user,req.body);
+    const result = await QuestionService.createQuestion(req.user,req.body,req.files);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,

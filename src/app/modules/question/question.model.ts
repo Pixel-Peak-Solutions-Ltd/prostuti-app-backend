@@ -1,6 +1,7 @@
 import { Schema, model } from 'mongoose';
 import { QuestionTypes } from './question.constant';
 import { IQuestion, QuestionModel } from './question.interface';
+import { imageSchema } from '../../schema';
 
 const QuestionSchema = new Schema<IQuestion, QuestionModel>(
     {
@@ -21,6 +22,14 @@ const QuestionSchema = new Schema<IQuestion, QuestionModel>(
         description: {
             type: String,
             required: [true, 'Question description is required'],
+        },
+        hasImage: {
+            type: Boolean,
+            default: false,
+        },
+        image:{
+            required: false,
+            type: imageSchema,
         },
         options: {
             type: [String],
