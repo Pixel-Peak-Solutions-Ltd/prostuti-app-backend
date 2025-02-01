@@ -15,7 +15,8 @@ export const QuestionFilterableFields = [
     'universityName',
     'unit',
     'type',
-    "ownQuestion"
+    "ownQuestion",
+    "hasImage"
 ];
 
 //searchTerm

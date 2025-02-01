@@ -12,66 +12,97 @@ import { Test } from './test.model';
 import { IQuestion } from '../../question/question.interface';
 import { Course } from '../course/course.model';
 import { Lesson } from '../lesson/lesson.model';
+import { uploadToB2 } from '../../../utils/backBlaze';
+import config from '../../../config';
+import { ICourse } from '../course/course.interface';
 
 const createTest = async (
     userInfo: TJWTDecodedUser,
     payload: any,
+    files?: Express.Multer.File[] | undefined,
 ): Promise<any> => {
-    const { questionList } = payload;
+    const [course, lesson] = await Promise.all([
+        Course.findById(payload.course_id).lean(),
+        Lesson.findOne({
+            _id: payload.lesson_id,
+            course_id: payload.course_id,
+        }).lean(),
+    ]);
 
-    // // Check if the course exist
-    const checkCourse = await Course.findById(payload.course_id);
-    if (!checkCourse) {
+    if (!course) {
         throw new AppError(
             StatusCodes.NOT_FOUND,
             'Course does not exist with this ID',
         );
     }
 
-    // Check if the course exist
-    const isLessonExist = await Lesson.findById(payload.lesson_id);
-    if (!isLessonExist) {
+    if (!lesson) {
         throw new AppError(
             StatusCodes.NOT_FOUND,
-            'Lesson does not exist with this ID',
+            'Lesson does not exist or does not belong to the course',
         );
     }
 
-    // Check if the lesson belongs to of tah course
-    const isLessonBelongsToCourse = await Lesson.findOne({
-        _id: payload.lesson_id,
-        course_id: payload.course_id,
-    });
-    if (!isLessonBelongsToCourse) {
-        throw new AppError(
-            StatusCodes.BAD_REQUEST,
-            'The lesson does not belong to the course',
+    // Process files if they exist
+    const fileMap: Record<string, any> = {};
+    if (files?.length) {
+        const uploadedFiles = await Promise.all(
+            files.map((file) =>
+                uploadToB2(
+                    file,
+                    config.backblaze_all_users_bucket_name,
+                    config.backblaze_all_users_bucket_id,
+                    'questionImages',
+                ),
+            ),
         );
+
+        files.forEach((file, index) => {
+            fileMap[file.fieldname] = uploadedFiles[index];
+        });
     }
 
-    const allQuestionIds: string[] = [];
+    // Process question list and collect all question IDs
+    const questionIds: string[] = [];
+    for (let i = 0; i < payload.questionList.length; i++) {
+        const item = payload.questionList[i];
 
-    for (const item of questionList) {
         if (item.questionId) {
-            // Validate existing question ID
-            const existingQuestion = await Question.findById(
-                item.questionId,
-            ).select('_id');
+            const existingQuestion = await Question.findById(item.questionId)
+                .select('_id')
+                .lean();
+
             if (!existingQuestion) {
                 throw new AppError(
                     StatusCodes.NOT_FOUND,
-                    `Question ID ${item.questionId} does not exist.`,
+                    `Question ID ${item.questionId} does not exist`,
                 );
             }
-            allQuestionIds.push(existingQuestion._id.toString());
+
+            questionIds.push(existingQuestion._id.toString());
         } else if (item.newQuestion) {
-            const questionToSave = new Question({
+            const questionData: any = {
                 ...item.newQuestion,
-                category_id: checkCourse.category_id,
+                category_id: course.category_id,
                 createdBy: new Types.ObjectId(userInfo.userId),
-            });
-            const savedQuestion = await questionToSave.save();
-            allQuestionIds.push(savedQuestion._id.toString());
+            };
+
+            // Add image if exists
+            const uploadedFile = fileMap[`image${i}`];
+            if (uploadedFile) {
+                questionData.hasImage = true;
+                questionData.image = {
+                    diskType: uploadedFile.diskType,
+                    path: uploadedFile.path,
+                    originalName: uploadedFile.originalName,
+                    modifiedName: uploadedFile.modifiedName,
+                    fileId: uploadedFile.fileId,
+                };
+            }
+
+            // Save new question
+            const savedQuestion = await Question.create(questionData);
+            questionIds.push(savedQuestion._id.toString());
         }
     }
 
@@ -83,7 +114,7 @@ const createTest = async (
         type: payload.type,
         time: payload.time,
         publishDate: payload.publishDate && new Date(payload.publishDate),
-        questionList: allQuestionIds,
+        questionList: questionIds,
         createdBy: userInfo.userId,
     });
 
@@ -205,95 +236,146 @@ const getTestByID = async (id: string): Promise<any> => {
 const updateTest = async (
     userInfo: TJWTDecodedUser,
     id: string, // test ID
-    payload: any
+    payload: any,
+    files: Express.Multer.File[] | undefined,
 ): Promise<any> => {
-    const checkUser = await User.findById(userInfo.userId);
+    const [checkUser, checkTest] = await Promise.all([
+        User.findById(userInfo.userId).lean(),
+        Test.findById(id).lean(),
+    ]);
+
     if (!checkUser) {
-        throw new AppError(StatusCodes.BAD_REQUEST, 'Something went wrong');
+        throw new AppError(StatusCodes.BAD_REQUEST, 'User not found');
     }
 
-    const checkTest = await Test.findById(id);
     if (!checkTest) {
-        throw new AppError(StatusCodes.NOT_FOUND, 'Test not found.');
+        throw new AppError(StatusCodes.NOT_FOUND, 'Test not found');
     }
 
     if (checkUser._id.toString() !== checkTest.createdBy.toString()) {
-        throw new AppError(StatusCodes.UNAUTHORIZED, 'You cannot update this test');
+        throw new AppError(
+            StatusCodes.UNAUTHORIZED,
+            'You cannot update this test',
+        );
     }
 
-    // Fetch course to get category_id for new questions
-    const course = await Course.findById(checkTest.course_id);
-    if (!course) {
-        throw new AppError(StatusCodes.NOT_FOUND, 'Course not found');
+    // Fetch course only if we need to add new questions.we need category_id from course
+    let course: ICourse | null;
+    if (payload.questionList?.some((item: any) => item.newQuestion)) {
+        course = await Course.findById(checkTest.course_id).lean();
+        if (!course) {
+            throw new AppError(StatusCodes.NOT_FOUND, 'Course not found');
+        }
     }
 
-    // Prepare the fields to be updated
-    const updateFields: any = {};
+    // Handle file uploads
+    const uploadedFiles = files?.length
+        ? await Promise.all(
+              files.map((file) =>
+                  uploadToB2(
+                      file,
+                      config.backblaze_all_users_bucket_name,
+                      config.backblaze_all_users_bucket_id,
+                      'questionImages',
+                  ),
+              ),
+          )
+        : [];
 
-    // Update test name if provided
-    if (payload.name) {
-        updateFields.name = payload.name;
-    }
+    // Create file mapping
+    const uploadedFileMap = uploadedFiles.reduce(
+        (acc, file, index) => {
+            if (files) {
+                acc[`image${index}`] = file;
+            }
+            return acc;
+        },
+        {} as Record<string, any>,
+    );
 
-    // Update test time if provided
-    if (payload.time) {
-        updateFields.time = payload.time;
-    }
+    // Prepare update fields
+    const updateFields: Record<string, any> = {
+        ...(payload.name && { name: payload.name }),
+        ...(payload.time && { time: payload.time }),
+        ...(payload.publishDate && {
+            publishDate: new Date(payload.publishDate),
+        }),
+        // ...(uploadedFile && {
+        //     image: {
+        //         diskType: uploadedFile.diskType,
+        //         path: uploadedFile.path,
+        //         originalName: uploadedFile.originalName,
+        //         modifiedName: uploadedFile.modifiedName,
+        //         fileId: uploadedFile.fileId
+        //     }
+        // })
+    };
 
-    // Update test publishDate if provided
-    if (payload.publishDate) {
-        updateFields.publishDate = new Date(payload.publishDate);
-    }
-
+    // Handle question list updates
     if (payload.questionList || payload.removeQuestions) {
-        // Initialize the updated question list as the current test's question list
         let updatedQuestionList = [...checkTest.questionList];
 
-        // Handle new questions to add to the list
-        if (payload.questionList) {
-            for (const item of payload.questionList) {
-                if (item.questionId) {
-                    // Validate existing question ID
-                    const existingQuestion = await Question.findById(item.questionId);
-                    if (!existingQuestion) {
-                        throw new AppError(
-                            StatusCodes.NOT_FOUND,
-                            `Question ID ${item.questionId} does not exist.`
-                        );
+        // Process new questions
+        if (payload.questionList?.length) {
+            const newQuestionIds = await Promise.all(
+                payload.questionList.map(async (item:any,index:any) => {
+                    if (item.questionId) {
+                        const existingQuestion = await Question.findById(
+                            item.questionId,
+                        ).lean();
+                        if (!existingQuestion) {
+                            throw new AppError(
+                                StatusCodes.NOT_FOUND,
+                                `Question ID ${item.questionId} does not exist`,
+                            );
+                        }
+                        return new Types.ObjectId(existingQuestion._id);
+                    } else if (item.newQuestion && course) {
+                        const questionData: any = {
+                            ...item.newQuestion,
+                            category_id: course.category_id,
+                            createdBy: new Types.ObjectId(userInfo.userId)
+                        };
+
+                        // Add image if exists for this question
+                        const uploadedFile = uploadedFileMap[`image${index}`];
+                        if (uploadedFile) {
+                            questionData.hasImage = true;
+                            questionData.image = {
+                                diskType: uploadedFile.diskType,
+                                path: uploadedFile.path,
+                                originalName: uploadedFile.originalName,
+                                modifiedName: uploadedFile.modifiedName,
+                                fileId: uploadedFile.fileId
+                            };
+                        }
+                        const savedQuestion = await Question.create(questionData);
+                        return new Types.ObjectId(savedQuestion._id);
                     }
-                    // Add existing question ID to the list (correcting to ObjectId type)
-                    updatedQuestionList.push(new Types.ObjectId(existingQuestion._id.toString()));
-                } else if (item.newQuestion) {
-                    // Create new question with category_id from the course
-                    const newQuestion = new Question({
-                        ...item.newQuestion,
-                        category_id: course.category_id, // Use category_id from the course
-                        createdBy: new Types.ObjectId(userInfo.userId),
-                    });
-                    const savedQuestion = await newQuestion.save();
-                    // Add new question ID to the list
-                    updatedQuestionList.push(new Types.ObjectId(savedQuestion._id.toString()));
-                }
-            }
+                }),
+            );
+
+            updatedQuestionList = [
+                ...updatedQuestionList,
+                ...newQuestionIds.filter(Boolean),
+            ];
         }
 
-        // Handle removing questions if provided
-        if (payload.removeQuestions && payload.removeQuestions.length > 0) {
-            // Remove questions from the test's current question list
+        // Remove questions if specified
+        if (payload.removeQuestions?.length) {
             updatedQuestionList = updatedQuestionList.filter(
-                (id: any) => !payload.removeQuestions.includes(id)
+                (id) => !payload.removeQuestions?.includes(id.toString()),
             );
         }
 
-        // Add updated question list to the fields to be updated
         updateFields.questionList = updatedQuestionList;
     }
 
-    // Update the test
+    // Update test
     const updatedTest = await Test.findByIdAndUpdate(id, updateFields, {
         new: true,
         runValidators: true,
-    });
+    }).lean();
 
     if (!updatedTest) {
         throw new AppError(StatusCodes.BAD_REQUEST, 'Failed to update test');
@@ -301,7 +383,6 @@ const updateTest = async (
 
     return updatedTest;
 };
-
 
 //mark Test as completed
 

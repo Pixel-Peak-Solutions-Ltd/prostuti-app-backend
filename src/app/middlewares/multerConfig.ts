@@ -1,5 +1,6 @@
 import multer from 'multer';
 import { Request, Express } from 'express';
+import { any } from 'zod';
 
 // Storage configuration
 const storage = multer.diskStorage({
@@ -63,4 +64,5 @@ export const upload = {
     single: (fieldName: string) => uploadMiddleware.single(fieldName),
     multiple: (fieldName: string, maxCount: number = 10) =>
         uploadMiddleware.array(fieldName, maxCount),
+    any: () => uploadMiddleware.any(),
 };

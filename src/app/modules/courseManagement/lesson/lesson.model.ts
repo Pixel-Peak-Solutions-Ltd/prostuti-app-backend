@@ -7,11 +7,11 @@ const lessonSchema = new Schema<ILesson>(
         number: {
             type: String,
             required: true,
-            validate: {
-                validator: (value) => /^Lesson \d+$/.test(value),
-                message:
-                    'Lesson number must be in the format "Lesson 1", "Lesson 2", etc.',
-            },
+            // validate: {
+            //     validator: (value) => /^Lesson \d+$/.test(value),
+            //     message:
+            //         'Lesson number must be in the format "Lesson 1", "Lesson 2", etc.',
+            // },
         },
         name: {
             type: String,
