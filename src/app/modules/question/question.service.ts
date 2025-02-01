@@ -199,6 +199,7 @@ const updateQuestion = async (
     userInfo: TJWTDecodedUser,
     id: string,
     payload: Partial<IQuestion>,
+    file: Express.Multer.File,
 ): Promise<any> => {
     const checkUser = await User.findById(userInfo.userId);
     if (!checkUser) {
@@ -216,6 +217,16 @@ const updateQuestion = async (
             'You can not update this question',
         );
     }
+    // Handle file upload if provided
+    let uploadedFile;
+    if (file) {
+        uploadedFile = await uploadToB2(
+            file,
+            config.backblaze_all_users_bucket_name,
+            config.backblaze_all_users_bucket_id,
+            'questionImages',
+        );
+    }
     // Find and update the question
     const updatedQuestion = await Question.findByIdAndUpdate(
         id,
@@ -225,6 +236,16 @@ const updateQuestion = async (
             ...(payload.options && { options: payload.options }),
             ...(payload.correctOption && {
                 correctOption: payload.correctOption,
+                ...(uploadedFile && {
+                    hasImage: true,
+                    image: {
+                        diskType: uploadedFile.diskType,
+                        path: uploadedFile.path,
+                        originalName: uploadedFile.originalName,
+                        modifiedName: uploadedFile.modifiedName,
+                        fileId: uploadedFile.fileId,
+                    },
+                }),
             }),
         },
         { new: true, runValidators: true },

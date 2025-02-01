@@ -25,7 +25,7 @@ router
     .patch(
         '/:id',
         auth('teacher'),
-        upload.any(),
+        upload.single("image"),
         (req: Request, res: Response, next: NextFunction) => {
             req.body = JSON.parse(req.body.data);
             next();
