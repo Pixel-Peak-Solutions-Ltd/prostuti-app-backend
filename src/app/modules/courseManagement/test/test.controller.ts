@@ -44,7 +44,7 @@ const getTestByID = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateTest = catchAsync(async (req: Request, res: Response) => {
-    const result = await TestService.updateTest(req.user,req.params.id,req.body);
+    const result = await TestService.updateTest(req.user,req.params.id,req.body,req.files as Express.Multer.File[]);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,

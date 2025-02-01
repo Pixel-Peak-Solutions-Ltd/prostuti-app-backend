@@ -27,6 +27,11 @@ router
     .patch(
         '/:id',
         auth('teacher'),
+        upload.any(),
+        (req: Request, res: Response, next: NextFunction) => {
+            req.body = JSON.parse(req.body.data);
+            next();
+        },
         validateRequest(TestValidation.updateTestSchema),
         TestController.updateTest,
     )
