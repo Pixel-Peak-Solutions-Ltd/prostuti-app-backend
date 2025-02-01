@@ -10,7 +10,7 @@ import { TestService } from './test.service';
 
 
 const createTest = catchAsync(async (req: Request, res: Response) => {
-    const result = await TestService.createTest(req.user as TJWTDecodedUser, req.body);
+    const result = await TestService.createTest(req.user as TJWTDecodedUser, req.body,req.files as  Express.Multer.File[]);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,

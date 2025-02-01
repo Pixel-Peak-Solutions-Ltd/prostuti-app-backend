@@ -12,66 +12,97 @@ import { Test } from './test.model';
 import { IQuestion } from '../../question/question.interface';
 import { Course } from '../course/course.model';
 import { Lesson } from '../lesson/lesson.model';
+import { uploadToB2 } from '../../../utils/backBlaze';
+import config from '../../../config';
 
 const createTest = async (
     userInfo: TJWTDecodedUser,
     payload: any,
+    files?: Express.Multer.File[] | undefined,
 ): Promise<any> => {
-    const { questionList } = payload;
 
-    // // Check if the course exist
-    const checkCourse = await Course.findById(payload.course_id);
-    if (!checkCourse) {
+    const [course, lesson] = await Promise.all([
+        Course.findById(payload.course_id).lean(),
+        Lesson.findOne({
+            _id: payload.lesson_id,
+            course_id: payload.course_id,
+        }).lean(),
+    ]);
+
+    if (!course) {
         throw new AppError(
             StatusCodes.NOT_FOUND,
             'Course does not exist with this ID',
         );
     }
 
-    // Check if the course exist
-    const isLessonExist = await Lesson.findById(payload.lesson_id);
-    if (!isLessonExist) {
+    if (!lesson) {
         throw new AppError(
             StatusCodes.NOT_FOUND,
-            'Lesson does not exist with this ID',
+            'Lesson does not exist or does not belong to the course',
         );
     }
 
-    // Check if the lesson belongs to of tah course
-    const isLessonBelongsToCourse = await Lesson.findOne({
-        _id: payload.lesson_id,
-        course_id: payload.course_id,
-    });
-    if (!isLessonBelongsToCourse) {
-        throw new AppError(
-            StatusCodes.BAD_REQUEST,
-            'The lesson does not belong to the course',
+    // Process files if they exist
+    const fileMap: Record<string, any> = {};
+    if (files?.length) {
+        const uploadedFiles = await Promise.all(
+            files.map((file) =>
+                uploadToB2(
+                    file,
+                    config.backblaze_all_users_bucket_name,
+                    config.backblaze_all_users_bucket_id,
+                    'questionImages',
+                ),
+            ),
         );
+
+        files.forEach((file, index) => {
+            fileMap[file.fieldname] = uploadedFiles[index];
+        });
     }
 
-    const allQuestionIds: string[] = [];
+    // Process question list and collect all question IDs
+    const questionIds: string[] = [];
+    for (let i = 0; i < payload.questionList.length; i++) {
+        const item = payload.questionList[i];
 
-    for (const item of questionList) {
         if (item.questionId) {
-            // Validate existing question ID
-            const existingQuestion = await Question.findById(
-                item.questionId,
-            ).select('_id');
+            const existingQuestion = await Question.findById(item.questionId)
+                .select('_id')
+                .lean();
+
             if (!existingQuestion) {
                 throw new AppError(
                     StatusCodes.NOT_FOUND,
-                    `Question ID ${item.questionId} does not exist.`,
+                    `Question ID ${item.questionId} does not exist`,
                 );
             }
-            allQuestionIds.push(existingQuestion._id.toString());
+
+            questionIds.push(existingQuestion._id.toString());
         } else if (item.newQuestion) {
-            const questionToSave = new Question({
+            const questionData: any = {
                 ...item.newQuestion,
-                category_id: checkCourse.category_id,
+                category_id: course.category_id,
                 createdBy: new Types.ObjectId(userInfo.userId),
-            });
-            const savedQuestion = await questionToSave.save();
-            allQuestionIds.push(savedQuestion._id.toString());
+            };
+
+            // Add image if exists
+            const uploadedFile = fileMap[`image${i}`];
+            if (uploadedFile) {
+                questionData.hasImage = true;
+                questionData.image = {
+                    diskType: uploadedFile.diskType,
+                    path: uploadedFile.path,
+                    originalName: uploadedFile.originalName,
+                    modifiedName: uploadedFile.modifiedName,
+                    fileId: uploadedFile.fileId,
+                };
+            }
+
+            // Save new question
+            const savedQuestion = await Question.create(questionData);
+            questionIds.push(savedQuestion._id.toString());
         }
     }
 
@@ -83,7 +114,7 @@ const createTest = async (
         type: payload.type,
         time: payload.time,
         publishDate: payload.publishDate && new Date(payload.publishDate),
-        questionList: allQuestionIds,
+        questionList: questionIds,
         createdBy: userInfo.userId,
     });
 
@@ -205,7 +236,7 @@ const getTestByID = async (id: string): Promise<any> => {
 const updateTest = async (
     userInfo: TJWTDecodedUser,
     id: string, // test ID
-    payload: any
+    payload: any,
 ): Promise<any> => {
     const checkUser = await User.findById(userInfo.userId);
     if (!checkUser) {
@@ -218,7 +249,10 @@ const updateTest = async (
     }
 
     if (checkUser._id.toString() !== checkTest.createdBy.toString()) {
-        throw new AppError(StatusCodes.UNAUTHORIZED, 'You cannot update this test');
+        throw new AppError(
+            StatusCodes.UNAUTHORIZED,
+            'You cannot update this test',
+        );
     }
 
     // Fetch course to get category_id for new questions
@@ -254,15 +288,19 @@ const updateTest = async (
             for (const item of payload.questionList) {
                 if (item.questionId) {
                     // Validate existing question ID
-                    const existingQuestion = await Question.findById(item.questionId);
+                    const existingQuestion = await Question.findById(
+                        item.questionId,
+                    );
                     if (!existingQuestion) {
                         throw new AppError(
                             StatusCodes.NOT_FOUND,
-                            `Question ID ${item.questionId} does not exist.`
+                            `Question ID ${item.questionId} does not exist.`,
                         );
                     }
                     // Add existing question ID to the list (correcting to ObjectId type)
-                    updatedQuestionList.push(new Types.ObjectId(existingQuestion._id.toString()));
+                    updatedQuestionList.push(
+                        new Types.ObjectId(existingQuestion._id.toString()),
+                    );
                 } else if (item.newQuestion) {
                     // Create new question with category_id from the course
                     const newQuestion = new Question({
@@ -272,7 +310,9 @@ const updateTest = async (
                     });
                     const savedQuestion = await newQuestion.save();
                     // Add new question ID to the list
-                    updatedQuestionList.push(new Types.ObjectId(savedQuestion._id.toString()));
+                    updatedQuestionList.push(
+                        new Types.ObjectId(savedQuestion._id.toString()),
+                    );
                 }
             }
         }
@@ -281,7 +321,7 @@ const updateTest = async (
         if (payload.removeQuestions && payload.removeQuestions.length > 0) {
             // Remove questions from the test's current question list
             updatedQuestionList = updatedQuestionList.filter(
-                (id: any) => !payload.removeQuestions.includes(id)
+                (id: any) => !payload.removeQuestions.includes(id),
             );
         }
 
@@ -301,7 +341,6 @@ const updateTest = async (
 
     return updatedTest;
 };
-
 
 //mark Test as completed
 
