@@ -227,6 +227,7 @@ const updateQuestion = async (
             'questionImages',
         );
     }
+    
     // Find and update the question
     const updatedQuestion = await Question.findByIdAndUpdate(
         id,
@@ -236,16 +237,16 @@ const updateQuestion = async (
             ...(payload.options && { options: payload.options }),
             ...(payload.correctOption && {
                 correctOption: payload.correctOption,
-                ...(uploadedFile && {
-                    hasImage: true,
-                    image: {
-                        diskType: uploadedFile.diskType,
-                        path: uploadedFile.path,
-                        originalName: uploadedFile.originalName,
-                        modifiedName: uploadedFile.modifiedName,
-                        fileId: uploadedFile.fileId,
-                    },
-                }),
+            }),
+            ...(uploadedFile && {
+                hasImage: true,
+                image: {
+                    diskType: uploadedFile.diskType,
+                    path: uploadedFile.path,
+                    originalName: uploadedFile.originalName,
+                    modifiedName: uploadedFile.modifiedName,
+                    fileId: uploadedFile.fileId,
+                },
             }),
         },
         { new: true, runValidators: true },
