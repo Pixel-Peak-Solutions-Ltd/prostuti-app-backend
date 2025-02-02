@@ -1,8 +1,9 @@
 import { Model, Types } from "mongoose";
-import { VoucherDiscountType } from "./voucher.constant";
+import { VoucherDiscountType, VoucherType } from "./voucher.constant";
 
 export type IVoucher={
     title: string;
+    voucherType:VoucherType
     discountType: VoucherDiscountType
     discountValue: number;
     isActive:boolean,
@@ -10,6 +11,7 @@ export type IVoucher={
     startDate: Date;
     endDate: Date;
     student_id?:Types.ObjectId
+    course_id?:Types.ObjectId
     createdBy:Types.ObjectId,
     updatedBy:Types.ObjectId
   }
@@ -22,8 +24,13 @@ export type IVoucher={
 
 export type IVoucherFilters = {
   searchTerm?: string;
+  voucherType?:string,
+  course?:string,
+  user?:string,
   discountType?: string,
   isActive?:string,
   isExpired?:string,
+  course_id?:string,
+  student_id?:string,
   createdBy?:string
 }

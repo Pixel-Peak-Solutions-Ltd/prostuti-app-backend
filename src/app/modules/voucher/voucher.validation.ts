@@ -26,6 +26,7 @@ const createVoucherSchema = z.object({
                 .datetime({ message: 'Invalid date format' })
                 .min(1, 'End date is required'),
             student_id: z.string().optional(),
+            course_id: z.string().optional(),
         })
         .strict(),
 });

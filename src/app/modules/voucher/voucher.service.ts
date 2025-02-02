@@ -1,14 +1,15 @@
 import { StatusCodes } from 'http-status-codes';
+import { SortOrder, Types } from 'mongoose';
 import AppError from '../../classes/errorClasses/AppError';
+import { calculatePagination } from '../../helpers/pagenationHelper';
+import { IPaginationOptions } from '../../interfaces/common';
 import { TJWTDecodedUser } from '../../interfaces/jwt/jwt.type';
+import { Course } from '../courseManagement/course/course.model';
+import { Student } from '../student/student.model';
+import { User } from '../user/user.model';
+import { VoucherSearchableFields, VoucherType } from './voucher.constant';
 import { IVoucher, IVoucherFilters } from './voucher.interface';
 import { Voucher } from './voucher.model';
-import { User } from '../user/user.model';
-import { Student } from '../student/student.model';
-import { SortOrder, Types } from 'mongoose';
-import { IPaginationOptions } from '../../interfaces/common';
-import { calculatePagination } from '../../helpers/pagenationHelper';
-import { VoucherSearchableFields } from './voucher.constant';
 
 const createVoucher = async (
     userInfo: TJWTDecodedUser,
@@ -41,6 +42,16 @@ const createVoucher = async (
             );
         }
     }
+    if (payload.course_id) {
+        const course = await Course.findById(payload.course_id);
+        if (!course) {
+            throw new AppError(
+                StatusCodes.NOT_FOUND,
+                `Course not found`,
+            );
+        }
+    }
+    let voucherType:VoucherType=payload.student_id?"Specific_Student":payload.course_id?"Specific_Course":"All_Course"
 
     // Create the voucher
     const newVoucher = new Voucher({
@@ -49,8 +60,12 @@ const createVoucher = async (
         discountValue: payload.discountValue,
         startDate: payload.startDate,
         endDate: payload.endDate,
+        voucherType:voucherType,
         ...(payload.student_id && {
             student_id: new Types.ObjectId(payload.student_id),
+        }),
+        ...(payload.course_id && {
+            course_id: new Types.ObjectId(payload.course_id),
         }),
         createdBy: checkUser._id,
     });
@@ -62,7 +77,7 @@ const getAllVouchers = async (
     filters: IVoucherFilters,
     paginationOptions: IPaginationOptions,
 ) => {
-    const { searchTerm, ...filtersData } = filters;
+    const { searchTerm,course,user, ...filtersData } = filters;
     const { page, limit, skip, sortBy, sortOrder } =
         calculatePagination(paginationOptions);
 
@@ -77,6 +92,23 @@ const getAllVouchers = async (
             })),
         });
     }
+    // Handle course filter
+    if (course) {
+        andConditions.push({
+            $or: [
+                { voucherType: "All_Course" },
+                { voucherType: "Specific_Course" }
+            ]
+        });
+    }
+
+    // Handle user filter
+    if (user) {
+        andConditions.push({
+            voucherType: "Specific_Student"
+        });
+    }
+    console.log(andConditions)
 
     // filtering data
     if (Object.keys(filtersData).length) {
@@ -103,6 +135,9 @@ const getAllVouchers = async (
         .limit(limit)
         .populate({
             path: 'student_id',
+        })
+        .populate({
+            path: 'course_id',
         })
         .populate({
             path: 'createdBy',

@@ -1,5 +1,5 @@
 import { Schema, model } from 'mongoose';
-import { VoucherDiscountType } from './voucher.constant';
+import { VoucherDiscountType, VoucherType } from './voucher.constant';
 import { IVoucher, VoucherModel } from './voucher.interface';
 
 const VoucherSchema = new Schema<IVoucher, VoucherModel>(
@@ -8,6 +8,11 @@ const VoucherSchema = new Schema<IVoucher, VoucherModel>(
             type: String,
             required: [true, 'Title is required'],
             trim:true
+        },
+        voucherType: {
+            type: String,
+            enum: VoucherType,
+            required: true,
         },
         discountType: {
             type: String,
@@ -18,6 +23,12 @@ const VoucherSchema = new Schema<IVoucher, VoucherModel>(
             type: Number,
             required: true,
             min: 0,
+            validate: {
+                validator: function(value: number) {
+                  return this.discountType === "Percentage" ? value <= 100 : true;
+                },
+                message: 'Percentage discount cannot exceed 100%'
+              }
         },
         isActive:{
             type:Boolean,
@@ -46,8 +57,17 @@ const VoucherSchema = new Schema<IVoucher, VoucherModel>(
         },
         student_id:{
             type:Schema.Types.ObjectId,
-            required:false,
+            required: function(this: IVoucher) {
+                return this.voucherType === "Specific_Student";
+              },
             ref:"Student"
+        },
+        course_id:{
+            type:Schema.Types.ObjectId,
+            required: function(this: IVoucher) {
+                return this.voucherType === "Specific_Course";
+              },
+            ref:"Course"
         },
         createdBy: {
             type: Schema.Types.ObjectId,
