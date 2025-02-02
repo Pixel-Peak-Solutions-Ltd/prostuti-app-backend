@@ -82,6 +82,7 @@ const getAllVouchers = async (
         calculatePagination(paginationOptions);
 
     const andConditions = [];
+   
     if (searchTerm) {
         andConditions.push({
             $or: VoucherSearchableFields.map((field) => ({
@@ -108,7 +109,7 @@ const getAllVouchers = async (
             voucherType: "Specific_Student"
         });
     }
-    console.log(andConditions)
+
 
     // filtering data
     if (Object.keys(filtersData).length) {
@@ -138,6 +139,9 @@ const getAllVouchers = async (
         })
         .populate({
             path: 'course_id',
+            populate: {
+                path: 'category_id', 
+            },
         })
         .populate({
             path: 'createdBy',
