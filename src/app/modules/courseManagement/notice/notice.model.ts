@@ -12,7 +12,6 @@ const noticeSchema = new Schema<INotice>(
             type: String,
             required: [true, 'Notice is required'],
             minlength: [2, 'Notice must be at least 2 characters long'],
-            maxlength: [500, 'Notice cannot be longer than 500 characters'],
         },
         noticeId: {
             type: String,
