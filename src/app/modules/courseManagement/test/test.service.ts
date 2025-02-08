@@ -58,7 +58,9 @@ const createTest = async (
         );
 
         files.forEach((file, index) => {
-            fileMap[file.fieldname] = uploadedFiles[index];
+            if (uploadedFiles[index]) {
+                fileMap[file.fieldname] = uploadedFiles[index];
+            }
         });
     }
 

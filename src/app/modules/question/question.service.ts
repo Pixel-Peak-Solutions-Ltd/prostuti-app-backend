@@ -44,15 +44,12 @@ const createQuestion = async (
             : [];
 
         // Create file mapping
-        const uploadedFileMap = uploadedFiles.reduce(
-            (acc, file, index) => {
-                if (files) {
-                    acc[`image${index}`] = file;
-                }
-                return acc;
-            },
-            {} as Record<string, any>,
-        );
+        const uploadedFileMap = files?.reduce((acc, file, index) => {
+            if (uploadedFiles[index]) {
+                acc[file.fieldname] = uploadedFiles[index];
+            }
+            return acc;
+        }, {} as Record<string, any>) ?? {};
 
         // Prepare questions
         const questionsToCreate = payload.map((question, index) => {
