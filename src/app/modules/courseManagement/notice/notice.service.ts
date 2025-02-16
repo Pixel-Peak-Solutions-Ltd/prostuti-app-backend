@@ -7,14 +7,16 @@ import { Notice } from './notice.model';
 // Create Notice
 const createNotice = async (payload: TCreateNoticePayload) => {
     const { course_id, notices } = payload;
-
     // Check if the course exists
     const courseExists = await Course.findById(course_id);
 
     if (!courseExists) {
-        throw new Error('Course does not exist');
+        throw new AppError(StatusCodes.NOT_FOUND, 'Course does not exist!');
     }
-
+    // checking whether notice is empty
+    if (notices.length === 0) {
+        throw new AppError(StatusCodes.BAD_REQUEST, 'Empty notice data');
+    }
     // Check for duplicate lesson numbers within the same course
     // const noticeIDs = notices.map((l) => l!.noticeId);
     // const duplicateWithinInput = noticeIDs.some(
@@ -43,9 +45,9 @@ const createNotice = async (payload: TCreateNoticePayload) => {
 
     // Create multiple lesson documents in a single operation
     const newNotice = await Notice.insertMany(
-        notices.map((l) => ({
+        notices.map((n) => ({
             course_id,
-            notice: l!.notice,
+            notice: n!.notice,
             // noticeId: l!.noticeId,
         })),
     );
