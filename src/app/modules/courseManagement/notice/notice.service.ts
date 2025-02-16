@@ -16,16 +16,16 @@ const createNotice = async (payload: TCreateNoticePayload) => {
     }
 
     // Check for duplicate lesson numbers within the same course
-    const noticeIDs = notices.map((l) => l!.noticeId);
-    const duplicateWithinInput = noticeIDs.some(
-        (number, index) => noticeIDs.indexOf(number) !== index,
-    );
-    if (duplicateWithinInput) {
-        throw new AppError(
-            StatusCodes.BAD_REQUEST,
-            'Duplicate notice id within the input',
-        );
-    }
+    // const noticeIDs = notices.map((l) => l!.noticeId);
+    // const duplicateWithinInput = noticeIDs.some(
+    //     (number, index) => noticeIDs.indexOf(number) !== index,
+    // );
+    // if (duplicateWithinInput) {
+    //     throw new AppError(
+    //         StatusCodes.BAD_REQUEST,
+    //         'Duplicate notice id within the input',
+    //     );
+    // }
 
     // Check for existing lessons with same number in the course
     // const existingNotice = await Notice.find({
@@ -46,7 +46,7 @@ const createNotice = async (payload: TCreateNoticePayload) => {
         notices.map((l) => ({
             course_id,
             notice: l!.notice,
-            noticeId: l!.noticeId,
+            // noticeId: l!.noticeId,
         })),
     );
 

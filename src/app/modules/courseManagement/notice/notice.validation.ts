@@ -8,7 +8,7 @@ const createNoticeValidationSchema = z.object({
         }),
         notices: z.array(
             z.object({
-                noticeId: z.string(),
+                // noticeId: z.string(),
                 notice: z
                     .string()
                     .min(2, {
