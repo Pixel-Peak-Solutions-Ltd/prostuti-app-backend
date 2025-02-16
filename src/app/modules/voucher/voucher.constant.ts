@@ -1,11 +1,11 @@
 export type VoucherDiscountType = 'Amount' | 'Percentage';
-// export type VoucherType = 'Active' | 'Disabled' | 'Expired';
+export type VoucherType = 'All_Course' | 'Specific_Course' | 'Specific_Student';
 
 export const VoucherDiscountType: VoucherDiscountType[] = [
     'Amount',
     'Percentage',
 ];
-// export const VoucherType: VoucherType[] = ['Active', 'Disabled', 'Expired'];
+export const VoucherType: VoucherType[] = ['All_Course', 'Specific_Course', 'Specific_Student'];
 
 //filter
 export const VoucherFilterableFields = [
@@ -15,6 +15,11 @@ export const VoucherFilterableFields = [
     'isExpired',
     'student_id',
     'createdBy',
+    'voucherType',
+    "course",
+    "user",
+    'course_id',
+    'student_id'
 ];
 
 //searchTerm
