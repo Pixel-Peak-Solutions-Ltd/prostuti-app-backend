@@ -24,6 +24,8 @@ import { userRoute } from '../modules/user/user.route';
 import { assignmentSubmissionRoute } from '../modules/assignmentSubmission/assignmentSubmission.route';
 import { SubscriptionRoute } from '../modules/subscription/subscription.route';
 import { VoucherRoute } from '../modules/voucher/voucher.route';
+import { LeaderBoard } from '../modules/leaderboard/leaderboard.model';
+import { LeaderBoardRoute } from '../modules/leaderboard/leaderboard.route';
 
 const globalRoute = Router();
 
@@ -52,6 +54,7 @@ const routes = [
     { path: '/admin', route: adminRoute },
     { path: '/assignment-submission', route: assignmentSubmissionRoute },
     { path: '/voucher', route: VoucherRoute },
+    { path: '/leaderboard', route: LeaderBoardRoute},
 ];
 
 routes.forEach((route) => globalRoute.use(route.path, route.route));
