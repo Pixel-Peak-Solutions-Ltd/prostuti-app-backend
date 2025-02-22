@@ -1,28 +1,125 @@
-const createLeaderBoard = async () => {
-    return 'createLeaderBoard service';
-};
+import { SortOrder } from 'mongoose';
+import { calculatePagination } from '../../helpers/pagenationHelper';
+import { IPaginationOptions } from '../../interfaces/common';
+import { ILeaderBoardFilters } from './leaderboard.interface';
+import { LeaderBoard } from './leaderboard.model';
+import { leaderBoardSearchableFields } from './leaderboard.constant';
 
-const getAllLeaderBoards = async () => {
-    return 'getAllLeaderBoards service';
-};
+const getGlobalLeaderBoard = async (
+    filters: ILeaderBoardFilters,
+    paginationOptions: IPaginationOptions,
+) => {
+    const { searchTerm, ...filtersData } = filters;
+    const { page, limit, skip, sortBy, sortOrder } =
+        calculatePagination(paginationOptions);
+    const andConditions = [];
+    if (searchTerm) {
+        andConditions.push({
+            $or: leaderBoardSearchableFields.map((field) => ({
+                [field]: {
+                    $regex: searchTerm,
+                    $options: 'i',
+                },
+            })),
+        });
+    }
+    // filtering data
+    if (Object.keys(filtersData).length) {
+        andConditions.push({
+            $and: Object.entries(filtersData).map(([field, value]) => ({
+                [field]: value,
+            })),
+        });
+    }
 
-const getLeaderBoardByID = async () => {
-    return 'getLeaderBoardByID service';
-};
+    const sortConditions: { [key: string]: SortOrder } = {};
 
-const updateLeaderBoard = async () => {
-    return 'updateLeaderBoard service';
-};
+    if (sortBy && sortOrder) {
+        sortConditions[sortBy] = sortOrder;
+    } else {
+        sortConditions['totalScore'] = -1;
+    }
 
-const deleteLeaderBoardByID = async () => {
-    return 'deleteLeaderBoardByID service';
+    const whereConditions =
+        andConditions.length > 0 ? { $and: andConditions } : {};
+
+    const count = await LeaderBoard.countDocuments(whereConditions);
+    const result = await LeaderBoard.find({
+        course_id: null,
+        ...whereConditions,
+    })
+        .sort(sortConditions)
+        .skip(skip)
+        .limit(limit);
+
+    return {
+        meta: {
+            page,
+            limit: limit === 0 ? count : limit,
+            count,
+        },
+        data: result,
+    };
+};
+const getCourseLeaderBoard = async (
+  courseId:string,
+    filters: ILeaderBoardFilters,
+    paginationOptions: IPaginationOptions,
+) => {
+    const { searchTerm, ...filtersData } = filters;
+    const { page, limit, skip, sortBy, sortOrder } =
+        calculatePagination(paginationOptions);
+    const andConditions = [];
+    if (searchTerm) {
+        andConditions.push({
+            $or: leaderBoardSearchableFields.map((field) => ({
+                [field]: {
+                    $regex: searchTerm,
+                    $options: 'i',
+                },
+            })),
+        });
+    }
+    // filtering data
+    if (Object.keys(filtersData).length) {
+        andConditions.push({
+            $and: Object.entries(filtersData).map(([field, value]) => ({
+                [field]: value,
+            })),
+        });
+    }
+
+    const sortConditions: { [key: string]: SortOrder } = {};
+
+    if (sortBy && sortOrder) {
+        sortConditions[sortBy] = sortOrder;
+    } else {
+        sortConditions['totalScore'] = -1;
+    }
+
+    const whereConditions =
+        andConditions.length > 0 ? { $and: andConditions } : {};
+
+    const count = await LeaderBoard.countDocuments(whereConditions);
+    const result = await LeaderBoard.find({
+        course_id: courseId,
+        ...whereConditions,
+    })
+        .sort(sortConditions)
+        .skip(skip)
+        .limit(limit);
+
+    return {
+        meta: {
+            page,
+            limit: limit === 0 ? count : limit,
+            count,
+        },
+        data: result,
+    };
 };
 
 export const LeaderBoardService = {
-    createLeaderBoard,
-    getAllLeaderBoards,
-    getLeaderBoardByID,
-    updateLeaderBoard,
-    deleteLeaderBoardByID,
+    getGlobalLeaderBoard,
+    getCourseLeaderBoard
 };
-

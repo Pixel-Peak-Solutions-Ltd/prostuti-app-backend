@@ -1,15 +1,12 @@
 import express from 'express';
 import { LeaderBoardController } from './leaderboard.controller';
+import auth from '../../middlewares/auth';
 
 
 
 const router = express.Router();
 
-router
-    .post('/', LeaderBoardController.createLeaderBoard)
-    .get('/', LeaderBoardController.getAllLeaderBoards)
-    .get('/:id', LeaderBoardController.getLeaderBoardByID)
-    .delete('/:id', LeaderBoardController.deleteLeaderBoardByID)
-    .patch('/:id', LeaderBoardController.updateLeaderBoard);
+router.get('/global',auth(), LeaderBoardController.getGlobalLeaderBoard)
+router.get('/course/:courseId',auth(), LeaderBoardController.getCourseLeaderBoard)
 
-export const categoryRoute = router;
+export const LeaderBoardRoute = router;

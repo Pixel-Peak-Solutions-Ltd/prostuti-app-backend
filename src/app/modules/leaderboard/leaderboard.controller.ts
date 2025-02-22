@@ -3,63 +3,40 @@ import { StatusCodes } from 'http-status-codes';
 import catchAsync from '../../utils/catchAsync';
 import sendSuccessResponse from '../../utils/sendSuccessResponse';
 import { LeaderBoardService } from './leaderboard.service';
+import pick from '../../helpers/pick';
+import { leaderBoardFilterableFields } from './leaderboard.constant';
+import { paginationFields } from '../../constant';
 
 
 
-const createLeaderBoard = catchAsync(async (req: Request, res: Response) => {
-    const result = await LeaderBoardService.createLeaderBoard();
+
+
+const getGlobalLeaderBoard = catchAsync(async (req: Request, res: Response) => {
+    const filters = pick(req.query, leaderBoardFilterableFields);
+    const paginationOptions = pick(req.query, paginationFields);
+    const result = await LeaderBoardService.getGlobalLeaderBoard(filters, paginationOptions);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
-        message: 'LeaderBoard created successfully',
+        message: 'Global LeaderBoards are retrieved successfully',
+        data: result,
+    });
+});
+const getCourseLeaderBoard = catchAsync(async (req: Request, res: Response) => {
+    const { courseId } = req.params;
+    const filters = pick(req.query, leaderBoardFilterableFields);
+    const paginationOptions = pick(req.query, paginationFields);
+    const result = await LeaderBoardService.getCourseLeaderBoard(courseId,filters, paginationOptions);
+
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'Course LeaderBoards are retrieved successfully',
         data: result,
     });
 });
 
-const getAllLeaderBoards = catchAsync(async (req: Request, res: Response) => {
-    const result = await LeaderBoardService.getAllLeaderBoards();
-
-    sendSuccessResponse(res, {
-        statusCode: StatusCodes.OK,
-        message: 'LeaderBoards are retrieved successfully',
-        data: result,
-    });
-});
-
-const getLeaderBoardByID = catchAsync(async (req: Request, res: Response) => {
-    const result = await LeaderBoardService.getLeaderBoardByID();
-
-    sendSuccessResponse(res, {
-        statusCode: StatusCodes.OK,
-        message: 'Single LeaderBoard retrieved successfully',
-        data: result,
-    });
-});
-
-const updateLeaderBoard = catchAsync(async (req: Request, res: Response) => {
-    const result = await LeaderBoardService.updateLeaderBoard();
-
-    sendSuccessResponse(res, {
-        statusCode: StatusCodes.OK,
-        message: 'LeaderBoard is updated successfully',
-        data: result,
-    });
-});
-
-const deleteLeaderBoardByID = catchAsync(async (req: Request, res: Response) => {
-    const result = await LeaderBoardService.deleteLeaderBoardByID();
-
-    sendSuccessResponse(res, {
-        statusCode: StatusCodes.OK,
-        message: 'LeaderBoard is deleted successfully',
-        data: result,
-    });
-});
 
 export const LeaderBoardController = {
-    createLeaderBoard,
-    getAllLeaderBoards,
-    getLeaderBoardByID,
-    updateLeaderBoard,
-    deleteLeaderBoardByID,
+   getGlobalLeaderBoard,
+   getCourseLeaderBoard,
 };
