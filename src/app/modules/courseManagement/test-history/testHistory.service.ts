@@ -14,6 +14,7 @@ import { IPaginationOptions } from '../../../interfaces/common';
 import { calculatePagination } from '../../../helpers/pagenationHelper';
 import { TestHistorySearchableFields } from './testHistory.constant';
 import { SortOrder } from 'mongoose';
+import { updateLeaderboard } from '../../leaderboard/leaderboard.utils';
 
 const createTestHistory = async (
     userInfo: TJWTDecodedUser,
@@ -126,6 +127,13 @@ const createTestHistory = async (
         isPassed,
         timeTaken,
     });
+    if(!data){
+        throw new AppError(StatusCodes.BAD_REQUEST,"Failed to create test history");
+       
+    }
+    await updateLeaderboard(studentDetails._id,course_id,score,0);
+    await updateLeaderboard(studentDetails._id,null,score,0);
+
 
     return data;
 };
@@ -227,6 +235,12 @@ const createWrittenTestHistory = async (
         isChecked:false,
         timeTaken,
     });
+    if(!data){
+        throw new AppError(StatusCodes.BAD_REQUEST,"Failed to create test history");
+       
+    }
+    await updateLeaderboard(studentDetails._id,course_id,score,0);
+    await updateLeaderboard(studentDetails._id,null,score,0);
 
     return data;
 };
