@@ -127,12 +127,12 @@ const createTestHistory = async (
         isPassed,
         timeTaken,
     });
-    if(!data){
-        throw new AppError(StatusCodes.BAD_REQUEST,"Failed to create test history");
-       
+    if (!data) {
+        throw new AppError(StatusCodes.BAD_REQUEST, "Failed to create test history");
+
     }
-    await updateLeaderboard(studentDetails._id,course_id,score,0);
-    await updateLeaderboard(studentDetails._id,null,score,0);
+    await updateLeaderboard(studentDetails._id, course_id, score, 0);
+    await updateLeaderboard(studentDetails._id, null, score, 0);
 
 
     return data;
@@ -232,15 +232,15 @@ const createWrittenTestHistory = async (
         wrongScore,
         answers,
         isPassed,
-        isChecked:false,
+        isChecked: false,
         timeTaken,
     });
-    if(!data){
-        throw new AppError(StatusCodes.BAD_REQUEST,"Failed to create test history");
-       
+    if (!data) {
+        throw new AppError(StatusCodes.BAD_REQUEST, "Failed to create test history");
+
     }
-    await updateLeaderboard(studentDetails._id,course_id,score,0);
-    await updateLeaderboard(studentDetails._id,null,score,0);
+    await updateLeaderboard(studentDetails._id, course_id, score, 0);
+    await updateLeaderboard(studentDetails._id, null, score, 0);
 
     return data;
 };
@@ -395,7 +395,7 @@ const getAllTestHistories = async (
     paginationOptions: IPaginationOptions,
     userInfo: TJWTDecodedUser,
 ): Promise<any> => {
-    const { searchTerm,...filtersData } = filters;
+    const { searchTerm, ...filtersData } = filters;
     const { page, limit, skip, sortBy, sortOrder } =
         calculatePagination(paginationOptions);
 
@@ -410,8 +410,8 @@ const getAllTestHistories = async (
             })),
         });
     }
-    
-    
+
+
     // filtering data
     if (Object.keys(filtersData).length) {
         andConditions.push({
@@ -421,7 +421,7 @@ const getAllTestHistories = async (
         });
     }
 
-    const sortConditions: { [key: string]: SortOrder } = {};
+    const sortConditions: { [key: string]: SortOrder; } = {};
 
     if (sortBy && sortOrder) {
         sortConditions[sortBy] = sortOrder;
@@ -444,8 +444,10 @@ const getAllTestHistories = async (
         .populate({
             path: 'test_id',
         }).populate({
-            path:"student_id"
-        })
+            path: "student_id"
+        }).populate({
+            path: "answers.question_id"
+        });
 
     return {
         meta: {
@@ -493,5 +495,5 @@ export const TestHistoryService = {
     createTestHistory,
     createWrittenTestHistory,
     previewWrittenTestHistory,
-    getTestHistoryByID,getAllTestHistories
+    getTestHistoryByID, getAllTestHistories
 };
