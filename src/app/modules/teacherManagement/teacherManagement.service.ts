@@ -29,9 +29,9 @@ const getTeacherInformation = async (teacherId: string) => {
         throw new AppError(StatusCodes.NOT_FOUND, 'Teacher is not found');
     }
 
-    const course = await Course.find({ teacher_id: teacher._id });
+    const course = await Course.find({ teacher_id: teacher.user_id });
 
-    return { teacherId, course };
+    return { teacher, courses: course };
 };
 
 export const teacherManagementService = {
