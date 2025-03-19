@@ -1,4 +1,5 @@
 import { Types } from 'mongoose';
+import { ASSIGNED_WORKS } from './teacher.constant';
 
 export interface TImage {
     diskType: string;
@@ -16,6 +17,7 @@ export interface ITeacher {
     image?: TImage;
     joinedDate: string;
     subject: string;
+    assignedWorks: string[];
     jobType: string;
 }
 
@@ -28,3 +30,5 @@ export type TAllowedTeacherUpdates = Pick<
 export type TUpdatePayloadType = Partial<
     TAllowedTeacherUpdates & { image?: TImage }
 >;
+
+export type TAssignedWorks = keyof typeof ASSIGNED_WORKS;
