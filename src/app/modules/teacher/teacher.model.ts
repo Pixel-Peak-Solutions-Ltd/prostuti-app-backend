@@ -2,6 +2,7 @@ import { Schema, model } from 'mongoose';
 import { ITeacher, TImage } from './teacher.interface';
 import { formatPhoneNumber } from '../../utils/formatPhoneNumber';
 import { categoryType } from '../category/category.constant';
+import { ASSIGNED_WORKS } from './teacher.constant';
 
 const imageSchema = new Schema<TImage>(
     {
@@ -95,6 +96,20 @@ const teacherSchema = new Schema<ITeacher>(
         subject: {
             type: String,
             trim: true,
+        },
+        assignedWorks: {
+            type: [String],
+            default: [],
+            validate: {
+                validator: function (works: string[]) {
+                    // Use type assertion to satisfy TypeScript
+                    const allowedWorks = Object.values(
+                        ASSIGNED_WORKS,
+                    ) as string[];
+                    return works.every((work) => allowedWorks.includes(work));
+                },
+                message: `Each assigned work must be one of: ${Object.values(ASSIGNED_WORKS).join(', ')}`,
+            },
         },
         jobType: {
             type: String,
