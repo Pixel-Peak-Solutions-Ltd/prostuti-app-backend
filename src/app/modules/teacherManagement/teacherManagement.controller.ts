@@ -31,7 +31,22 @@ const getTeacherInformation = catchAsync(
     },
 );
 
+//  Update Teacher Assigned Works
+const updateTeacherAssignedWorks = catchAsync(
+    async (req: Request, res: Response) => {
+        const result =
+            await teacherManagementService.updateTeacherAssignedWorks(req.body);
+
+        sendSuccessResponse(res, {
+            statusCode: StatusCodes.OK,
+            message: 'Teacher assigned works updated successfully',
+            data: result,
+        });
+    },
+);
+
 export const teacherManagementController = {
     getAllTeacher,
     getTeacherInformation,
+    updateTeacherAssignedWorks,
 };

@@ -34,7 +34,30 @@ const getTeacherInformation = async (teacherId: string) => {
     return { teacher, courses: course };
 };
 
+const updateTeacherAssignedWorks = async (payload: Record<string, unknown>) => {
+    const { teacherProfileId, assignedWorks } = payload;
+
+    // Find the teacher by ID
+    const teacher = await Teacher.findById(teacherProfileId);
+
+    if (!teacher) {
+        throw new Error('Teacher not found');
+    }
+
+    // Using findByIdAndUpdate with runValidators: true to enforce schema validation
+    const updatedTeacher = await Teacher.findByIdAndUpdate(
+        teacherProfileId,
+        { assignedWorks },
+        {
+            new: true, // Return the updated document
+        },
+    );
+
+    return updatedTeacher;
+};
+
 export const teacherManagementService = {
     getAllTeacher,
     getTeacherInformation,
+    updateTeacherAssignedWorks,
 };
