@@ -7,6 +7,7 @@ import { uploadToB2 } from '../../utils/backBlaze';
 import config from '../../config';
 import { AssignmentSubmission } from './assignmentSubmission.model';
 import { Student } from '../student/student.model';
+import { updateLeaderboard } from '../leaderboard/leaderboard.utils';
 
 const submitAssignment = async (
     user: TJWTDecodedUser,
@@ -79,6 +80,25 @@ const giveAssignmentMark = async (
             { givenMark },
             { new: true, runValidators: true },
         );
+    if (!updatedSubmittedAssignment) {
+        throw new AppError(
+            StatusCodes.INTERNAL_SERVER_ERROR,
+            'Failed to update assignment mark',
+        );
+    }
+
+    await updateLeaderboard(
+        updatedSubmittedAssignment.studentProfile_id,
+        updatedSubmittedAssignment.course_id,
+        0,
+        parseInt(givenMark),
+    );
+    await updateLeaderboard(
+        updatedSubmittedAssignment.studentProfile_id,
+        null,
+        0,
+        parseInt(givenMark),
+    );
 
     return updatedSubmittedAssignment;
 };

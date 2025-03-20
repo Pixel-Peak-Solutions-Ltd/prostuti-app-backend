@@ -167,15 +167,30 @@ const getVoucherByID = async (id: string) => {
     return data;
 };
 
-const updateVoucher = async (id: string) => {
+const updateVoucher = async (id: string,userInfo: TJWTDecodedUser,payload:Partial<IVoucher>) => {
     const voucher = await Voucher.findById(id);
     if (!voucher) {
         throw new AppError(StatusCodes.NOT_FOUND, 'Voucher not found');
     }
+    const checkUser = await User.findById(userInfo.userId);
+    if (!checkUser) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'User is not found');
+    }
 
     const updatedVoucher = await Voucher.findByIdAndUpdate(
         id,
-        { isActive: !voucher.isActive },
+        {
+            ...(payload.title && { title: payload.title }),
+            ...(payload.discountType && { discountType: payload.discountType }),
+            ...(payload.discountValue !== undefined && { discountValue: payload.discountValue }),
+            ...(payload.startDate && { startDate: new Date(payload.startDate) }),
+            ...(payload.endDate && { endDate: new Date(payload.endDate) }),
+            ...(payload.student_id && { student_id: payload.student_id }),
+            ...(payload.course_id && { course_id: payload.course_id }),
+            ...(payload.isActive !== undefined && { isActive: payload.isActive }),
+            updatedBy: checkUser._id,
+            updatedAt: new Date(),
+        },
         { new: true },
     )
         .populate('student_id')
@@ -191,8 +206,20 @@ const updateVoucher = async (id: string) => {
     return updatedVoucher;
 };
 
-const deleteVoucherByID = async () => {
-    return 'deleteVoucherByID service';
+const deleteVoucherByID = async (id:string,userInfo: TJWTDecodedUser) => {
+    const voucher = await Voucher.findById(id);
+    if (!voucher) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Voucher not found');
+    }
+    const checkUser = await User.findById(userInfo.userId);
+    if (!checkUser) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'User is not found');
+    }
+
+    const deletedVoucher = await Voucher.deleteOne({ _id: id });
+    
+    return deletedVoucher;
+
 };
 
 export const VoucherService = {
