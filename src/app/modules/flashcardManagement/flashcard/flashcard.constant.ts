@@ -5,6 +5,8 @@ export const flashcardFilterableFields = [
     'title',
     'studentId',
     'isApproved',
+    'visibility',
+    'categoryId',
   ];
 
   export const flashcardSearchableFields = [

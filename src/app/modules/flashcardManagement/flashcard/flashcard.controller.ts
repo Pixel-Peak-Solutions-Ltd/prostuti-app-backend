@@ -3,6 +3,9 @@ import { StatusCodes } from 'http-status-codes';
 import sendSuccessResponse from '../../../utils/sendSuccessResponse';
 import catchAsync from '../../../utils/catchAsync';
 import { FlashcardService } from './flashcard.service';
+import pick from '../../../helpers/pick';
+import { flashcardFilterableFields } from './flashcard.constant';
+import { paginationFields } from '../../../constant';
 
 
 
@@ -17,7 +20,9 @@ const createFlashcard = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllFlashcards = catchAsync(async (req: Request, res: Response) => {
-    const result = await FlashcardService.getAllFlashcards();
+    const filters = pick(req.query, flashcardFilterableFields);
+    const paginationOptions = pick(req.query, paginationFields);
+    const result = await FlashcardService.getAllFlashcards(filters, paginationOptions,req.user);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
