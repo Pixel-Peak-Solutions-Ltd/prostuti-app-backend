@@ -7,10 +7,12 @@ import { IFlashcard, IFlashcardFilters } from './flashcard.interface';
 import { Flashcard } from './flashcard.model';
 import { FlashcardItem } from '../flashcardItem/flashcardItem.model';
 import { Category } from '../../category/category.model';
-import mongoose, { SortOrder } from 'mongoose';
+import mongoose, { SortOrder, Types } from 'mongoose';
 import { IPaginationOptions } from '../../../interfaces/common';
 import { calculatePagination } from '../../../helpers/pagenationHelper';
 import { flashcardSearchableFields } from './flashcard.constant';
+import { User } from '../../user/user.model';
+import { FlashcardHistory } from '../flashcardHistory/flashcardHistory.model';
 
 const createFlashcard = async (
     payload: Partial<IFlashcard & { items: Partial<IFlashcardItem>[] }>,
@@ -136,10 +138,114 @@ const getAllFlashcards = async (
     };
 };
 
-const getFlashcardByID = async () => {
-    return 'getFlashcardByID service';
-};
+const getFlashcardByID = async (id: string, userInfo: TJWTDecodedUser) => {
+    // Check user details
+    const checkUser = await User.findById(userInfo.userId);
+    if (!checkUser) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'User does not exist');
+    }
 
+    // Check flashcard with student details populated
+    const checkFlashcard = await Flashcard.findById(id).populate(
+        'studentId',
+        'name email',
+    ); // Adjust fields as needed
+    if (!checkFlashcard) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Flashcard does not exist');
+    }
+
+    // Fetch all items
+    const items = await FlashcardItem.find({ flashcardId: checkFlashcard._id });
+    if (!items || items.length === 0) {
+        throw new AppError(
+            StatusCodes.NOT_FOUND,
+            'No items found for this flashcard',
+        );
+    }
+
+    let mappedItems;
+    if (checkUser.role === 'teacher' || checkUser.role === 'admin') {
+        // Teachers and admins: map items directly
+        mappedItems = items.map((item) => ({
+            flashcardId: item.flashcardId,
+            term: item.term,
+            answer: item.answer,
+            viewCount: item.viewCount || 0,
+            isFavourite:
+                item.favoritedBy?.includes(
+                    new Types.ObjectId(userInfo.userId),
+                ) || false,
+            isKnown: false, // Default for non-students
+            isLearned: false, // Default for non-students
+        }));
+    } else {
+        const checkStudent = await Student.findOne({
+            user_id: userInfo.userId,
+        });
+        if (!checkStudent) {
+            throw new AppError(StatusCodes.NOT_FOUND, 'Student does not exist');
+        }
+
+        // Visibility check for students
+        if (
+            checkFlashcard.visibility === 'ONLY_ME' &&
+            checkFlashcard.studentId.toString() !== checkStudent._id.toString()
+        ) {
+            throw new AppError(
+                StatusCodes.FORBIDDEN,
+                'This flashcard is private',
+            );
+        }
+
+        const checkFlashcardHistory = await FlashcardHistory.findOne({
+            studentId: checkStudent._id,
+            flashcardId: id,
+        });
+        if (checkFlashcardHistory) {
+            // Returning student: map history cardInteractions with item details
+            mappedItems = checkFlashcardHistory.cardInteractions.map(
+                (interaction) => {
+                    const item = items.find(
+                        (i) =>
+                            i._id.toString() === interaction.cardId.toString(),
+                    );
+                    return {
+                        flashcardId: checkFlashcard._id,
+                        term: item?.term || '',
+                        answer: item?.answer || '',
+                        viewCount: item?.viewCount || 0,
+                        isFavourite:
+                            item?.favoritedBy?.includes(
+                                new Types.ObjectId(userInfo.userId),
+                            ) || false,
+                        isKnown: interaction.isKnown,
+                        isLearned: interaction.isLearned,
+                    };
+                },
+            );
+        } else {
+            // First-time student: map items with default history flags
+            mappedItems = items.map((item) => ({
+                flashcardId: item.flashcardId,
+                term: item.term,
+                answer: item.answer,
+                viewCount: item.viewCount || 0,
+                isFavourite:
+                    item.favoritedBy?.includes(
+                        new Types.ObjectId(userInfo.userId),
+                    ) || false,
+                isKnown: false,
+                isLearned: false,
+            }));
+        }
+    }
+
+    // Return flashcard with all fields and mapped items
+    return {
+        ...checkFlashcard.toObject(), // Convert Mongoose document to plain object
+        items: mappedItems,
+    };
+};
 const updateFlashcard = async () => {
     return 'updateFlashcard service';
 };

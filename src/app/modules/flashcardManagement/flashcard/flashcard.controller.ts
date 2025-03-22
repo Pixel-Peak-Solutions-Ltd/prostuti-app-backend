@@ -32,7 +32,7 @@ const getAllFlashcards = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getFlashcardByID = catchAsync(async (req: Request, res: Response) => {
-    const result = await FlashcardService.getFlashcardByID();
+    const result = await FlashcardService.getFlashcardByID(req.params.id,req.user);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,

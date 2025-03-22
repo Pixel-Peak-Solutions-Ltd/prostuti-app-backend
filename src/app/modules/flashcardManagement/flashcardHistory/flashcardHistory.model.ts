@@ -13,7 +13,13 @@ const CardInteractionSchema = new Schema<ICardInteraction>({
     },
     isLearned: {
         type: Boolean,
-        required: [true, 'Interaction status (learned or skipped) is required'],
+        required: [true, 'Learned status is required'],
+        default: false,
+    },
+    isKnown: {
+        type: Boolean,
+        required: [true, 'Known status is required'],
+        default: false,
     },
 });
 

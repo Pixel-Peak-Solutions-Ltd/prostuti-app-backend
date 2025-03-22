@@ -3,6 +3,7 @@ import { Model, Types } from "mongoose";
 export type ICardInteraction = {
     cardId: Types.ObjectId;
     isLearned: boolean;
+    isKnown: boolean;
   };
   export type IFlashcardHistory = {
     studentId: Types.ObjectId;
