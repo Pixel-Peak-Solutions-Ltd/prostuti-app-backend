@@ -401,8 +401,87 @@ const updateFlashcard = async (
     return checkFlashcard;
 };
 
-const deleteFlashcardByID = async () => {
-    return 'deleteFlashcardByID service';
+const deleteFlashcardByID = async (id: string,
+    userInfo: TJWTDecodedUser,) => {
+    // Check user details
+    const checkUser = await User.findById(userInfo.userId);
+    if (!checkUser) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'User does not exist');
+    }
+
+    // Find the FlashcardItem
+    const itemIdToDelete = new Types.ObjectId(id);
+    const itemToDelete = await FlashcardItem.findById(itemIdToDelete);
+    if (!itemToDelete) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Flashcard item does not exist');
+    }
+
+    // Check the associated flashcard with student and approvedBy details populated
+    const checkFlashcard = await Flashcard.findById(itemToDelete.flashcardId)
+    if (!checkFlashcard) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Associated flashcard does not exist');
+    }
+
+    // Authorization check
+    let checkStudent:  (IStudent & { _id: Types.ObjectId }) | null = null;
+    let checkTeacher:  (ITeacher & { _id: Types.ObjectId }) | null = null;
+
+    if (checkUser.role === 'student') {
+        checkStudent = await Student.findOne({ user_id: userInfo.userId });
+        if (!checkStudent) {
+            throw new AppError(StatusCodes.NOT_FOUND, 'Student does not exist');
+        }
+        if (checkFlashcard.studentId.toString() !== checkStudent._id.toString()) {
+            throw new AppError(StatusCodes.FORBIDDEN, 'You can only delete items from flashcards you created');
+        }
+    } else if (checkUser.role === 'teacher') {
+        checkTeacher = await Teacher.findOne({ user_id: userInfo.userId });
+        if (!checkTeacher) {
+            throw new AppError(StatusCodes.NOT_FOUND, 'Teacher does not exist');
+        }
+        // Check if teacher is assigned for Flashcard
+        if (!checkTeacher.assignedWorks.includes('FLASHCARD')) {
+            throw new AppError(StatusCodes.FORBIDDEN, 'You are not assigned to delete items from flashcards');
+        }
+    } else if (checkUser.role !== 'admin') {
+        throw new AppError(StatusCodes.FORBIDDEN, 'Only the creator, assigned teacher, or admin can delete items from this flashcard');
+    }
+
+    // Delete the item and update history in a transaction
+    let history;
+    const session = await mongoose.startSession();
+    try {
+        session.startTransaction();
+
+        // Delete the item
+        await FlashcardItem.deleteOne({ _id: itemIdToDelete }, { session });
+
+        // Update FlashcardHistory for student (if it exists)
+        if (checkUser.role === 'student') {
+            history = await FlashcardHistory.findOne({
+                studentId: checkStudent._id,
+                flashcardId: checkFlashcard._id,
+            }).session(session);
+
+            if (history) {
+                history.cardInteractions = history.cardInteractions.filter(
+                    interaction => !itemIdToDelete.equals(interaction.cardId)
+                );
+                await history.save({ session });
+            }
+        }
+
+        await session.commitTransaction();
+    } catch (error) {
+        if (session.inTransaction()) {
+            await session.abortTransaction();
+        }
+        throw new AppError(StatusCodes.INTERNAL_SERVER_ERROR, 'Failed to delete flashcard item');
+    } finally {
+        session.endSession();
+    }
+    return itemToDelete 
+
 };
 
 export const FlashcardService = {

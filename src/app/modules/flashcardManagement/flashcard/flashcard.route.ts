@@ -11,7 +11,7 @@ const router = express.Router();
 router.post('/create-flashcard',auth("student"),validateRequest(FlashcardValidation.createFlashcard), FlashcardController.createFlashcard)
 router.get('/all-flashcard',auth(), FlashcardController.getAllFlashcards)
 router.get('/single-flashcard/:id',auth(), FlashcardController.getFlashcardByID)
-router.delete('/:id', FlashcardController.deleteFlashcardByID)
+router.delete('/delete-flashcard-item/:id',auth(), FlashcardController.deleteFlashcardByID)
 router.patch('/update-flashcard/:id',auth(),validateRequest(FlashcardValidation.updateFlashcard), FlashcardController.updateFlashcard);
 
 export const flashcardRoute = router;

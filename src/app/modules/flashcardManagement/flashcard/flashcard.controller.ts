@@ -52,7 +52,7 @@ const updateFlashcard = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteFlashcardByID = catchAsync(async (req: Request, res: Response) => {
-    const result = await FlashcardService.deleteFlashcardByID();
+    const result = await FlashcardService.deleteFlashcardByID(req.params.id,req.user);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
