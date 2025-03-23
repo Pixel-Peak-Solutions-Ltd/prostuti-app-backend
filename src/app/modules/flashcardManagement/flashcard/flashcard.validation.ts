@@ -11,10 +11,11 @@ const createFlashcard = z.object({
             visibility: z.enum(['ONLY_ME', 'EVERYONE'], {
                 required_error: 'Visibility is required',
             }),
-            categoryId: z.string({ required_error: 'Category ID is required' }).refine(
-                (val) => Types.ObjectId.isValid(val),
-                { message: 'Invalid Category ID' }
-            ),
+            categoryId: z
+                .string({ required_error: 'Category ID is required' })
+                .refine((val) => Types.ObjectId.isValid(val), {
+                    message: 'Invalid Category ID',
+                }),
             items: z
                 .array(
                     z.object({
@@ -33,4 +34,41 @@ const createFlashcard = z.object({
         })
         .strict(),
 });
-export const FlashcardValidation={createFlashcard}
+
+const updateItemSchema = z
+    .object({
+        id: z.string(),
+        term: z.string().optional(),
+        answer: z.string().optional(),
+    })
+    .refine((data) => data.term !== undefined || data.answer !== undefined, {
+        message:
+            'At least one of term or answer must be provided when id is present',
+    });
+
+const newItemSchema = z.object({
+    id: z.undefined(),
+    term: z.string().min(1, 'Term is required for new items'),
+    answer: z.string().min(1, 'Answer is required for new items'),
+});
+
+const itemSchema = z.union([updateItemSchema, newItemSchema]);
+
+const updateFlashcard = z.object({
+    body:z
+    .object({
+        title: z.string().optional(),
+        visibility: z.enum(['ONLY_ME', 'EVERYONE']).optional(),
+        items: z.array(itemSchema).optional(),
+    })
+    .refine(
+        (data) =>
+            data.title !== undefined ||
+            data.visibility !== undefined ||
+            (data.items && data.items.length > 0),
+        {
+            message: 'Nothing is provided to update',
+        },
+    )
+})
+export const FlashcardValidation = { createFlashcard, updateFlashcard };

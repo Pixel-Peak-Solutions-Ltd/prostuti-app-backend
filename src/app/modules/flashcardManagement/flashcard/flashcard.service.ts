@@ -13,6 +13,9 @@ import { calculatePagination } from '../../../helpers/pagenationHelper';
 import { flashcardSearchableFields } from './flashcard.constant';
 import { User } from '../../user/user.model';
 import { FlashcardHistory } from '../flashcardHistory/flashcardHistory.model';
+import { Teacher } from '../../teacher/teacher.model';
+import { IStudent } from '../../student/student.interface';
+import { ITeacher } from '../../teacher/teacher.interface';
 
 const createFlashcard = async (
     payload: Partial<IFlashcard & { items: Partial<IFlashcardItem>[] }>,
@@ -167,6 +170,7 @@ const getFlashcardByID = async (id: string, userInfo: TJWTDecodedUser) => {
     if (checkUser.role === 'teacher' || checkUser.role === 'admin') {
         // Teachers and admins: map items directly
         mappedItems = items.map((item) => ({
+            _id: item._id,
             flashcardId: item.flashcardId,
             term: item.term,
             answer: item.answer,
@@ -210,6 +214,7 @@ const getFlashcardByID = async (id: string, userInfo: TJWTDecodedUser) => {
                             i._id.toString() === interaction.cardId.toString(),
                     );
                     return {
+                        _id: item?._id,
                         flashcardId: checkFlashcard._id,
                         term: item?.term || '',
                         answer: item?.answer || '',
@@ -226,6 +231,7 @@ const getFlashcardByID = async (id: string, userInfo: TJWTDecodedUser) => {
         } else {
             // First-time student: map items with default history flags
             mappedItems = items.map((item) => ({
+                _id: item._id,
                 flashcardId: item.flashcardId,
                 term: item.term,
                 answer: item.answer,
@@ -246,8 +252,153 @@ const getFlashcardByID = async (id: string, userInfo: TJWTDecodedUser) => {
         items: mappedItems,
     };
 };
-const updateFlashcard = async () => {
-    return 'updateFlashcard service';
+const updateFlashcard = async (
+    id: string,
+    payload: Partial<IFlashcard & { items: Partial<IFlashcardItem>[] }>,
+    userInfo: TJWTDecodedUser,
+) => {
+    // Check user details
+    const checkUser = await User.findById(userInfo.userId);
+    if (!checkUser) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'User does not exist');
+    }
+
+    // Check flashcard with student details populated
+    const checkFlashcard = await Flashcard.findById(id) 
+    if (!checkFlashcard) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Flashcard does not exist');
+    }
+
+    // Authorization check
+    let checkStudent: (IStudent & { _id: Types.ObjectId }) | null = null;
+    let checkTeacher: (ITeacher & { _id: Types.ObjectId }) | null = null;
+
+    if (checkUser.role === 'student') {
+        checkStudent = await Student.findOne({ user_id: userInfo.userId });
+        if (!checkStudent) {
+            throw new AppError(StatusCodes.NOT_FOUND, 'Student does not exist');
+        }
+        if (
+            checkFlashcard.studentId.toString() !== checkStudent._id.toString()
+        ) {
+            
+            throw new AppError(
+                StatusCodes.FORBIDDEN,
+                'You can only update flashcards you created',
+            );
+        }
+    } else if (checkUser.role === 'teacher') {
+        checkTeacher = await Teacher.findOne({ user_id: userInfo.userId });
+        if (!checkTeacher) {
+            throw new AppError(StatusCodes.NOT_FOUND, 'Teacher does not exist');
+        }
+        // Check if teacher is assigned for Flashcard
+        if (!checkTeacher.assignedWorks.includes('FLASHCARD')) {
+            throw new AppError(
+                StatusCodes.FORBIDDEN,
+                'You are not assigned to update flashcards',
+            );
+        }
+    } else if (checkUser.role !== 'admin') {
+        throw new AppError(
+            StatusCodes.FORBIDDEN,
+            'Only the creator, assigned teacher, or admin can update this flashcard',
+        );
+    }
+
+    // Update flashcard fields
+    if (payload.title) checkFlashcard.title = payload.title;
+    if (payload.visibility) checkFlashcard.visibility = payload.visibility;
+
+    // Handle items update
+    let updatedItems = await FlashcardItem.find({
+        flashcardId: checkFlashcard._id,
+    });
+    if (payload.items && payload.items.length > 0) {
+        const session = await mongoose.startSession();
+        try {
+            session.startTransaction();
+
+            const newItems: any[] = [];
+            for (const payloadItem of payload.items) {
+                if (payloadItem.id) {
+                    // Update existing item
+                    const existingItem = updatedItems.find(
+                        (item) => item._id.toString() === payloadItem.id,
+                    );
+                    if (existingItem) {
+                        if (payloadItem.term)
+                            existingItem.term = payloadItem.term;
+                        if (payloadItem.answer)
+                            existingItem.answer = payloadItem.answer;
+                        await existingItem.save({ session });
+                    } else {
+                        throw new AppError(
+                            StatusCodes.BAD_REQUEST,
+                            `Item with ID ${payloadItem.id} not found`,
+                        );
+                    }
+                } else {
+                    // Create new item (term and answer are required by Zod)
+                    const newItem = new FlashcardItem({
+                        flashcardId: checkFlashcard._id,
+                        term: payloadItem.term,
+                        answer: payloadItem.answer,
+                        viewCount: 0,
+                        favoritedBy: [],
+                    });
+                    await newItem.save({ session });
+                    newItems.push(newItem);
+                }
+            }
+
+            // Sync FlashcardHistory for student (only if history exists)
+            if (checkUser.role === 'student') {
+                let history = await FlashcardHistory.findOne({
+                    studentId: checkStudent._id,
+                    flashcardId: id,
+                }).session(session);
+
+                if (history && newItems.length > 0) {
+                    const existingCardIds = history.cardInteractions.map((ci) =>
+                        ci.cardId.toString(),
+                    );
+                    const newCardInteractions = newItems.map((item) => ({
+                        cardId: item._id,
+                        isKnown: false,
+                        isLearned: false,
+                    }));
+                    history.cardInteractions = [
+                        ...history.cardInteractions,
+                        ...newCardInteractions.filter(
+                            (ci) =>
+                                !existingCardIds.includes(ci.cardId.toString()),
+                        ),
+                    ];
+                    await history.save({ session });
+                }
+            }
+
+            await checkFlashcard.save({ session });
+            await session.commitTransaction();
+        } catch (error) {
+            if (session.inTransaction()) {
+                await session.abortTransaction();
+            }
+            throw error instanceof AppError
+                ? error
+                : new AppError(
+                      StatusCodes.INTERNAL_SERVER_ERROR,
+                      'Failed to update flashcard',
+                  );
+        } finally {
+            session.endSession();
+        }
+    } else {
+        await checkFlashcard.save();
+    }
+
+    return checkFlashcard;
 };
 
 const deleteFlashcardByID = async () => {

@@ -42,7 +42,7 @@ const getFlashcardByID = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateFlashcard = catchAsync(async (req: Request, res: Response) => {
-    const result = await FlashcardService.updateFlashcard();
+    const result = await FlashcardService.updateFlashcard(req.params.id, req.body,req.user);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
