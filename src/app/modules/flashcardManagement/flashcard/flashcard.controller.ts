@@ -60,11 +60,20 @@ const deleteFlashcardByID = catchAsync(async (req: Request, res: Response) => {
         data: result,
     });
 });
+const approveFlashcardByID = catchAsync(async (req: Request, res: Response) => {
+    const result = await FlashcardService.approveFlashcardByID(req.params.id,req.user);
+
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'Flashcard is approved successfully',
+        data: result,
+    });
+});
 
 export const FlashcardController = {
     createFlashcard,
     getAllFlashcards,
     getFlashcardByID,
     updateFlashcard,
-    deleteFlashcardByID,
+    deleteFlashcardByID,approveFlashcardByID
 };

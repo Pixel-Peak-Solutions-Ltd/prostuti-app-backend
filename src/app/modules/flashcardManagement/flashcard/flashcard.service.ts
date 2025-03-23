@@ -484,10 +484,34 @@ const deleteFlashcardByID = async (id: string,
 
 };
 
+const approveFlashcardByID = async (id: string, userInfo: TJWTDecodedUser) => {
+    const checkFlashcard = await Flashcard.findOne({
+        _id: id,
+        visibility: 'EVERYONE',
+        isApproved: false,
+    })
+    if (!checkFlashcard) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Flashcard does not exist or already approved');
+    }
+    const checkTeacher = await Teacher.findOne({ user_id: userInfo.userId });
+        if (!checkTeacher) {
+            throw new AppError(StatusCodes.NOT_FOUND, 'Teacher does not exist');
+        }
+        checkFlashcard.approvedBy = checkTeacher._id;
+        checkFlashcard.isApproved = true;
+
+        await checkFlashcard.save();
+        return checkFlashcard;
+    
+    
+
+}
+
 export const FlashcardService = {
     createFlashcard,
     getAllFlashcards,
     getFlashcardByID,
     updateFlashcard,
     deleteFlashcardByID,
+    approveFlashcardByID
 };
