@@ -527,6 +527,7 @@ const SwipeFlashcardItemByID = async (id: string, payload: { swipeDirection: "ri
     if (!checkFlashcard) {      
         throw new AppError(StatusCodes.NOT_FOUND, 'Flashcard does not exist');
     }
+    let history
 
     // Handle swipe in a transaction
     const session = await mongoose.startSession();
@@ -537,7 +538,7 @@ const SwipeFlashcardItemByID = async (id: string, payload: { swipeDirection: "ri
         const allItems = await FlashcardItem.find({ flashcardId: checkFlashcard._id }).session(session);
 
         // Find or create FlashcardHistory and initialize with all items if new
-        let history = await FlashcardHistory.findOne({
+        history = await FlashcardHistory.findOne({
             studentId: checkStudent._id,
             flashcardId: checkFlashcard._id,
         }).session(session);
