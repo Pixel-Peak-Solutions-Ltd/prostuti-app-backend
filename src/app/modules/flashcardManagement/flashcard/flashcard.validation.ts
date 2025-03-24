@@ -71,4 +71,15 @@ const updateFlashcard = z.object({
         },
     )
 })
-export const FlashcardValidation = { createFlashcard, updateFlashcard };
+
+const swipeFlashcardItemSchema = z.object({
+    body: z.object({
+        swipeDirection: z.enum(['right', 'left'], {
+            message: 'Swipe direction must be "right" or "left"',
+        }),
+    }).strict(),
+});
+
+
+
+export const FlashcardValidation = { createFlashcard, updateFlashcard ,swipeFlashcardItemSchema};

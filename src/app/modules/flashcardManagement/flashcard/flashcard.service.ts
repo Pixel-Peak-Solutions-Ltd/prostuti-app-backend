@@ -16,6 +16,7 @@ import { FlashcardHistory } from '../flashcardHistory/flashcardHistory.model';
 import { Teacher } from '../../teacher/teacher.model';
 import { IStudent } from '../../student/student.interface';
 import { ITeacher } from '../../teacher/teacher.interface';
+import { ICardInteraction } from '../flashcardHistory/flashcardHistory.interface';
 
 const createFlashcard = async (
     payload: Partial<IFlashcard & { items: Partial<IFlashcardItem>[] }>,
@@ -507,11 +508,97 @@ const approveFlashcardByID = async (id: string, userInfo: TJWTDecodedUser) => {
 
 }
 
+const SwipeFlashcardItemByID = async (id: string, payload: { swipeDirection: "right" | "left" }, userInfo: TJWTDecodedUser) => {
+    
+    // Check student
+    const checkStudent = await Student.findOne({ user_id: userInfo.userId });
+    if (!checkStudent) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Student does not exist');
+    }
+
+    // Check flashcard item
+    const checkFlashcardItem = await FlashcardItem.findById(id);
+    if (!checkFlashcardItem) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Flashcard item does not exist');
+    }
+
+    // Check flashcard   
+    const checkFlashcard = await Flashcard.findById(checkFlashcardItem.flashcardId);
+    if (!checkFlashcard) {      
+        throw new AppError(StatusCodes.NOT_FOUND, 'Flashcard does not exist');
+    }
+
+    // Handle swipe in a transaction
+    const session = await mongoose.startSession();
+    try {
+        session.startTransaction();
+
+        // Fetch all items for the flashcard
+        const allItems = await FlashcardItem.find({ flashcardId: checkFlashcard._id }).session(session);
+
+        // Find or create FlashcardHistory and initialize with all items if new
+        let history = await FlashcardHistory.findOne({
+            studentId: checkStudent._id,
+            flashcardId: checkFlashcard._id,
+        }).session(session);
+
+        if (!history) {
+            history = new FlashcardHistory({
+                studentId: checkStudent._id,
+                flashcardId: checkFlashcard._id,
+                cardInteractions: allItems.map(item => ({
+                    cardId: item._id,
+                    isKnown: false,
+                    isLearned: false,
+                })),
+            });
+        } else {
+            // Add any missing items to history
+            const existingCardIds = history.cardInteractions.map(ci => ci.cardId.toString());
+            const newCardInteractions = allItems
+                .filter(item => !existingCardIds.includes(item._id.toString()))
+                .map(item => ({
+                    cardId: item._id,
+                    isKnown: false,
+                    isLearned: false,
+                }));
+            history.cardInteractions = [...history.cardInteractions, ...newCardInteractions];
+        }
+
+        // Find the specific card interaction 
+        const interaction = history.cardInteractions.find(ci => ci.cardId.equals(checkFlashcardItem._id));
+        if (!interaction) {
+            throw new AppError(StatusCodes.INTERNAL_SERVER_ERROR, 'Card interaction not found after initialization');
+        }
+
+        // Update based on swipe direction
+        if (payload.swipeDirection === 'right') {
+            interaction.isKnown = true;
+            checkFlashcardItem.viewCount = (checkFlashcardItem.viewCount || 0) + 1; 
+            await checkFlashcardItem.save({ session });
+        } else if (payload.swipeDirection === 'left') {
+            interaction.isLearned = true; 
+        }
+
+        await history.save({ session });
+        await session.commitTransaction();
+    } catch (error) {
+        if (session.inTransaction()) {
+            await session.abortTransaction();
+        }
+        throw error instanceof AppError ? error : new AppError(StatusCodes.INTERNAL_SERVER_ERROR, 'Failed to process swipe action');
+    } finally {
+        session.endSession();
+    }
+    return history;
+}
+
 export const FlashcardService = {
     createFlashcard,
     getAllFlashcards,
     getFlashcardByID,
     updateFlashcard,
     deleteFlashcardByID,
-    approveFlashcardByID
+    approveFlashcardByID,
+    SwipeFlashcardItemByID
 };

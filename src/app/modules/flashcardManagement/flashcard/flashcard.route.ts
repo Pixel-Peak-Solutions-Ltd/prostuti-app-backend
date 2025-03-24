@@ -15,5 +15,6 @@ router.get('/single-flashcard/:id',auth(), FlashcardController.getFlashcardByID)
 router.patch('/update-flashcard/:id',auth(),validateRequest(FlashcardValidation.updateFlashcard), FlashcardController.updateFlashcard);
 router.patch('/approve-flashcard/:id',auth("teacher"),checkAssignedWork("Flashcard"), FlashcardController.approveFlashcardByID)
 router.delete('/delete-flashcard-item/:id',auth(), FlashcardController.deleteFlashcardByID)
+router.patch('/swipe-flashcard-item/:id',auth("student"),validateRequest(FlashcardValidation.swipeFlashcardItemSchema), FlashcardController.SwipeFlashcardItemByID)
 
 export const flashcardRoute = router;

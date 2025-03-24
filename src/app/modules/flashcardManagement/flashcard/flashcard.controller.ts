@@ -69,11 +69,22 @@ const approveFlashcardByID = catchAsync(async (req: Request, res: Response) => {
         data: result,
     });
 });
+const SwipeFlashcardItemByID = catchAsync(async (req: Request, res: Response) => {
+    const result = await FlashcardService.SwipeFlashcardItemByID(req.params.id,req.body,req.user);
+
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'Flashcard item is swiped successfully',
+        data: result,
+    });
+});
 
 export const FlashcardController = {
     createFlashcard,
     getAllFlashcards,
     getFlashcardByID,
     updateFlashcard,
-    deleteFlashcardByID,approveFlashcardByID
+    deleteFlashcardByID,
+    approveFlashcardByID,
+    SwipeFlashcardItemByID
 };
