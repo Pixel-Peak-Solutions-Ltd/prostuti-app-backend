@@ -265,7 +265,7 @@ const updateFlashcard = async (
     }
 
     // Check flashcard with student details populated
-    const checkFlashcard = await Flashcard.findById(id) 
+    const checkFlashcard = await Flashcard.findById(id);
     if (!checkFlashcard) {
         throw new AppError(StatusCodes.NOT_FOUND, 'Flashcard does not exist');
     }
@@ -282,7 +282,6 @@ const updateFlashcard = async (
         if (
             checkFlashcard.studentId.toString() !== checkStudent._id.toString()
         ) {
-            
             throw new AppError(
                 StatusCodes.FORBIDDEN,
                 'You can only update flashcards you created',
@@ -402,8 +401,7 @@ const updateFlashcard = async (
     return checkFlashcard;
 };
 
-const deleteFlashcardByID = async (id: string,
-    userInfo: TJWTDecodedUser,) => {
+const deleteFlashcardByID = async (id: string, userInfo: TJWTDecodedUser) => {
     // Check user details
     const checkUser = await User.findById(userInfo.userId);
     if (!checkUser) {
@@ -414,26 +412,37 @@ const deleteFlashcardByID = async (id: string,
     const itemIdToDelete = new Types.ObjectId(id);
     const itemToDelete = await FlashcardItem.findById(itemIdToDelete);
     if (!itemToDelete) {
-        throw new AppError(StatusCodes.NOT_FOUND, 'Flashcard item does not exist');
+        throw new AppError(
+            StatusCodes.NOT_FOUND,
+            'Flashcard item does not exist',
+        );
     }
 
     // Check the associated flashcard with student and approvedBy details populated
-    const checkFlashcard = await Flashcard.findById(itemToDelete.flashcardId)
+    const checkFlashcard = await Flashcard.findById(itemToDelete.flashcardId);
     if (!checkFlashcard) {
-        throw new AppError(StatusCodes.NOT_FOUND, 'Associated flashcard does not exist');
+        throw new AppError(
+            StatusCodes.NOT_FOUND,
+            'Associated flashcard does not exist',
+        );
     }
 
     // Authorization check
-    let checkStudent:  (IStudent & { _id: Types.ObjectId }) | null = null;
-    let checkTeacher:  (ITeacher & { _id: Types.ObjectId }) | null = null;
+    let checkStudent: (IStudent & { _id: Types.ObjectId }) | null = null;
+    let checkTeacher: (ITeacher & { _id: Types.ObjectId }) | null = null;
 
     if (checkUser.role === 'student') {
         checkStudent = await Student.findOne({ user_id: userInfo.userId });
         if (!checkStudent) {
             throw new AppError(StatusCodes.NOT_FOUND, 'Student does not exist');
         }
-        if (checkFlashcard.studentId.toString() !== checkStudent._id.toString()) {
-            throw new AppError(StatusCodes.FORBIDDEN, 'You can only delete items from flashcards you created');
+        if (
+            checkFlashcard.studentId.toString() !== checkStudent._id.toString()
+        ) {
+            throw new AppError(
+                StatusCodes.FORBIDDEN,
+                'You can only delete items from flashcards you created',
+            );
         }
     } else if (checkUser.role === 'teacher') {
         checkTeacher = await Teacher.findOne({ user_id: userInfo.userId });
@@ -442,10 +451,16 @@ const deleteFlashcardByID = async (id: string,
         }
         // Check if teacher is assigned for Flashcard
         if (!checkTeacher.assignedWorks.includes('FLASHCARD')) {
-            throw new AppError(StatusCodes.FORBIDDEN, 'You are not assigned to delete items from flashcards');
+            throw new AppError(
+                StatusCodes.FORBIDDEN,
+                'You are not assigned to delete items from flashcards',
+            );
         }
     } else if (checkUser.role !== 'admin') {
-        throw new AppError(StatusCodes.FORBIDDEN, 'Only the creator, assigned teacher, or admin can delete items from this flashcard');
+        throw new AppError(
+            StatusCodes.FORBIDDEN,
+            'Only the creator, assigned teacher, or admin can delete items from this flashcard',
+        );
     }
 
     // Delete the item and update history in a transaction
@@ -466,7 +481,7 @@ const deleteFlashcardByID = async (id: string,
 
             if (history) {
                 history.cardInteractions = history.cardInteractions.filter(
-                    interaction => !itemIdToDelete.equals(interaction.cardId)
+                    (interaction) => !itemIdToDelete.equals(interaction.cardId),
                 );
                 await history.save({ session });
             }
@@ -477,12 +492,14 @@ const deleteFlashcardByID = async (id: string,
         if (session.inTransaction()) {
             await session.abortTransaction();
         }
-        throw new AppError(StatusCodes.INTERNAL_SERVER_ERROR, 'Failed to delete flashcard item');
+        throw new AppError(
+            StatusCodes.INTERNAL_SERVER_ERROR,
+            'Failed to delete flashcard item',
+        );
     } finally {
         session.endSession();
     }
-    return itemToDelete 
-
+    return itemToDelete;
 };
 
 const approveFlashcardByID = async (id: string, userInfo: TJWTDecodedUser) => {
@@ -490,26 +507,29 @@ const approveFlashcardByID = async (id: string, userInfo: TJWTDecodedUser) => {
         _id: id,
         visibility: 'EVERYONE',
         isApproved: false,
-    })
+    });
     if (!checkFlashcard) {
-        throw new AppError(StatusCodes.NOT_FOUND, 'Flashcard does not exist or already approved');
+        throw new AppError(
+            StatusCodes.NOT_FOUND,
+            'Flashcard does not exist or already approved',
+        );
     }
     const checkTeacher = await Teacher.findOne({ user_id: userInfo.userId });
-        if (!checkTeacher) {
-            throw new AppError(StatusCodes.NOT_FOUND, 'Teacher does not exist');
-        }
-        checkFlashcard.approvedBy = checkTeacher._id;
-        checkFlashcard.isApproved = true;
+    if (!checkTeacher) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Teacher does not exist');
+    }
+    checkFlashcard.approvedBy = checkTeacher._id;
+    checkFlashcard.isApproved = true;
 
-        await checkFlashcard.save();
-        return checkFlashcard;
-    
-    
+    await checkFlashcard.save();
+    return checkFlashcard;
+};
 
-}
-
-const SwipeFlashcardItemByID = async (id: string, payload: { swipeDirection: "right" | "left" }, userInfo: TJWTDecodedUser) => {
-    
+const SwipeFlashcardItemByID = async (
+    id: string,
+    payload: { swipeDirection: 'right' | 'left' },
+    userInfo: TJWTDecodedUser,
+) => {
     // Check student
     const checkStudent = await Student.findOne({ user_id: userInfo.userId });
     if (!checkStudent) {
@@ -519,15 +539,20 @@ const SwipeFlashcardItemByID = async (id: string, payload: { swipeDirection: "ri
     // Check flashcard item
     const checkFlashcardItem = await FlashcardItem.findById(id);
     if (!checkFlashcardItem) {
-        throw new AppError(StatusCodes.NOT_FOUND, 'Flashcard item does not exist');
+        throw new AppError(
+            StatusCodes.NOT_FOUND,
+            'Flashcard item does not exist',
+        );
     }
 
-    // Check flashcard   
-    const checkFlashcard = await Flashcard.findById(checkFlashcardItem.flashcardId);
-    if (!checkFlashcard) {      
+    // Check flashcard
+    const checkFlashcard = await Flashcard.findById(
+        checkFlashcardItem.flashcardId,
+    );
+    if (!checkFlashcard) {
         throw new AppError(StatusCodes.NOT_FOUND, 'Flashcard does not exist');
     }
-    let history
+    let history;
 
     // Handle swipe in a transaction
     const session = await mongoose.startSession();
@@ -535,7 +560,9 @@ const SwipeFlashcardItemByID = async (id: string, payload: { swipeDirection: "ri
         session.startTransaction();
 
         // Fetch all items for the flashcard
-        const allItems = await FlashcardItem.find({ flashcardId: checkFlashcard._id }).session(session);
+        const allItems = await FlashcardItem.find({
+            flashcardId: checkFlashcard._id,
+        }).session(session);
 
         // Find or create FlashcardHistory and initialize with all items if new
         history = await FlashcardHistory.findOne({
@@ -547,7 +574,7 @@ const SwipeFlashcardItemByID = async (id: string, payload: { swipeDirection: "ri
             history = new FlashcardHistory({
                 studentId: checkStudent._id,
                 flashcardId: checkFlashcard._id,
-                cardInteractions: allItems.map(item => ({
+                cardInteractions: allItems.map((item) => ({
                     cardId: item._id,
                     isKnown: false,
                     isLearned: false,
@@ -555,30 +582,43 @@ const SwipeFlashcardItemByID = async (id: string, payload: { swipeDirection: "ri
             });
         } else {
             // Add any missing items to history
-            const existingCardIds = history.cardInteractions.map(ci => ci.cardId.toString());
+            const existingCardIds = history.cardInteractions.map((ci) =>
+                ci.cardId.toString(),
+            );
             const newCardInteractions = allItems
-                .filter(item => !existingCardIds.includes(item._id.toString()))
-                .map(item => ({
+                .filter(
+                    (item) => !existingCardIds.includes(item._id.toString()),
+                )
+                .map((item) => ({
                     cardId: item._id,
                     isKnown: false,
                     isLearned: false,
                 }));
-            history.cardInteractions = [...history.cardInteractions, ...newCardInteractions];
+            history.cardInteractions = [
+                ...history.cardInteractions,
+                ...newCardInteractions,
+            ];
         }
 
-        // Find the specific card interaction 
-        const interaction = history.cardInteractions.find(ci => ci.cardId.equals(checkFlashcardItem._id));
+        // Find the specific card interaction
+        const interaction = history.cardInteractions.find((ci) =>
+            ci.cardId.equals(checkFlashcardItem._id),
+        );
         if (!interaction) {
-            throw new AppError(StatusCodes.INTERNAL_SERVER_ERROR, 'Card interaction not found after initialization');
+            throw new AppError(
+                StatusCodes.INTERNAL_SERVER_ERROR,
+                'Card interaction not found after initialization',
+            );
         }
 
         // Update based on swipe direction
         if (payload.swipeDirection === 'right') {
             interaction.isKnown = true;
-            checkFlashcardItem.viewCount = (checkFlashcardItem.viewCount || 0) + 1; 
+            checkFlashcardItem.viewCount =
+                (checkFlashcardItem.viewCount || 0) + 1;
             await checkFlashcardItem.save({ session });
         } else if (payload.swipeDirection === 'left') {
-            interaction.isLearned = true; 
+            interaction.isLearned = true;
         }
 
         await history.save({ session });
@@ -587,11 +627,76 @@ const SwipeFlashcardItemByID = async (id: string, payload: { swipeDirection: "ri
         if (session.inTransaction()) {
             await session.abortTransaction();
         }
-        throw error instanceof AppError ? error : new AppError(StatusCodes.INTERNAL_SERVER_ERROR, 'Failed to process swipe action');
+        throw error instanceof AppError
+            ? error
+            : new AppError(
+                  StatusCodes.INTERNAL_SERVER_ERROR,
+                  'Failed to process swipe action',
+              );
     } finally {
         session.endSession();
     }
     return history;
+};
+
+const favoriteFlashcardByID = async (id: string, userInfo: TJWTDecodedUser) => {
+    // Check student
+    const checkStudent = await Student.findOne({ user_id: userInfo.userId });
+    if (!checkStudent) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Student does not exist');
+    }
+
+    // Check flashcard item
+    const checkFlashcardItem = await FlashcardItem.findById(id);
+    if (!checkFlashcardItem) {
+        throw new AppError(
+            StatusCodes.NOT_FOUND,
+            'Flashcard item does not exist',
+        );
+    }
+
+    // Check flashcard
+    const checkFlashcard = await Flashcard.findById(
+        checkFlashcardItem.flashcardId,
+    );
+    if (!checkFlashcard) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Flashcard does not exist');
+    }
+
+    // Check if the item is already favorited
+    const studentId = new Types.ObjectId(checkStudent._id);
+    if (checkFlashcardItem.favoritedBy.some((id) => id.equals(studentId))) {
+        checkFlashcardItem.favoritedBy = checkFlashcardItem.favoritedBy.filter(
+            (id) => !id.equals(studentId),
+        );
+    } else {
+        // Add student to favoritedBy array
+        checkFlashcardItem.favoritedBy.push(studentId);
+    }
+
+    await checkFlashcardItem.save();
+
+    return checkFlashcardItem;
+};
+
+const getFavoriteFlashcardItems = async (userInfo: TJWTDecodedUser) => {
+    // Check student
+    const checkStudent = await Student.findOne({ user_id: userInfo.userId });
+    if (!checkStudent) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Student does not exist');
+    }
+
+    // Fetch all favorited items
+    const favoriteItems= await FlashcardItem.find({
+        favoritedBy: checkStudent._id,
+    });
+
+    // Return favorite items with isFavorite true
+    return favoriteItems.map(item => ({
+        ...item.toObject(),
+        isFavorite: true // Always true since these are the user's favorites
+    }));
+
 }
 
 export const FlashcardService = {
@@ -601,5 +706,7 @@ export const FlashcardService = {
     updateFlashcard,
     deleteFlashcardByID,
     approveFlashcardByID,
-    SwipeFlashcardItemByID
+    SwipeFlashcardItemByID,
+    favoriteFlashcardByID,
+    getFavoriteFlashcardItems,
 };

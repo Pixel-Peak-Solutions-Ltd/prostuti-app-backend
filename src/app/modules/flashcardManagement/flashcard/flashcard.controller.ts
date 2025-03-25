@@ -79,6 +79,26 @@ const SwipeFlashcardItemByID = catchAsync(async (req: Request, res: Response) =>
     });
 });
 
+const favoriteFlashcardByID = catchAsync(async (req: Request, res: Response) => {
+    const result = await FlashcardService.favoriteFlashcardByID(req.params.id,req.user);
+
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: "Flashcard item's favorite status is updated successfully",
+        data: result,
+    });
+});
+const getFavoriteFlashcardItems = catchAsync(async (req: Request, res: Response) => {
+    const result = await FlashcardService.getFavoriteFlashcardItems(req.user);
+
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: "Favorite Flashcard items are retrieved successfully",
+        data: result,
+    });
+});
+
+
 export const FlashcardController = {
     createFlashcard,
     getAllFlashcards,
@@ -86,5 +106,7 @@ export const FlashcardController = {
     updateFlashcard,
     deleteFlashcardByID,
     approveFlashcardByID,
-    SwipeFlashcardItemByID
+    SwipeFlashcardItemByID,
+    favoriteFlashcardByID,
+    getFavoriteFlashcardItems
 };
