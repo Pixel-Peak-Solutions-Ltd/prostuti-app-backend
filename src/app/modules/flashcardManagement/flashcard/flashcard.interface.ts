@@ -1,0 +1,24 @@
+import { Model, Types } from 'mongoose';
+import { VisibilityType } from './flashcard.constant';
+
+export type IFlashcard = {
+    title: string;
+    visibility:VisibilityType
+    categoryId: Types.ObjectId;
+    studentId: Types.ObjectId;
+    isApproved: boolean;
+    approvedBy:Types.ObjectId
+
+};
+export type FlashcardModel = Model<
+IFlashcard,
+Record<string, unknown>
+>;
+export type IFlashcardFilters = {
+    searchTerm?: string;
+    title?: string;
+    visibility?: string
+    categoryId?: string;
+    studentId?: string; 
+    isApproved?: string;
+  };
