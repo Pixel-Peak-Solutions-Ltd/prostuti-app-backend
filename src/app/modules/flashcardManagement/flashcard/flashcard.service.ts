@@ -255,7 +255,7 @@ const getFlashcardByID = async (id: string, userInfo: TJWTDecodedUser) => {
 };
 const updateFlashcard = async (
     id: string,
-    payload: Partial<IFlashcard & { items: Partial<IFlashcardItem>[] }>,
+    payload: Partial<IFlashcard & { items: Partial<IFlashcardItem & { id?: string }>[] }>,
     userInfo: TJWTDecodedUser,
 ) => {
     // Check user details
@@ -353,7 +353,7 @@ const updateFlashcard = async (
             }
 
             // Sync FlashcardHistory for student (only if history exists)
-            if (checkUser.role === 'student') {
+            if (checkUser.role === 'student'&& checkStudent) {
                 let history = await FlashcardHistory.findOne({
                     studentId: checkStudent._id,
                     flashcardId: id,
@@ -473,7 +473,7 @@ const deleteFlashcardByID = async (id: string, userInfo: TJWTDecodedUser) => {
         await FlashcardItem.deleteOne({ _id: itemIdToDelete }, { session });
 
         // Update FlashcardHistory for student (if it exists)
-        if (checkUser.role === 'student') {
+        if (checkUser.role === 'student' && checkStudent) {
             history = await FlashcardHistory.findOne({
                 studentId: checkStudent._id,
                 flashcardId: checkFlashcard._id,
