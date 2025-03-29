@@ -87,7 +87,16 @@ const getAllFlashcards = async (
     paginationOptions: IPaginationOptions,
     userInfo: TJWTDecodedUser,
 ) => {
-    const { searchTerm, ...filtersData } = filters;
+    const {
+        searchTerm,
+        categoryType,
+        categoryDivision,
+        categoryUniversityType,
+        categoryUniversityName,
+        categoryChapter,
+        categorySubject,
+        ...filtersData
+    } = filters;
 
     const { page, limit, skip, sortBy, sortOrder } =
         calculatePagination(paginationOptions);
@@ -114,6 +123,22 @@ const getAllFlashcards = async (
             })),
         });
     }
+    
+    if (categoryType || categoryDivision || categoryUniversityType || categoryUniversityName || categoryChapter || categorySubject) {
+        const categoryFilter: any = {};
+        if (categoryType) categoryFilter.type = categoryType;
+        if (categoryDivision) categoryFilter.division = categoryDivision;
+        if (categoryUniversityType) categoryFilter.universityType = categoryUniversityType;
+        if (categoryUniversityName) categoryFilter.universityName = categoryUniversityName;
+        if (categoryChapter) categoryFilter.chapter = categoryChapter;
+        if (categorySubject) categoryFilter.subject = categorySubject;
+
+        const matchingCategories = await Category.find(categoryFilter).select('_id');
+        const categoryIds = matchingCategories.map(cat => cat._id);
+        andConditions.push({ categoryId: { $in: categoryIds } });
+    }
+
+
     const sortConditions: { [key: string]: SortOrder } = {};
 
     if (sortBy && sortOrder) {
@@ -132,13 +157,29 @@ const getAllFlashcards = async (
         .populate('studentId')
         .populate('approvedBy');
 
+    // Add item count for each flashcard
+    const flashcardIds = result.map((flashcard) => flashcard._id);
+    const itemCounts = await FlashcardItem.aggregate([
+        { $match: { flashcardId: { $in: flashcardIds } } },
+        { $group: { _id: '$flashcardId', itemCount: { $sum: 1 } } },
+    ]);
+
+    // Map item counts to flashcards
+    const dataWithItemCount = result.map((flashcard) => {
+        const countEntry = itemCounts.find((c) => c._id.equals(flashcard._id));
+        return {
+            ...flashcard.toObject(),
+            itemCount: countEntry ? countEntry.itemCount : 0,
+        };
+    });
+
     return {
         meta: {
             page,
             limit: limit === 0 ? count : limit,
             count,
         },
-        data: result,
+        data: dataWithItemCount,
     };
 };
 
@@ -255,7 +296,9 @@ const getFlashcardByID = async (id: string, userInfo: TJWTDecodedUser) => {
 };
 const updateFlashcard = async (
     id: string,
-    payload: Partial<IFlashcard & { items: Partial<IFlashcardItem & { id?: string }>[] }>,
+    payload: Partial<
+        IFlashcard & { items: Partial<IFlashcardItem & { id?: string }>[] }
+    >,
     userInfo: TJWTDecodedUser,
 ) => {
     // Check user details
@@ -353,7 +396,7 @@ const updateFlashcard = async (
             }
 
             // Sync FlashcardHistory for student (only if history exists)
-            if (checkUser.role === 'student'&& checkStudent) {
+            if (checkUser.role === 'student' && checkStudent) {
                 let history = await FlashcardHistory.findOne({
                     studentId: checkStudent._id,
                     flashcardId: id,
@@ -687,17 +730,16 @@ const getFavoriteFlashcardItems = async (userInfo: TJWTDecodedUser) => {
     }
 
     // Fetch all favorited items
-    const favoriteItems= await FlashcardItem.find({
+    const favoriteItems = await FlashcardItem.find({
         favoritedBy: checkStudent._id,
     });
 
     // Return favorite items with isFavorite true
-    return favoriteItems.map(item => ({
+    return favoriteItems.map((item) => ({
         ...item.toObject(),
-        isFavorite: true // Always true since these are the user's favorites
+        isFavorite: true, // Always true since these are the user's favorites
     }));
-
-}
+};
 
 export const FlashcardService = {
     createFlashcard,
