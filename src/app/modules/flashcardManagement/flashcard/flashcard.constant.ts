@@ -6,7 +6,12 @@ export const flashcardFilterableFields = [
     'studentId',
     'isApproved',
     'visibility',
-    'categoryId',
+    'categoryType',
+    'categoryDivision',
+    'categoryUniversityType',
+    'categoryUniversityName',
+    'categoryChapter',
+    'categorySubject',
   ];
 
   export const flashcardSearchableFields = [

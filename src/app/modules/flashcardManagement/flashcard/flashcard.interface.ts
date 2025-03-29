@@ -18,7 +18,12 @@ export type IFlashcardFilters = {
     searchTerm?: string;
     title?: string;
     visibility?: string
-    categoryId?: string;
     studentId?: string; 
     isApproved?: string;
+    categoryType?: string
+    categoryDivision?: string
+    categoryUniversityType?: string;
+    categoryUniversityName?: string;
+    categoryChapter?: string;
+    categorySubject?: string;
   };
