@@ -3,7 +3,7 @@ import { Response } from 'express';
 interface IMeta {
     page: number;
     limit: number;
-    count: number;
+    count?: number;
     // totalPage: number;
 }
 

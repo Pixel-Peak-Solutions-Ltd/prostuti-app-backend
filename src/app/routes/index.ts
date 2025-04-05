@@ -28,6 +28,8 @@ import { teacherManagementRoute } from '../modules/teacherManagement/teacherMana
 import { LeaderBoard } from '../modules/leaderboard/leaderboard.model';
 import { LeaderBoardRoute } from '../modules/leaderboard/leaderboard.route';
 import { flashcardRoute } from '../modules/flashcardManagement/flashcard/flashcard.route';
+import { conversationRoute } from '../modules/conversation/conversation.route';
+import { messageRoute } from '../modules/message/message.route';
 
 const globalRoute = Router();
 
@@ -57,8 +59,11 @@ const routes = [
     { path: '/assignment-submission', route: assignmentSubmissionRoute },
     { path: '/voucher', route: VoucherRoute },
     { path: '/teacher-management', route: teacherManagementRoute },
-    { path: '/leaderboard', route: LeaderBoardRoute},
-    { path: '/flashcard', route: flashcardRoute},
+    { path: '/leaderboard', route: LeaderBoardRoute },
+    { path: '/flashcard', route: flashcardRoute },
+    // Add chat routes
+    { path: '/conversations', route: conversationRoute },
+    { path: '/messages', route: messageRoute },
 ];
 
 routes.forEach((route) => globalRoute.use(route.path, route.route));
