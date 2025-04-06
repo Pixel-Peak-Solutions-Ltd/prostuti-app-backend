@@ -28,6 +28,7 @@ import { teacherManagementRoute } from '../modules/teacherManagement/teacherMana
 import { LeaderBoard } from '../modules/leaderboard/leaderboard.model';
 import { LeaderBoardRoute } from '../modules/leaderboard/leaderboard.route';
 import { flashcardRoute } from '../modules/flashcardManagement/flashcard/flashcard.route';
+import { quizRoute } from '../modules/quiz/quiz.route';
 
 const globalRoute = Router();
 
@@ -59,6 +60,7 @@ const routes = [
     { path: '/teacher-management', route: teacherManagementRoute },
     { path: '/leaderboard', route: LeaderBoardRoute},
     { path: '/flashcard', route: flashcardRoute},
+    { path: '/quiz', route: quizRoute},
 ];
 
 routes.forEach((route) => globalRoute.use(route.path, route.route));
