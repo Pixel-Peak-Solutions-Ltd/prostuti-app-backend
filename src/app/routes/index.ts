@@ -1,5 +1,4 @@
 import { Router } from 'express';
-
 import { adminRoute } from '../modules/admin/admin.route';
 import { authRoute } from '../modules/auth/auth.route';
 import { categoryRoute } from '../modules/category/category.route';
@@ -30,6 +29,8 @@ import { LeaderBoardRoute } from '../modules/leaderboard/leaderboard.route';
 import { flashcardRoute } from '../modules/flashcardManagement/flashcard/flashcard.route';
 import { conversationRoute } from '../modules/conversation/conversation.route';
 import { messageRoute } from '../modules/message/message.route';
+import { messageRequestRoute } from '../modules/messageRequest/messageRequest.route';
+import { notificationRoute } from '../modules/chatNotification/notification.route';
 
 const globalRoute = Router();
 
@@ -64,6 +65,8 @@ const routes = [
     // Add chat routes
     { path: '/conversations', route: conversationRoute },
     { path: '/messages', route: messageRoute },
+    { path: '/message-requests', route: messageRequestRoute },
+    { path: '/notifications', route: notificationRoute },
 ];
 
 routes.forEach((route) => globalRoute.use(route.path, route.route));
