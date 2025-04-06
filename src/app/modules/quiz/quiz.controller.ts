@@ -13,4 +13,16 @@ const createQuiz = catchAsync(async (req: Request, res: Response) => {
         data: result,
     });
 });
-export const QuizController= {createQuiz}
+
+const submitQuiz = catchAsync(async (req: Request, res: Response) => {
+    const result = await QuizService.submitQuiz(req.user, req.body);
+
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'Quiz submitted successfully',
+        data: result,
+    });
+});
+
+
+export const QuizController= {createQuiz,submitQuiz}

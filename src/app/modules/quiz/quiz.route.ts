@@ -7,5 +7,7 @@ const router = express.Router();
 
 router.post('/create-quiz',auth("student"),validateRequest(quizValidation.createQuiz), QuizController.createQuiz)
 
+router.post('/submit-quiz',auth("student"),validateRequest(quizValidation.submitQuiz), QuizController.submitQuiz)
+
 
 export const quizRoute = router;

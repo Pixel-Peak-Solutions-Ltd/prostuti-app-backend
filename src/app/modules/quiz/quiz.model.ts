@@ -1,5 +1,6 @@
 import { Schema, model } from 'mongoose';
 import { IQuiz, QuizModel } from './quiz.interface';
+import { QuestionTypes } from '../question/question.constant';
 
 const QuizSchema = new Schema<IQuiz, QuizModel>(
     {
@@ -8,49 +9,55 @@ const QuizSchema = new Schema<IQuiz, QuizModel>(
             ref: 'Student',
             required: true,
             index: true,
-          },
-          category_id: {
+        },
+        category_id: {
             type: Schema.Types.ObjectId,
             ref: 'Category',
             required: true,
             index: true,
-          },
-          questions: [{
-            type: Schema.Types.ObjectId,
-            ref: 'Question',
-            required: true,
-          }],
-          answers: [{
-            question_id: {
-              type: Schema.Types.ObjectId,
-              ref: 'Question',
-              required: true,
+        },
+        type: {
+            type: String,
+            enum: QuestionTypes,
+            required: [true, 'Type is required.'],
+        },
+        questions: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: 'Question',
+                required: true,
             },
-            selectedOption: {
-              type: String,
-              required: true,
+        ],
+        answers: [
+            {
+                question_id: {
+                    type: Schema.Types.ObjectId,
+                    ref: 'Question',
+                    required: true,
+                },
+                selectedOption: {
+                    type: String,
+                    required: true,
+                },
             },
-          }],
-          score: {
+        ],
+        score: {
             type: Number,
             default: 0,
             min: 0,
-          },
-          totalQuestions: {
+        },
+        totalQuestions: {
             type: Number,
             required: true,
             min: 1,
-          },
-          completedAt: {
+        },
+        completedAt: {
             type: Date,
-          },
+        },
     },
     {
         timestamps: true,
     },
 );
 
-export const Quiz = model<IQuiz, QuizModel>(
-    'Quiz',
-    QuizSchema,
-);
+export const Quiz = model<IQuiz, QuizModel>('Quiz', QuizSchema);
