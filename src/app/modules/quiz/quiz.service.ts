@@ -231,8 +231,8 @@ const getAllQuizzes = async (
 
     const count = await Quiz.countDocuments(whereConditions);
     const result = await Quiz.find(whereConditions)
-        .populate('student_id') 
-        .populate('category_id') 
+        .populate('student_id')
+        .populate('category_id')
         .sort(sortConditions)
         .skip(skip)
         .limit(limit);
@@ -246,4 +246,41 @@ const getAllQuizzes = async (
         data: result,
     };
 };
-export const QuizService = { createQuiz, submitQuiz, getAllQuizzes };
+
+const getSingleQuiz = async (id: string, userInfo: TJWTDecodedUser) => {
+    const checkQuiz = await Quiz.findById(id)
+        .populate('questions')
+        .populate('student_id')
+        .populate('category_id')
+        .populate('answers.question_id');
+    if (!checkQuiz) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Quiz not found');
+    }
+
+    if (userInfo.role === 'student') {
+        const checkStudent = await Student.findOne({
+            user_id: userInfo.userId,
+        });
+        if (!checkStudent) {
+            throw new AppError(StatusCodes.NOT_FOUND, 'Student not found');
+        }
+        // Verify checkQuiz belongs to the student
+        if (
+            checkQuiz.student_id._id.toString() !== checkStudent._id.toString()
+        ) {
+            throw new AppError(
+                StatusCodes.FORBIDDEN,
+                'You are not authorized to view this Quiz',
+            );
+        }
+        return checkQuiz;
+    } else {
+        return checkQuiz;
+    }
+};
+export const QuizService = {
+    createQuiz,
+    submitQuiz,
+    getAllQuizzes,
+    getSingleQuiz,
+};

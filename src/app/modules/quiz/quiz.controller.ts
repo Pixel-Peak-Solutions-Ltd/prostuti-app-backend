@@ -39,5 +39,15 @@ const getAllQuizzes = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const getSingleQuiz= catchAsync(async (req: Request, res: Response) => {
+    const result = await QuizService.getSingleQuiz(req.params.id,req.user);
 
-export const QuizController= {createQuiz,submitQuiz,getAllQuizzes}
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'Single quiz retrieved successfully',
+        data: result,
+    });
+});
+
+
+export const QuizController= {createQuiz,submitQuiz,getAllQuizzes,getSingleQuiz}

@@ -9,6 +9,9 @@ router.post('/create-quiz',auth("student"),validateRequest(quizValidation.create
 
 router.post('/submit-quiz',auth("student"),validateRequest(quizValidation.submitQuiz), QuizController.submitQuiz)
 router.get('/all-quiz',auth(), QuizController.getAllQuizzes)
+router.get('/single-quiz/:id',auth(), QuizController.getSingleQuiz)
+
+
 
 
 export const quizRoute = router;
