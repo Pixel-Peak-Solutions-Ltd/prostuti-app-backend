@@ -7,12 +7,13 @@ import config from '../../config';
 import { uploadToB2 } from '../../utils/backBlaze';
 import pick from '../../helpers/pick';
 import { paginationFields } from '../../constant';
+import { TImage } from '../../interfaces/common';
 
 const sendMessage = catchAsync(async (req: Request, res: Response) => {
     const { conversationId, content } = req.body;
     const userId = req.user.userId;
 
-    let attachments = [];
+    let attachments: TImage[] | undefined = [];
 
     // Handle file uploads if any
     if (req.files && Array.isArray(req.files) && req.files.length > 0) {
