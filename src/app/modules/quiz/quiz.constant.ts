@@ -1,8 +1,9 @@
 
 export const quizFilterableFields = [
     'searchTerm',
-    'studentId',
-    'categoryId',
+    'student_id',
+    'category_id',
+    'type'
 ];
 
 //searchTerm

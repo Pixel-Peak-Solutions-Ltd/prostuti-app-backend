@@ -3,6 +3,9 @@ import catchAsync from "../../utils/catchAsync";
 import sendSuccessResponse from "../../utils/sendSuccessResponse";
 import { StatusCodes } from "http-status-codes";
 import { QuizService } from "./quiz.service";
+import pick from "../../helpers/pick";
+import { quizFilterableFields } from "./quiz.constant";
+import { paginationFields } from "../../constant";
 
 const createQuiz = catchAsync(async (req: Request, res: Response) => {
     const result = await QuizService.createQuiz(req.user, req.body);
@@ -24,5 +27,17 @@ const submitQuiz = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const getAllQuizzes = catchAsync(async (req: Request, res: Response) => {
+    const filters = pick(req.query, quizFilterableFields);
+  const paginationOptions = pick(req.query, paginationFields);
+    const result = await QuizService.getAllQuizzes(filters, paginationOptions);
 
-export const QuizController= {createQuiz,submitQuiz}
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'All quizzes retrieved successfully',
+        data: result,
+    });
+});
+
+
+export const QuizController= {createQuiz,submitQuiz,getAllQuizzes}
