@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Request, Response } from 'express';
 import catchAsync from '../../utils/catchAsync';
 import { MessageRequestService } from './messageRequest.service';
@@ -7,13 +8,14 @@ import pick from '../../helpers/pick';
 import { paginationFields } from '../../constant';
 import config from '../../config';
 import { uploadToB2 } from '../../utils/backBlaze';
+import { TImage } from '../../interfaces/common';
 
 // Create a new message request (broadcast to all teachers)
 const createMessageRequest = catchAsync(async (req: Request, res: Response) => {
     const { content } = req.body;
     const studentId = req.user.userId;
 
-    let attachments = [];
+    let attachments: TImage[] | undefined = [];
 
     // Handle file uploads if any
     if (req.files && Array.isArray(req.files) && req.files.length > 0) {
