@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prostuti Chat API Test Client</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.1/socket.io.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background-color: #f5f5f5;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+
+    .header {
+      background-color: #4a6cfa;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .connection-form {
+      padding: 20px;
+      background-color: #f9f9f9;
+      border-bottom: 1px solid #eee;
+    }
+
+    .input-group {
+      margin-bottom: 15px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+    }
+
+    input[type="text"],
+    input[type="url"],
+    textarea,
+    select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    button {
+      background-color: #4a6cfa;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 10px 15px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #3a5bd9;
+    }
+
+    button:disabled {
+      background-color: #aaa;
+      cursor: not-allowed;
+    }
+
+    .status {
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 4px;
+    }
+
+    .status-connected {
+      background-color: #d4edda;
+      color: #155724;
+    }
+
+    .status-disconnected {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+
+    .main-content {
+      display: flex;
+      height: 600px;
+    }
+
+    .sidebar {
+      width: 30%;
+      border-right: 1px solid #eee;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .sidebar-header {
+      padding: 15px;
+      background-color: #f1f1f1;
+      border-bottom: 1px solid #eee;
+      font-weight: bold;
+    }
+
+    .broadcast-form {
+      padding: 15px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .broadcast-list,
+    .conversation-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+    }
+
+    .broadcast-item,
+    .conversation-item {
+      padding: 10px;
+      border: 1px solid #eee;
+      border-radius: 4px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .broadcast-item:hover,
+    .conversation-item:hover,
+    .conversation-item.active {
+      background-color: #f9f9f9;
+    }
+
+    .broadcast-item h4,
+    .conversation-item h4 {
+      margin-bottom: 5px;
+      color: #333;
+    }
+
+    .broadcast-item p,
+    .conversation-item p {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 5px;
+    }
+
+    .broadcast-item .actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .chat-container {
+      width: 70%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chat-header {
+      padding: 15px;
+      background-color: #f1f1f1;
+      border-bottom: 1px solid #eee;
+      font-weight: bold;
+    }
+
+    .chat-messages {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      background-color: #f9f9f9;
+    }
+
+    .message {
+      max-width: 70%;
+      padding: 10px 15px;
+      border-radius: 18px;
+      margin-bottom: 10px;
+      position: relative;
+      word-wrap: break-word;
+    }
+
+    .message-sent {
+      background-color: #e3f2fd;
+      color: #333;
+      margin-left: auto;
+      border-bottom-right-radius: 4px;
+    }
+
+    .message-received {
+      background-color: #fff;
+      color: #333;
+      border-bottom-left-radius: 4px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+
+    .message-time {
+      font-size: 11px;
+      color: #999;
+      margin-top: 4px;
+    }
+
+    .typing-indicator {
+      padding: 10px;
+      font-style: italic;
+      color: #999;
+    }
+
+    .chat-input {
+      padding: 15px;
+      background-color: #f1f1f1;
+      border-top: 1px solid #eee;
+      display: flex;
+      align-items: center;
+    }
+
+    .chat-input textarea {
+      flex: 1;
+      border: 1px solid #ddd;
+      border-radius: 20px;
+      padding: 10px 15px;
+      font-size: 14px;
+      resize: none;
+      max-height: 100px;
+      min-height: 40px;
+    }
+
+    .chat-input button {
+      margin-left: 10px;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .tabs {
+      display: flex;
+      background-color: #f1f1f1;
+      border-bottom: 1px solid #eee;
+    }
+
+    .tab {
+      padding: 10px 15px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .tab.active {
+      background-color: #fff;
+      border-bottom: 2px solid #4a6cfa;
+      font-weight: bold;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .log-container {
+      padding: 15px;
+      background-color: #f9f9f9;
+      border-top: 1px solid #eee;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .log-entry {
+      font-family: monospace;
+      margin-bottom: 5px;
+      font-size: 12px;
+    }
+
+    .log-entry.incoming {
+      color: #2e7d32;
+    }
+
+    .log-entry.outgoing {
+      color: #d32f2f;
+    }
+
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 15px;
+      background-color: #4a6cfa;
+      color: white;
+      border-radius: 4px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+      animation: fadeInOut 4s forwards;
+    }
+
+    @keyframes fadeInOut {
+      0% { opacity: 0; transform: translateX(20px); }
+      10% { opacity: 1; transform: translateX(0); }
+      90% { opacity: 1; transform: translateX(0); }
+      100% { opacity: 0; transform: translateX(20px); }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>Prostuti Chat API Tester</h1>
+  </div>
+
+  <div class="connection-form">
+    <div class="input-group">
+      <label for="api-url">API URL:</label>
+      <input type="url" id="api-url" value="http://localhost:3000" placeholder="Enter API base URL">
+    </div>
+
+    <div class="input-group">
+      <label for="access-token">Access Token:</label>
+      <input type="text" id="access-token" placeholder="Paste your JWT token here">
+    </div>
+
+    <div class="input-group">
+      <label for="user-role">Your Role:</label>
+      <select id="user-role">
+        <option value="student">Student</option>
+        <option value="teacher">Teacher</option>
+      </select>
+    </div>
+
+    <button id="connect-btn">Connect</button>
+    <button id="disconnect-btn" disabled>Disconnect</button>
+
+    <div id="connection-status"></div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="chat">Chat</div>
+    <div class="tab" data-tab="logs">Event Logs</div>
+  </div>
+
+  <div class="tab-content active" data-tab-content="chat">
+    <div class="main-content">
+      <div class="sidebar">
+        <!-- Student View -->
+        <div id="student-view">
+          <div class="sidebar-header">
+            <h3>Your Questions</h3>
+          </div>
+
+          <div class="broadcast-form">
+            <div class="input-group">
+              <label for="broadcast-subject">Subject:</label>
+              <input type="text" id="broadcast-subject" placeholder="Math, Science, etc.">
+            </div>
+
+            <div class="input-group">
+              <label for="broadcast-message">Question:</label>
+              <textarea id="broadcast-message" placeholder="Type your question here..."></textarea>
+            </div>
+
+            <button id="send-broadcast-btn">Send Question</button>
+          </div>
+
+          <div class="broadcast-list" id="student-broadcast-list">
+            <!-- Active broadcasts will be displayed here -->
+          </div>
+        </div>
+
+        <!-- Teacher View -->
+        <div id="teacher-view" class="hidden">
+          <div class="sidebar-header">
+            <h3>Student Requests</h3>
+          </div>
+
+          <div class="broadcast-list" id="teacher-broadcast-list">
+            <!-- Pending broadcasts will be displayed here -->
+          </div>
+        </div>
+
+        <div class="sidebar-header">
+          <h3>Conversations</h3>
+        </div>
+
+        <div class="conversation-list" id="conversation-list">
+          <!-- Active conversations will be displayed here -->
+        </div>
+      </div>
+
+      <div class="chat-container">
+        <div class="chat-header" id="chat-header">
+          Select a conversation
+        </div>
+
+        <div class="chat-messages" id="chat-messages">
+          <!-- Messages will be displayed here -->
+        </div>
+
+        <div class="typing-indicator hidden" id="typing-indicator">
+          Someone is typing...
+        </div>
+
+        <div class="chat-input">
+          <textarea id="message-input" placeholder="Type a message..." disabled></textarea>
+          <button id="send-message-btn" disabled>
+            ➤
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-content" data-tab-content="logs">
+    <div class="log-container" id="event-logs">
+      <!-- Event logs will be displayed here -->
+    </div>
+  </div>
+</div>
+
+<script>
+  // DOM Elements
+  const apiUrlInput = document.getElementById('api-url');
+  const accessTokenInput = document.getElementById('access-token');
+  const userRoleSelect = document.getElementById('user-role');
+  const connectBtn = document.getElementById('connect-btn');
+  const disconnectBtn = document.getElementById('disconnect-btn');
+  const connectionStatus = document.getElementById('connection-status');
+
+  const studentView = document.getElementById('student-view');
+  const teacherView = document.getElementById('teacher-view');
+
+  const broadcastSubject = document.getElementById('broadcast-subject');
+  const broadcastMessage = document.getElementById('broadcast-message');
+  const sendBroadcastBtn = document.getElementById('send-broadcast-btn');
+
+  const studentBroadcastList = document.getElementById('student-broadcast-list');
+  const teacherBroadcastList = document.getElementById('teacher-broadcast-list');
+  const conversationList = document.getElementById('conversation-list');
+
+  const chatHeader = document.getElementById('chat-header');
+  const chatMessages = document.getElementById('chat-messages');
+  const typingIndicator = document.getElementById('typing-indicator');
+  const messageInput = document.getElementById('message-input');
+  const sendMessageBtn = document.getElementById('send-message-btn');
+
+  const eventLogs = document.getElementById('event-logs');
+
+  const tabs = document.querySelectorAll('.tab');
+  const tabContents = document.querySelectorAll('.tab-content');
+
+  // Global Variables
+  let socket = null;
+  let currentUser = {
+    id: null,
+    role: null
+  };
+  let currentConversation = null;
+  let isTyping = false;
+  let typingTimeout = null;
+
+  // Tab functionality
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+
+      const tabName = tab.getAttribute('data-tab');
+      tabContents.forEach(content => {
+        content.classList.remove('active');
+        if (content.getAttribute('data-tab-content') === tabName) {
+          content.classList.add('active');
+        }
+      });
+    });
+  });
+
+  // Show appropriate view based on selected role
+  userRoleSelect.addEventListener('change', () => {
+    if (userRoleSelect.value === 'student') {
+      studentView.classList.remove('hidden');
+      teacherView.classList.add('hidden');
+    } else {
+      studentView.classList.add('hidden');
+      teacherView.classList.remove('hidden');
+    }
+  });
+
+  // Connect to Socket.IO server
+  connectBtn.addEventListener('click', () => {
+    const apiUrl = apiUrlInput.value.trim();
+    const token = accessTokenInput.value.trim();
+    const role = userRoleSelect.value;
+
+    if (!apiUrl || !token) {
+      showNotification('Please enter API URL and Access Token');
+      return;
+    }
+
+    // Initialize Socket.IO connection
+    socket = io(apiUrl, {
+      auth: { token },
+      transports: ['websocket'],
+      autoConnect: true
+    });
+
+    // Connection events
+    socket.on('connect', () => {
+      logEvent('Socket connected', 'incoming');
+      connectionStatus.innerHTML = '<div class="status status-connected">Connected to server</div>';
+      connectBtn.disabled = true;
+      disconnectBtn.disabled = false;
+
+      // Set role-specific views
+      if (role === 'student') {
+        studentView.classList.remove('hidden');
+        teacherView.classList.add('hidden');
+        fetchStudentBroadcasts();
+      } else {
+        studentView.classList.add('hidden');
+        teacherView.classList.remove('hidden');
+        fetchTeacherBroadcasts();
+      }
+
+      // Fetch active conversations
+      fetchConversations();
+    });
+
+    socket.on('disconnect', () => {
+      logEvent('Socket disconnected', 'incoming');
+      connectionStatus.innerHTML = '<div class="status status-disconnected">Disconnected from server</div>';
+      connectBtn.disabled = false;
+      disconnectBtn.disabled = true;
+      messageInput.disabled = true;
+      sendMessageBtn.disabled = true;
+    });
+
+    socket.on('connect_error', (error) => {
+      logEvent(`Connection error: ${error.message}`, 'incoming');
+      connectionStatus.innerHTML = `<div class="status status-disconnected">Connection error: ${error.message}</div>`;
+    });
+
+    // Authentication events
+    socket.on('authenticated', (data) => {
+      logEvent(`Authenticated: ${JSON.stringify(data)}`, 'incoming');
+      showNotification('Successfully authenticated!');
+    });
+
+    socket.on('authentication_error', (error) => {
+      logEvent(`Authentication error: ${JSON.stringify(error)}`, 'incoming');
+      showNotification('Authentication failed! Check your token.');
+      socket.disconnect();
+    });
+
+    // Broadcast events
+    socket.on('broadcast_request', (data) => {
+      logEvent(`Broadcast request created: ${JSON.stringify(data)}`, 'incoming');
+      showNotification('Broadcast request sent successfully!');
+      fetchStudentBroadcasts();
+    });
+
+    socket.on('new_broadcast_available', (broadcast) => {
+      logEvent(`New broadcast available: ${JSON.stringify(broadcast)}`, 'incoming');
+      showNotification('New student request available!');
+      addTeacherBroadcast(broadcast);
+    });
+
+    socket.on('broadcast_accepted', (data) => {
+      logEvent(`Broadcast accepted: ${JSON.stringify(data)}`, 'incoming');
+      showNotification('A broadcast was accepted!');
+      fetchStudentBroadcasts();
+      fetchTeacherBroadcasts();
+      fetchConversations();
+    });
+
+    socket.on('broadcast_expired', (data) => {
+      logEvent(`Broadcast expired: ${JSON.stringify(data)}`, 'incoming');
+      showNotification('A broadcast request expired');
+      fetchStudentBroadcasts();
+      fetchTeacherBroadcasts();
+    });
+
+    // Chat events
+    socket.on('join_conversation', (data) => {
+      logEvent(`Joined conversation: ${JSON.stringify(data)}`, 'incoming');
+    });
+
+    socket.on('leave_conversation', (data) => {
+      logEvent(`Left conversation: ${JSON.stringify(data)}`, 'incoming');
+    });
+
+    socket.on('send_message', (data) => {
+      logEvent(`Message sent confirmation: ${JSON.stringify(data)}`, 'incoming');
+    });
+
+    socket.on('receive_message', (message) => {
+      logEvent(`Received message: ${JSON.stringify(message)}`, 'incoming');
+
+      if (message.conversation_id === currentConversation) {
+        addMessage(message);
+        markMessagesAsRead(currentConversation);
+      } else {
+        showNotification(`New message in another conversation`);
+        // Update conversation list to show new message
+        fetchConversations();
+      }
+    });
+
+    socket.on('typing', (data) => {
+      logEvent(`User typing: ${JSON.stringify(data)}`, 'incoming');
+      if (data.conversation_id === currentConversation && data.user_id !== currentUser.id) {
+        typingIndicator.classList.remove('hidden');
+      }
+    });
+
+    socket.on('stop_typing', (data) => {
+      logEvent(`User stopped typing: ${JSON.stringify(data)}`, 'incoming');
+      if (data.conversation_id === currentConversation && data.user_id !== currentUser.id) {
+        typingIndicator.classList.add('hidden');
+      }
+    });
+
+    socket.on('error', (error) => {
+      logEvent(`Socket error: ${JSON.stringify(error)}`, 'incoming');
+      showNotification(`Error: ${error.message}`);
+    });
+  });
+
+  // Disconnect from Socket.IO server
+  disconnectBtn.addEventListener('click', () => {
+    if (socket) {
+      socket.disconnect();
+      socket = null;
+      currentConversation = null;
+
+      // Reset UI
+      chatHeader.textContent = 'Select a conversation';
+      chatMessages.innerHTML = '';
+      conversationList.innerHTML = '';
+      studentBroadcastList.innerHTML = '';
+      teacherBroadcastList.innerHTML = '';
+      messageInput.disabled = true;
+      sendMessageBtn.disabled = true;
+
+      logEvent('Manually disconnected', 'outgoing');
+    }
+  });
+
+  // Send broadcast request (Student)
+  sendBroadcastBtn.addEventListener('click', () => {
+    const subject = broadcastSubject.value.trim();
+    const message = broadcastMessage.value.trim();
+
+    if (!subject || !message) {
+      showNotification('Please enter both subject and question');
+      return;
+    }
+
+    if (socket) {
+      logEvent(`Sending broadcast request: ${subject} - ${message}`, 'outgoing');
+
+      // Using Socket.IO
+      socket.emit('broadcast_request', { subject, message });
+
+      // Clear form
+      broadcastSubject.value = '';
+      broadcastMessage.value = '';
+    }
+  });
+
+  // Send message
+  sendMessageBtn.addEventListener('click', sendMessage);
+  messageInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+
+    // Typing indicator
+    if (!isTyping && currentConversation) {
+      isTyping = true;
+      socket.emit('typing', currentConversation);
+      logEvent(`Sent typing indicator for ${currentConversation}`, 'outgoing');
+    }
+
+    // Clear previous timeout
+    if (typingTimeout) {
+      clearTimeout(typingTimeout);
+    }
+
+    // Set new timeout
+    typingTimeout = setTimeout(() => {
+      if (isTyping && currentConversation) {
+        isTyping = false;
+        socket.emit('stop_typing', currentConversation);
+        logEvent(`Sent stop typing for ${currentConversation}`, 'outgoing');
+      }
+    }, 2000);
+  });
+
+  function sendMessage() {
+    const message = messageInput.value.trim();
+
+    if (!message || !currentConversation) return;
+
+    if (socket) {
+      // Get recipient ID from the conversation
+      const conversation = document.querySelector(`.conversation-item[data-id="${currentConversation}"]`);
+      if (!conversation) return;
+
+      const recipientId = conversation.getAttribute('data-recipient');
+
+      const payload = {
+        conversation_id: currentConversation,
+        message: message,
+        recipient_id: recipientId
+      };
+
+      logEvent(`Sending message: ${JSON.stringify(payload)}`, 'outgoing');
+      socket.emit('send_message', payload);
+
+      // Clear input
+      messageInput.value = '';
+
+      // Stop typing indicator
+      if (isTyping) {
+        isTyping = false;
+        socket.emit('stop_typing', currentConversation);
+        clearTimeout(typingTimeout);
+      }
+    }
+  }
+
+  // Fetch data functions
+  async function fetchStudentBroadcasts() {
+    if (userRoleSelect.value !== 'student') return;
+
+    try {
+      const response = await fetch(`${apiUrlInput.value}/api/v1/chat/broadcasts/active`, {
+        headers: {
+          'Authorization': `Bearer ${accessTokenInput.value}`
+        }
+      });
+
+      const data = await response.json();
+      logEvent(`Fetched student broadcasts: ${JSON.stringify(data)}`, 'incoming');
+
+      if (data.success) {
+        renderStudentBroadcasts(data.data);
+      }
+    } catch (error) {
+      logEvent(`Error fetching student broadcasts: ${error.message}`, 'incoming');
+    }
+  }
+
+  async function fetchTeacherBroadcasts() {
+    if (userRoleSelect.value !== 'teacher') return;
+
+    try {
+      const response = await fetch(`${apiUrlInput.value}/api/v1/chat/broadcasts/pending`, {
+        headers: {
+          'Authorization': `Bearer ${accessTokenInput.value}`
+        }
+      });
+
+      const data = await response.json();
+      logEvent(`Fetched teacher broadcasts: ${JSON.stringify(data)}`, 'incoming');
+
+      if (data.success) {
+        renderTeacherBroadcasts(data.data);
+      }
+    } catch (error) {
+      logEvent(`Error fetching teacher broadcasts: ${error.message}`, 'incoming');
+    }
+  }
+
+  async function fetchConversations() {
+    try {
+      const response = await fetch(`${apiUrlInput.value}/api/v1/chat/conversations`, {
+        headers: {
+          'Authorization': `Bearer ${accessTokenInput.value}`
+        }
+      });
+
+      const data = await response.json();
+      logEvent(`Fetched conversations: ${JSON.stringify(data)}`, 'incoming');
+
+      if (data.success) {
+        renderConversations(data.data);
+      }
+    } catch (error) {
+      logEvent(`Error fetching conversations: ${error.message}`, 'incoming');
+    }
+  }
+
+  async function fetchChatMessages(conversationId) {
+    try {
+      const response = await fetch(`${apiUrlInput.value}/api/v1/chat/messages?conversation_id=${conversationId}&limit=50`, {
+        headers: {
+          'Authorization': `Bearer ${accessTokenInput.value}`
+        }
+      });
+
+      const data = await response.json();
+      logEvent(`Fetched chat messages for ${conversationId}: ${JSON.stringify(data)}`, 'incoming');
+
+      if (data.success) {
+        renderChatMessages(data.data.messages);
+        markMessagesAsRead(conversationId);
+      }
+    } catch (error) {
+      logEvent(`Error fetching chat messages: ${error.message}`, 'incoming');
+    }
+  }
+
+  async function markMessagesAsRead(conversationId) {
+    try {
+      const response = await fetch(`${apiUrlInput.value}/api/v1/chat/messages/${conversationId}/read`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessTokenInput.value}`
+        }
+      });
+
+      const data = await response.json();
+      logEvent(`Marked messages as read: ${JSON.stringify(data)}`, 'incoming');
+    } catch (error) {
+      logEvent(`Error marking messages as read: ${error.message}`, 'incoming');
+    }
+  }
+
+  // Accept/Decline broadcast functions
+  async function acceptBroadcast(broadcastId) {
+    try {
+      const response = await fetch(`${apiUrlInput.value}/api/v1/chat/broadcast/${broadcastId}/accept`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessTokenInput.value}`
+        }
+      });
+
+      const data = await response.json();
+      logEvent(`Accepted broadcast: ${JSON.stringify(data)}`, 'incoming');
+
+      if (data.success) {
+        // Socket event
+        socket.emit('accept_broadcast', { broadcast_id: broadcastId });
+
+        // Update UI
+        fetchTeacherBroadcasts();
+        fetchConversations();
+      }
+    } catch (error) {
+      logEvent(`Error accepting broadcast: ${error.message}`, 'incoming');
+    }
+  }
+
+  async function declineBroadcast(broadcastId) {
+    try {
+      const response = await fetch(`${apiUrlInput.value}/api/v1/chat/broadcast/${broadcastId}/decline`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessTokenInput.value}`
+        }
+      });
+
+      const data = await response.json();
+      logEvent(`Declined broadcast: ${JSON.stringify(data)}`, 'incoming');
+
+      if (data.success) {
+        // Socket event
+        socket.emit('decline_broadcast', { broadcast_id: broadcastId });
+
+        // Update UI
+        fetchTeacherBroadcasts();
+      }
+    } catch (error) {
+      logEvent(`Error declining broadcast: ${error.message}`, 'incoming');
+    }
+  }
+
+  // Render functions
+  function renderStudentBroadcasts(broadcasts) {
+    studentBroadcastList.innerHTML = '';
+
+    if (!broadcasts || broadcasts.length === 0) {
+      studentBroadcastList.innerHTML = '<p>No active broadcast requests</p>';
+      return;
+    }
+
+    broadcasts.forEach(broadcast => {
+      const broadcastElement = document.createElement('div');
+      broadcastElement.className = 'broadcast-item';
+      broadcastElement.innerHTML = `
+                    <h4>${broadcast.subject}</h4>
+                    <p>${broadcast.message}</p>
+                    <p>Status: ${broadcast.status}</p>
+                    <p>Expires: ${new Date(broadcast.expiry_time).toLocaleString()}</p>
+                `;
+
+      studentBroadcastList.appendChild(broadcastElement);
+    });
+  }
+
+  function renderTeacherBroadcasts(broadcasts) {
+    teacherBroadcastList.innerHTML = '';
+
+    if (!broadcasts || broadcasts.length === 0) {
+      teacherBroadcastList.innerHTML = '<p>No pending broadcast requests</p>';
+      return;
+    }
+
+    broadcasts.forEach(broadcast => {
+      const broadcastElement = document.createElement('div');
+      broadcastElement.className = 'broadcast-item';
+      broadcastElement.innerHTML = `
+                    <h4>${broadcast.subject}</h4>
+                    <p>From: ${broadcast.student?.name || 'Unknown Student'}</p>
+                    <p>${broadcast.message}</p>
+                    <div class="actions">
+                        <button class="accept-btn" data-id="${broadcast._id}">Accept</button>
+                        <button class="decline-btn" data-id="${broadcast._id}">Decline</button>
+                    </div>
+                `;
+
+      teacherBroadcastList.appendChild(broadcastElement);
+    });
+
+    // Add event listeners to accept/decline buttons
+    document.querySelectorAll('.accept-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-id');
+        acceptBroadcast(id);
+      });
+    });
+
+    document.querySelectorAll('.decline-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-id');
+        declineBroadcast(id);
+      });
+    });
+  }
+
+  function addTeacherBroadcast(broadcast) {
+    if (userRoleSelect.value !== 'teacher') return;
+
+    const existingBroadcast = document.querySelector(`.broadcast-item [data-id="${broadcast.id}"]`);
+    if (existingBroadcast) return;
+
+    const broadcastElement = document.createElement('div');
+    broadcastElement.className = 'broadcast-item';
+    broadcastElement.innerHTML = `
+                <h4>${broadcast.subject || 'No Subject'}</h4>
+                <p>From: ${broadcast.student?.name || 'Unknown Student'}</p>
+                <p>${broadcast.message}</p>
+                <div class="actions">
+                    <button class="accept-btn" data-id="${broadcast.id}">Accept</button>
+                    <button class="decline-btn" data-id="${broadcast.id}">Decline</button>
+                </div>
+            `;
+
+    teacherBroadcastList.appendChild(broadcastElement);
+
+    // Add event listeners
+    const acceptBtn = broadcastElement.querySelector('.accept-btn');
+    acceptBtn.addEventListener('click', () => {
+      const id = acceptBtn.getAttribute('data-id');
+      acceptBroadcast(id);
+    });
+
+    const declineBtn = broadcastElement.querySelector('.decline-btn');
+    declineBtn.addEventListener('click', () => {
+      const id = declineBtn.getAttribute('data-id');
+      declineBroadcast(id);
+    });
+  }
+
+  function renderConversations(conversations) {
+    conversationList.innerHTML = '';
+
+    if (!conversations || conversations.length === 0) {
+      conversationList.innerHTML = '<p>No active conversations</p>';
+      return;
+    }
+
+    conversations.forEach(conversation => {
+      const conversationElement = document.createElement('div');
+      conversationElement.className = 'conversation-item';
+      conversationElement.setAttribute('data-id', conversation.conversation_id);
+
+      // Determine recipient ID based on role
+      let recipientId;
+      if (userRoleSelect.value === 'student') {
+        recipientId = conversation.accepted_by;
+      } else {
+        recipientId = conversation.student_id;
+      }
+
+      conversationElement.setAttribute('data-recipient', recipientId);
+
+      if (conversation.conversation_id === currentConversation) {
+        conversationElement.classList.add('active');
+      }
+
+      const lastMessage = conversation.lastMessage ?
+          `<p>${conversation.lastMessage.message.substring(0, 30)}${conversation.lastMessage.message.length > 30 ? '...' : ''}</p>
+                     <p>at ${new Date(conversation.lastMessage.createdAt).toLocaleTimeString()}</p>` :
+          '<p>No messages yet</p>';
+
+      conversationElement.innerHTML = `
+                    <h4>${conversation.participant?.name || 'Unknown'}</h4>
+                    <p>Subject: ${conversation.subject}</p>
+                    ${lastMessage}
+                `;
+
+      conversationElement.addEventListener('click', () => {
+        selectConversation(conversation.conversation_id, recipientId);
+      });
+
+      conversationList.appendChild(conversationElement);
+    });
+  }
+
+  function renderChatMessages(messages) {
+    chatMessages.innerHTML = '';
+
+    if (!messages || messages.length === 0) {
+      chatMessages.innerHTML = '<p class="no-messages">No messages yet</p>';
+      return;
+    }
+
+    messages.forEach(message => {
+      addMessage(message);
+    });
+
+    // Scroll to bottom
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  function addMessage(message) {
+    const role = userRoleSelect.value;
+    const isSent = (role === 'student' && message.sender_role === 'student') ||
+        (role === 'teacher' && message.sender_role === 'teacher');
+
+    const messageElement = document.createElement('div');
+    messageElement.className = `message ${isSent ? 'message-sent' : 'message-received'}`;
+
+    const time = new Date(message.createdAt).toLocaleTimeString();
+
+    messageElement.innerHTML = `
+                <div>${message.message}</div>
+                <div class="message-time">${time}</div>
+            `;
+
+    chatMessages.appendChild(messageElement);
+
+    // Scroll to bottom
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  function selectConversation(conversationId, recipientId) {
+    // Update active conversation
+    currentConversation = conversationId;
+
+    // Update UI
+    document.querySelectorAll('.conversation-item').forEach(item => {
+      item.classList.remove('active');
+      if (item.getAttribute('data-id') === conversationId) {
+        item.classList.add('active');
+        chatHeader.textContent = `Chat with ${item.querySelector('h4').textContent}`;
+      }
+    });
+
+    // Enable message input
+    messageInput.disabled = false;
+    sendMessageBtn.disabled = false;
+
+    // Join conversation socket room
+    if (socket) {
+      socket.emit('join_conversation', conversationId);
+    }
+
+    // Fetch chat history
+    fetchChatMessages(conversationId);
+  }
+
+  // Utility functions
+  function logEvent(message, direction) {
+    const entry = document.createElement('div');
+    entry.className = `log-entry ${direction}`;
+
+    const time = new Date().toLocaleTimeString();
+    entry.textContent = `[${time}] ${message}`;
+
+    eventLogs.appendChild(entry);
+    eventLogs.scrollTop = eventLogs.scrollHeight;
+  }
+
+  function showNotification(message) {
+    const notification = document.createElement('div');
+    notification.className = 'notification';
+    notification.textContent = message;
+
+    document.body.appendChild(notification);
+
+    // Remove after animation completes
+    setTimeout(() => {
+      notification.remove();
+    }, 4000);
+  }
+</script>
+</body>
+</html>
