@@ -14,8 +14,10 @@ const app: Application = express();
 // cors options
 const corsOptions = {
     origin: [
+        '*',
         'http://localhost:5173',
-        'http://localhost:63342',
+        // 'http://localhost:63342',
+        // 'http://localhost:5500',
         'https://prostuti-app-teacher-admin-dashb-production.up.railway.app'
     ], // Your frontend's URL
     credentials: true, // Allow cookies and credentials to be sent
