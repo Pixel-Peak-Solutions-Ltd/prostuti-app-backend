@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Server } from 'socket.io';
 import type { Socket } from 'socket.io';
 import http from 'http';
@@ -49,6 +50,7 @@ export class SocketHandler {
     /**
      * Authentication middleware for Socket.IO
      */
+    // eslint-disable-next-line no-unused-vars
     private authMiddleware(socket: Socket, next: (err?: Error) => void): void {
         try {
             const token = socket.handshake.auth.token;

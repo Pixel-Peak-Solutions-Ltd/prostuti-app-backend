@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Types } from 'mongoose';
 import { StatusCodes } from 'http-status-codes';
 import AppError from '../../classes/errorClasses/AppError';
@@ -254,7 +255,7 @@ const storeMessage = async (message: Partial<IChatMessage>): Promise<IChatMessag
 /**
  * Get chat history for a conversation
  */
-const getChatHistory = async (filters: IChatFilters): Promise<{ messages: IChatMessage[], total: number }> => {
+const getChatHistory = async (filters: IChatFilters): Promise<{ messages: IChatMessage[], total: number; }> => {
     const { conversation_id, sender_id, recipient_id, page = CHAT_PAGINATION.DEFAULT_PAGE, limit = CHAT_PAGINATION.DEFAULT_LIMIT } = filters;
 
     const query: any = {};
@@ -308,7 +309,7 @@ const markMessagesAsRead = async (conversation_id: string, user_id: string): Pro
 /**
  * Get unread message count for a user
  */
-const getUnreadMessageCount = async (user_id: string): Promise<{ total: number, conversations: any[] }> => {
+const getUnreadMessageCount = async (user_id: string): Promise<{ total: number, conversations: any[]; }> => {
     const unreadMessages = await ChatMessage.aggregate([
         {
             $match: {
