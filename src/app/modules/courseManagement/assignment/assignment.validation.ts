@@ -1,6 +1,14 @@
 import { Types } from 'mongoose';
 import { z } from 'zod';
 
+const TResourceSchema = z.object({
+    diskType: z.string(),
+    path: z.string(),
+    originalName: z.string(),
+    modifiedName: z.string(),
+    fileId: z.string(),
+});
+
 const createAssignmentValidationSchema = z.object({
     body: z.object({
         course_id: z
@@ -80,6 +88,7 @@ const updateAssignmentValidationSchema = z.object({
                 .min(1, 'Details are required')
                 .min(1, 'Details cannot be empty')
                 .optional(),
+            canceledAssignments: z.array(TResourceSchema).optional(),
         })
         .superRefine((data, ctx) => {
             if (data.unlockDate && data.deadline) {

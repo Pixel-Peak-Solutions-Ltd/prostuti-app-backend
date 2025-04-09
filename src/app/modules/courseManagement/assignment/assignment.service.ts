@@ -47,17 +47,17 @@ const createAssignment = async (
     }
 
     // Check if the assignment already added for this course under that lesson
-    const isAssignmentsAdded = await Assignment.findOne({
-        course_id: payload.course_id,
-        lesson_id: payload.lesson_id,
-    });
+    // const isAssignmentsAdded = await Assignment.findOne({
+    //     course_id: payload.course_id,
+    //     lesson_id: payload.lesson_id,
+    // });
 
-    if (isAssignmentsAdded) {
-        throw new AppError(
-            StatusCodes.BAD_REQUEST,
-            'Already assignment(s) added for this lesson',
-        );
-    }
+    // if (isAssignmentsAdded) {
+    //     throw new AppError(
+    //         StatusCodes.BAD_REQUEST,
+    //         'Already assignment(s) added for this lesson',
+    //     );
+    // }
 
     // If no files were uploaded, throw an error
     if (!files.length) {
@@ -123,7 +123,12 @@ const getAllCourseAssignmentsWithLessons = async (courseId: string) => {
             select: 'number name',
             model: Lesson,
         })
-        .select({ uploadFileResources: 1, assignmentNo: 1, unlockDate: 1 });
+        .select({
+            uploadFileResources: 1,
+            assignmentNo: 1,
+            unlockDate: 1,
+            isCompleted: 1,
+        });
 
     return assignments;
 };
@@ -146,7 +151,7 @@ const getAssignmentByID = async (assignmentId: string) => {
 
 const updateAssignment = async (
     assignmentId: string,
-    payload: Partial<IAssignment>,
+    payload: Partial<IAssignment> & { canceledAssignments: TResource[] },
     files: Express.Multer.File[] | [],
 ) => {
     // Check if there are fields to update
@@ -190,6 +195,27 @@ const updateAssignment = async (
         ...(payload.details && { details: payload.details }),
     };
 
+    if (files.length === 0 && payload.canceledAssignments.length > 0) {
+        // Combine existing and new upload resources
+        // Extract the fieldIds from deletedFields
+        const canceledAssignmentsFileIds = payload.canceledAssignments.map(
+            (item) => item.fileId,
+        );
+
+        // Filter out objects
+        const newAssignments = existingResource.uploadFileResources.filter(
+            (item) => !canceledAssignmentsFileIds.includes(item.fileId),
+        );
+
+        // Combine existing and new upload resources
+        updatedPayload.uploadFileResources = [...(newAssignments || [])];
+
+        // Delete Canceled Assignments from backblaze
+        for (const value of payload.canceledAssignments) {
+            await deleteFromB2(value.fileId, value.modifiedName, 'resources');
+        }
+    }
+
     // Handle file uploads if present
     if (files.length > 0) {
         try {
@@ -207,10 +233,32 @@ const updateAssignment = async (
             }
 
             // Combine existing and new upload resources
+            // Extract the fieldIds from deletedFields
+            const canceledAssignmentsFileIds = payload.canceledAssignments.map(
+                (item) => item.fileId,
+            );
+
+            // Filter out objects
+            const newAssignments = existingResource.uploadFileResources.filter(
+                (item) => !canceledAssignmentsFileIds.includes(item.fileId),
+            );
+
+            // Combine existing and new upload resources
             updatedPayload.uploadFileResources = [
-                ...(existingResource.uploadFileResources || []),
+                ...(newAssignments || []),
                 ...uploadedResources,
             ];
+
+            // Delete Canceled Assignments from backblaze
+            if (payload.canceledAssignments.length > 0) {
+                for (const value of payload.canceledAssignments) {
+                    await deleteFromB2(
+                        value.fileId,
+                        value.modifiedName,
+                        'resources',
+                    );
+                }
+            }
         } catch (error) {
             // Clean up any remaining local files
             files.forEach((file) => {
@@ -242,6 +290,21 @@ const updateAssignment = async (
     return result;
 };
 
+const markAssignmentAsCompleted = async (assignmentId: string) => {
+    // Check if the resource exists
+    const existingAssignment = await Assignment.findById(assignmentId);
+    if (!existingAssignment) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Assignment not found');
+    }
+
+    const markAsCompeted = await Assignment.findByIdAndUpdate(
+        assignmentId,
+        { isCompleted: true },
+        { new: true },
+    );
+
+    return markAsCompeted;
+};
 const deleteAssignmentByID = async (assignmentId: string) => {
     // Check if the course exists
     const existingResource = await Assignment.findById(assignmentId);
@@ -291,4 +354,5 @@ export const assignmentService = {
     getAssignmentByID,
     updateAssignment,
     deleteAssignmentByID,
+    markAssignmentAsCompleted,
 };

@@ -11,7 +11,7 @@ import { USER_ROLE } from './user.constant';
 import { Student } from '../student/student.model';
 
 // Create Teacher
-const createTeacher = async (email: string, password: string) => {
+const createTeacher = async (payload: Record<string, any>) => {
     const session = await mongoose.startSession();
 
     try {
@@ -19,8 +19,8 @@ const createTeacher = async (email: string, password: string) => {
 
         const user: Partial<IUser> = {
             registeredId: `TID${Date.now()}${Math.random().toString(36).slice(2, 7)}`,
-            email,
-            password,
+            email: payload.email,
+            password: payload.password,
             role: 'teacher',
         };
 
@@ -36,6 +36,11 @@ const createTeacher = async (email: string, password: string) => {
             user_id: newUser[0]._id,
             teacherId: newUser[0].registeredId,
             email: newUser[0].email,
+            ...(payload.name && { name: payload.name }),
+            ...(payload.subject && { subject: payload.subject }),
+            ...(payload.assignedWorks && {
+                assignedWorks: payload.assignedWorks,
+            }),
             joinedDate: formattedTeacherJoiningDate(),
         };
 

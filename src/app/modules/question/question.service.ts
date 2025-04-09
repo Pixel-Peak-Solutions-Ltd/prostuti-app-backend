@@ -9,43 +9,90 @@ import { User } from '../user/user.model';
 import { QuestionSearchableFields } from './question.constant';
 import { IQuestion, IQuestionFilters } from './question.interface';
 import { Question } from './question.model';
+import { uploadToB2 } from '../../utils/backBlaze';
+import config from '../../config';
 
 const createQuestion = async (
     userInfo: TJWTDecodedUser,
     payload: Partial<IQuestion>[],
+    files?: Express.Multer.File[] | undefined,
 ): Promise<any> => {
     if (!Array.isArray(payload) || payload.length === 0) {
         throw new AppError(StatusCodes.BAD_REQUEST, 'No questions provided');
     }
     const categoryId = payload[0].category_id;
-    const category = await Category.findById(categoryId)
+    const category = await Category.findById(categoryId).lean();
     if (!category) {
         throw new AppError(
             StatusCodes.NOT_FOUND,
             `Category not found for category_id: ${categoryId}`,
         );
     }
+    try {
+        // Handle file uploads
+        const uploadedFiles = files?.length
+            ? await Promise.all(
+                  files.map((file) =>
+                      uploadToB2(
+                          file,
+                          config.backblaze_all_users_bucket_name,
+                          config.backblaze_all_users_bucket_id,
+                          'questionImages',
+                      ),
+                  ),
+              )
+            : [];
 
-    const questionsToCreate = payload.map((question) => {
-        const newQuestion: Partial<IQuestion> = {
-            type: question.type,
-            title: question.title,
-            description: question.description,
-            category_id: category._id,
-            createdBy: new Types.ObjectId(userInfo.userId),
-        };
+        // Create file mapping
+        const uploadedFileMap = files?.reduce((acc, file, index) => {
+            if (uploadedFiles[index]) {
+                acc[file.fieldname] = uploadedFiles[index];
+            }
+            return acc;
+        }, {} as Record<string, any>) ?? {};
 
-        if (question.type === 'MCQ') {
-            newQuestion.options = question.options;
-            newQuestion.correctOption = question.correctOption;
-        }
+        // Prepare questions
+        const questionsToCreate = payload.map((question, index) => {
+            const baseQuestion: Partial<IQuestion> = {
+                type: question.type,
+                title: question.title,
+                description: question.description,
+                category_id: category._id,
+                createdBy: new Types.ObjectId(userInfo.userId),
+            };
 
-        return newQuestion;
-    });
+            // Add MCQ specific fields
+            if (question.type === 'MCQ') {
+                baseQuestion.options = question.options;
+                baseQuestion.correctOption = question.correctOption;
+            }
 
-    const data = await Question.create(questionsToCreate);
+            // Add image if exists
+            const uploadedFile = uploadedFileMap[`image${index}`];
+            if (uploadedFile) {
+                baseQuestion.hasImage = true;
+                baseQuestion.image = {
+                    diskType: uploadedFile.diskType,
+                    path: uploadedFile.path,
+                    originalName: uploadedFile.originalName,
+                    modifiedName: uploadedFile.modifiedName,
+                    fileId: uploadedFile.fileId,
+                };
+            }
 
-    return data;
+            return baseQuestion;
+        });
+
+        // Create questions in database
+        return await Question.create(questionsToCreate);
+    } catch (error) {
+        throw new AppError(
+            StatusCodes.INTERNAL_SERVER_ERROR,
+            error instanceof Error
+                ? error.message
+                : 'Failed to create questions',
+        );
+    }
 };
 
 const getAllQuestions = async (
@@ -78,7 +125,6 @@ const getAllQuestions = async (
     if (Object.keys(filtersData).length) {
         andConditions.push({
             $and: Object.entries(filtersData).map(([field, value]) => {
-                
                 if (field === 'type') {
                     return { [field]: value };
                 } else if (field === 'categoryType') {
@@ -146,8 +192,70 @@ const getQuestionByID = async (id: string): Promise<any> => {
     return data;
 };
 
-const updateQuestion = async () => {
-    return 'updateQuestion service';
+const updateQuestion = async (
+    userInfo: TJWTDecodedUser,
+    id: string,
+    payload: Partial<IQuestion>,
+    file: Express.Multer.File,
+): Promise<any> => {
+    const checkUser = await User.findById(userInfo.userId);
+    if (!checkUser) {
+        throw new AppError(StatusCodes.BAD_REQUEST, 'Something went wrong');
+    }
+
+    const checkQuestion = await Question.findById(id);
+    if (!checkQuestion) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Question not found.');
+    }
+
+    if (checkUser._id.toString() !== checkQuestion.createdBy.toString()) {
+        throw new AppError(
+            StatusCodes.UNAUTHORIZED,
+            'You can not update this question',
+        );
+    }
+    // Handle file upload if provided
+    let uploadedFile;
+    if (file) {
+        uploadedFile = await uploadToB2(
+            file,
+            config.backblaze_all_users_bucket_name,
+            config.backblaze_all_users_bucket_id,
+            'questionImages',
+        );
+    }
+    
+    // Find and update the question
+    const updatedQuestion = await Question.findByIdAndUpdate(
+        id,
+        {
+            ...(payload.title && { title: payload.title }),
+            ...(payload.description && { description: payload.description }),
+            ...(payload.options && { options: payload.options }),
+            ...(payload.correctOption && {
+                correctOption: payload.correctOption,
+            }),
+            ...(uploadedFile && {
+                hasImage: true,
+                image: {
+                    diskType: uploadedFile.diskType,
+                    path: uploadedFile.path,
+                    originalName: uploadedFile.originalName,
+                    modifiedName: uploadedFile.modifiedName,
+                    fileId: uploadedFile.fileId,
+                },
+            }),
+        },
+        { new: true, runValidators: true },
+    );
+
+    if (!updatedQuestion) {
+        throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            'Failed to update question',
+        );
+    }
+    return updatedQuestion;
 };
 
 const deleteQuestionByID = async (

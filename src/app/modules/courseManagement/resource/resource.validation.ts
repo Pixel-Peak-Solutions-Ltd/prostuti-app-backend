@@ -1,6 +1,14 @@
 import { Types } from 'mongoose';
 import { z } from 'zod';
 
+const TResourceSchema = z.object({
+    diskType: z.string(),
+    path: z.string(),
+    originalName: z.string(),
+    modifiedName: z.string(),
+    fileId: z.string(),
+});
+
 const createResourceValidationSchema = z.object({
     body: z.object({
         course_id: z.string().refine((val) => Types.ObjectId.isValid(val), {
@@ -54,10 +62,9 @@ const updateResourceValidationSchema = z.object({
                 message:
                     'Invalid date format. Please provide a valid ISO date string',
             })
-            .refine((date) => new Date(date) >= new Date(), {
-                message: 'resourceDate cannot be in the past',
-            })
             .optional(),
+
+        canceledResources: z.array(TResourceSchema).optional(),
     }),
 });
 

@@ -1,16 +1,31 @@
 import { Schema, model } from 'mongoose';
-import { IRecodedClass } from './recodedClass.interface';
-import { validDomains } from './recodedClass.constant';
+import { IRecodedClass, TVideo } from './recodedClass.interface';
 
-// Custom URL validator function
-const validateVideoURL = (urls: string[]): boolean => {
-    const urlPattern = /^(https?:\/\/)?([\w-]+\.)+[\w-]+(\/[\w-./?%&=]*)?$/;
-
-    return urls.every((url) => {
-        if (!urlPattern.test(url)) return false;
-        return validDomains.some((domain) => url.includes(domain));
-    });
-};
+const videoSchema = new Schema<TVideo>(
+    {
+        diskType: {
+            type: String,
+            required: [true, 'Image disk type is required'],
+        },
+        path: {
+            type: String,
+            required: [true, 'Image url is required'],
+        },
+        originalName: {
+            type: String,
+            required: [true, 'Image original name is required'],
+        },
+        modifiedName: {
+            type: String,
+            required: [true, 'Image modified name is required'],
+        },
+        fileId: {
+            type: String,
+            required: [true, 'File ID is required'],
+        },
+    },
+    { _id: false, versionKey: false },
+);
 
 // Recoded Class Schema
 const recodedClassSchema = new Schema<IRecodedClass>(
@@ -64,39 +79,29 @@ const recodedClassSchema = new Schema<IRecodedClass>(
             ],
         },
         classVideoURL: {
-            type: [String],
-            required: [true, 'At least one video URL is required'],
-            validate: [
-                {
-                    validator: function (urls: string[]) {
-                        return urls.length > 0;
-                    },
-                    message: 'At least one video URL is required',
-                },
-                {
-                    validator: validateVideoURL,
-                    message:
-                        'Invalid video URL format. Only YouTube, Vimeo, or Google Drive URLs are allowed',
-                },
-            ],
+            type: videoSchema,
         },
+        isCompleted: {
+            type: Boolean,
+            default: false,
+
+        }
     },
     {
         timestamps: true,
         versionKey: false,
         toObject: { virtuals: true },
     },
+
 );
 
-recodedClassSchema.index({ course_id: 1, lesson_id: 1 }, { unique: true });
+recodedClassSchema.index(
+    { course_id: 1, lesson_id: 1, recodeClassName: 1 },
+    { unique: true },
+);
 
 // Compound index for optimized queries
 recodedClassSchema.index({ recodeClassName: 1, classDate: 1 });
-
-// Virtual for video count
-recodedClassSchema.virtual('videoCount').get(function () {
-    return this.classVideoURL.length;
-});
 
 // Create and export the model
 export const RecodedClass = model<IRecodedClass>(

@@ -5,9 +5,7 @@ import sendSuccessResponse from '../../utils/sendSuccessResponse';
 import { userService } from './user.service';
 
 const createTeacher = catchAsync(async (req: Request, res: Response) => {
-    const { email, password } = req.body;
-
-    const result = await userService.createTeacher(email, password);
+    const result = await userService.createTeacher(req.body);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,

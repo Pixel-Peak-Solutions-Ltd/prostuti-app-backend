@@ -21,6 +21,16 @@ router
         courseController.createCourse,
     )
     .get('/all-courses', courseController.getAllCourses)
+    .get(
+        '/all-course-admin',
+        auth(USER_ROLE.admin),
+        courseController.getCoursesForAdmins,
+    )
+    .get(
+        '/course-by-me',
+        auth(USER_ROLE.teacher),
+        courseController.getCourseByTeacherID,
+    )
     .get('/preview/:courseId', auth(), courseController.getCoursePreview)
     .get(
         '/student-published-courses',

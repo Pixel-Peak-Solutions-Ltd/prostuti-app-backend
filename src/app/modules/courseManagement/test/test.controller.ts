@@ -10,7 +10,7 @@ import { TestService } from './test.service';
 
 
 const createTest = catchAsync(async (req: Request, res: Response) => {
-    const result = await TestService.createTest(req.user as TJWTDecodedUser,req.body);
+    const result = await TestService.createTest(req.user as TJWTDecodedUser, req.body,req.files as  Express.Multer.File[]);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
@@ -44,7 +44,7 @@ const getTestByID = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateTest = catchAsync(async (req: Request, res: Response) => {
-    const result = await TestService.updateTest();
+    const result = await TestService.updateTest(req.user,req.params.id,req.body,req.files as Express.Multer.File[]);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
@@ -53,8 +53,19 @@ const updateTest = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const testCompletion = catchAsync(async (req: Request, res: Response) => {
+    const { testId } = req.params;
+    const result = await TestService.markTestAsCompleted(testId);
+
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'Test marked as completed',
+        data: result,
+    });
+})
+
 const deleteTestByID = catchAsync(async (req: Request, res: Response) => {
-    const result = await TestService.deleteTestByID(req.params.id,req.user as TJWTDecodedUser);
+    const result = await TestService.deleteTestByID(req.params.id, req.user as TJWTDecodedUser);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
@@ -69,4 +80,5 @@ export const TestController = {
     getTestByID,
     updateTest,
     deleteTestByID,
+    testCompletion
 };

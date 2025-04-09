@@ -83,6 +83,11 @@ const studentSchema = new Schema<IStudent>(
         image: {
             type: imageSchema,
         },
+        enrolledCourses: [
+            { type: Schema.Types.ObjectId, ref: 'EnrolledCourse' },
+        ],
+        subscriptionStartDate: { type: Date },
+        subscriptionEndDate: { type: Date },
     },
     {
         timestamps: true,

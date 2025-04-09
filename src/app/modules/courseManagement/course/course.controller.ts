@@ -58,6 +58,17 @@ const getCourseByID = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const getCourseByTeacherID = catchAsync(async (req: Request, res: Response) => {
+    const { userId } = req.user;
+    const result = await courseService.getCourseByTeacherID(userId);
+
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'Course created by teacher fetched successfully',
+        data: result,
+    });
+});
+
 // Get All Courses
 const getAllCourses = catchAsync(async (req: Request, res: Response) => {
     const result = await courseService.getAllCourses();
@@ -115,6 +126,17 @@ const approvedCourse = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+// Get All Courses
+const getCoursesForAdmins = catchAsync(async (req: Request, res: Response) => {
+    const result = await courseService.getCoursesForAdmins(req.query);
+
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'Courses retrieved successfully',
+        data: result,
+    });
+});
+
 export const courseController = {
     createCourse,
     getCoursePreview,
@@ -124,4 +146,6 @@ export const courseController = {
     updateCourse,
     deleteCourseByID,
     approvedCourse,
+    getCourseByTeacherID,
+    getCoursesForAdmins,
 };

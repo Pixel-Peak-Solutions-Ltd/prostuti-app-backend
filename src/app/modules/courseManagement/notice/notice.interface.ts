@@ -8,5 +8,6 @@ export interface INotice {
 
 export type TCreateNoticePayload = {
     course_id: Types.ObjectId;
-    notices: { noticeId: string; notice: string }[];
+    // notices: { noticeId: string; notice: string }[];
+    notices: { notice: string; }[];
 };

@@ -72,6 +72,18 @@ const updateAssignment = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+
+const assignmentCompletion = catchAsync(async (req: Request, res: Response) => {
+    const { assignmentId } = req.params;
+    const result = await assignmentService.markAssignmentAsCompleted(assignmentId);
+
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'Assignment marked as completed',
+        data: result,
+    });
+});
+
 const deleteAssignmentByID = catchAsync(async (req: Request, res: Response) => {
     const { assignmentId } = req.params;
     const result = await assignmentService.deleteAssignmentByID(assignmentId);
@@ -90,4 +102,5 @@ export const assignmentController = {
     getAssignmentByID,
     updateAssignment,
     deleteAssignmentByID,
+    assignmentCompletion
 };

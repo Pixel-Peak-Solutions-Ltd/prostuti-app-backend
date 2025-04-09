@@ -5,7 +5,10 @@ import sendSuccessResponse from '../../../utils/sendSuccessResponse';
 import { recodedClassService } from './recodedClass.service';
 
 const createRecodedClass = catchAsync(async (req: Request, res: Response) => {
-    const result = await recodedClassService.createRecodedClass(req.body);
+    const result = await recodedClassService.createRecodedClass(
+        req.body,
+        req.file,
+    );
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
@@ -60,6 +63,7 @@ const updateRecodedClass = catchAsync(async (req: Request, res: Response) => {
     const result = await recodedClassService.updateRecodedClass(
         recodedClassId,
         req.body,
+        req.file,
     );
 
     sendSuccessResponse(res, {
@@ -68,6 +72,22 @@ const updateRecodedClass = catchAsync(async (req: Request, res: Response) => {
         data: result,
     });
 });
+
+// mark as complete status change for record class
+const updateRecordClassCompleteStatus = catchAsync(
+    async (req: Request, res: Response) => {
+        const { recordedClassId } = req.params;
+
+        const result =
+            await recodedClassService.markAsComplete(recordedClassId);
+
+        sendSuccessResponse(res, {
+            statusCode: StatusCodes.OK,
+            message: 'Recoded class marked as complete',
+            data: result,
+        });
+    },
+);
 
 const deleteRecodedClassByID = catchAsync(
     async (req: Request, res: Response) => {
@@ -91,4 +111,5 @@ export const recodedClassController = {
     getRecodedClassByID,
     updateRecodedClass,
     deleteRecodedClassByID,
+    updateRecordClassCompleteStatus,
 };

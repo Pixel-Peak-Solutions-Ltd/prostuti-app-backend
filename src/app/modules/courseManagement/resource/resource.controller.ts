@@ -71,6 +71,17 @@ const updateResource = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const resourceCompletion = catchAsync(async (req: Request, res: Response) => {
+    const { resourceId } = req.params;
+    const result = await resourceService.markResourceAsCompleted(resourceId);
+
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'Resource marked as completed',
+        data: result,
+    });
+})
+
 const deleteResourceByID = catchAsync(async (req: Request, res: Response) => {
     const { resourceId } = req.params;
 
@@ -90,4 +101,5 @@ export const resourceController = {
     getResourceByID,
     updateResource,
     deleteResourceByID,
+    resourceCompletion
 };

@@ -1,5 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
-import mongoose, { SortOrder } from 'mongoose';
+import mongoose, { SortOrder, Types } from 'mongoose';
 import AppError from '../../../classes/errorClasses/AppError';
 import { calculatePagination } from '../../../helpers/pagenationHelper';
 import { IPaginationOptions } from '../../../interfaces/common';
@@ -9,60 +9,102 @@ import { User } from '../../user/user.model';
 import { TestSearchableFields } from './test.constant';
 import { ITest, ITestFilters } from './test.interface';
 import { Test } from './test.model';
+import { IQuestion } from '../../question/question.interface';
+import { Course } from '../course/course.model';
+import { Lesson } from '../lesson/lesson.model';
+import { uploadToB2 } from '../../../utils/backBlaze';
+import config from '../../../config';
+import { ICourse } from '../course/course.interface';
 
 const createTest = async (
     userInfo: TJWTDecodedUser,
-    payload: Partial<ITest>,
+    payload: any,
+    files?: Express.Multer.File[] | undefined,
 ): Promise<any> => {
+    const [course, lesson] = await Promise.all([
+        Course.findById(payload.course_id).lean(),
+        Lesson.findOne({
+            _id: payload.lesson_id,
+            course_id: payload.course_id,
+        }).lean(),
+    ]);
 
-    
-    // // Check if the course exist
-    // const isCourseExist = await Course.findById(payload.course_id);
-    // if (!isCourseExist) {
-    //     throw new AppError(
-    //         StatusCodes.NOT_FOUND,
-    //         'Course does not exist with this ID',
-    //     );
-    // }
+    if (!course) {
+        throw new AppError(
+            StatusCodes.NOT_FOUND,
+            'Course does not exist with this ID',
+        );
+    }
 
-    // // Check if the course exist
-    // const isLessonExist = await Lesson.findById(payload.lesson_id);
-    // if (!isLessonExist) {
-    //     throw new AppError(
-    //         StatusCodes.NOT_FOUND,
-    //         'Lesson does not exist with this ID',
-    //     );
-    // }
+    if (!lesson) {
+        throw new AppError(
+            StatusCodes.NOT_FOUND,
+            'Lesson does not exist or does not belong to the course',
+        );
+    }
 
-    // // Check if the lesson belongs to of tah course
-    // const isLessonBelongsToCourse = await Lesson.findOne({
-    //     _id: payload.lesson_id,
-    //     course_id: payload.course_id,
-    // });
-    // if (!isLessonBelongsToCourse) {
-    //     throw new AppError(
-    //         StatusCodes.BAD_REQUEST,
-    //         'The lesson does not belong to the course',
-    //     );
-    // }
+    // Process files if they exist
+    const fileMap: Record<string, any> = {};
+    if (files?.length) {
+        const uploadedFiles = await Promise.all(
+            files.map((file) =>
+                uploadToB2(
+                    file,
+                    config.backblaze_all_users_bucket_name,
+                    config.backblaze_all_users_bucket_id,
+                    'questionImages',
+                ),
+            ),
+        );
 
-    //check if reference question id exists or not
-    const { questionList } = payload;
+        files.forEach((file, index) => {
+            if (uploadedFiles[index]) {
+                fileMap[file.fieldname] = uploadedFiles[index];
+            }
+        });
+    }
 
-    const questionIds =
-        questionList &&
-        questionList.filter((q) => q.questionId).map((q) => q.questionId);
+    // Process question list and collect all question IDs
+    const questionIds: string[] = [];
+    for (let i = 0; i < payload.questionList.length; i++) {
+        const item = payload.questionList[i];
 
-    if (questionIds && questionIds.length > 0) {
-        const existingQuestions = await Question.find({
-            _id: { $in: questionIds },
-        }).select('_id');
+        if (item.questionId) {
+            const existingQuestion = await Question.findById(item.questionId)
+                .select('_id')
+                .lean();
 
-        if (existingQuestions.length !== questionIds.length) {
-            throw new AppError(
-                StatusCodes.NOT_FOUND,
-                'One or more questions do not exist in your question database',
-            );
+            if (!existingQuestion) {
+                throw new AppError(
+                    StatusCodes.NOT_FOUND,
+                    `Question ID ${item.questionId} does not exist`,
+                );
+            }
+
+            questionIds.push(existingQuestion._id.toString());
+        } else if (item.newQuestion) {
+            const questionData: any = {
+                ...item.newQuestion,
+                category_id: course.category_id,
+                createdBy: new Types.ObjectId(userInfo.userId),
+            };
+
+            // Add image if exists
+            const uploadedFile = fileMap[`image${i}`];
+            if (uploadedFile) {
+                questionData.hasImage = true;
+                questionData.image = {
+                    diskType: uploadedFile.diskType,
+                    path: uploadedFile.path,
+                    originalName: uploadedFile.originalName,
+                    modifiedName: uploadedFile.modifiedName,
+                    fileId: uploadedFile.fileId,
+                };
+            }
+
+            // Save new question
+            const savedQuestion = await Question.create(questionData);
+            questionIds.push(savedQuestion._id.toString());
         }
     }
 
@@ -74,7 +116,7 @@ const createTest = async (
         type: payload.type,
         time: payload.time,
         publishDate: payload.publishDate && new Date(payload.publishDate),
-        questionList: payload.questionList,
+        questionList: questionIds,
         createdBy: userInfo.userId,
     });
 
@@ -163,6 +205,9 @@ const getAllTests = async (
         })
         .populate({
             path: 'lesson_id',
+        })
+        .populate({
+            path: 'questionList',
         });
 
     return {
@@ -176,7 +221,13 @@ const getAllTests = async (
 };
 
 const getTestByID = async (id: string): Promise<any> => {
-    const data = await Test.findById(id);
+    const data = await Test.findById(id)
+        .populate({
+            path: 'lesson_id',
+        })
+        .populate({
+            path: 'questionList',
+        });
     if (!data) {
         throw new AppError(StatusCodes.NOT_FOUND, 'Test not found.');
     }
@@ -184,8 +235,173 @@ const getTestByID = async (id: string): Promise<any> => {
     return data;
 };
 
-const updateTest = async () => {
-    return 'updateTest service';
+const updateTest = async (
+    userInfo: TJWTDecodedUser,
+    id: string, // test ID
+    payload: any,
+    files: Express.Multer.File[] | undefined,
+): Promise<any> => {
+    const [checkUser, checkTest] = await Promise.all([
+        User.findById(userInfo.userId).lean(),
+        Test.findById(id).lean(),
+    ]);
+
+    if (!checkUser) {
+        throw new AppError(StatusCodes.BAD_REQUEST, 'User not found');
+    }
+
+    if (!checkTest) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Test not found');
+    }
+
+    if (checkUser._id.toString() !== checkTest.createdBy.toString()) {
+        throw new AppError(
+            StatusCodes.UNAUTHORIZED,
+            'You cannot update this test',
+        );
+    }
+
+    // Fetch course only if we need to add new questions.we need category_id from course
+    let course: ICourse | null;
+    if (payload.questionList?.some((item: any) => item.newQuestion)) {
+        course = await Course.findById(checkTest.course_id).lean();
+        if (!course) {
+            throw new AppError(StatusCodes.NOT_FOUND, 'Course not found');
+        }
+    }
+
+    // Handle file uploads
+    const uploadedFiles = files?.length
+        ? await Promise.all(
+              files.map((file) =>
+                  uploadToB2(
+                      file,
+                      config.backblaze_all_users_bucket_name,
+                      config.backblaze_all_users_bucket_id,
+                      'questionImages',
+                  ),
+              ),
+          )
+        : [];
+
+    // Create file mappingggg
+    const uploadedFileMap = uploadedFiles.reduce(
+        (acc, file, index) => {
+            if (files) {
+                acc[`image${index}`] = file;
+            }
+            return acc;
+        },
+        {} as Record<string, any>,
+    );
+
+    // Prepare update fields
+    const updateFields: Record<string, any> = {
+        ...(payload.name && { name: payload.name }),
+        ...(payload.time && { time: payload.time }),
+        ...(payload.publishDate && {
+            publishDate: new Date(payload.publishDate),
+        }),
+        // ...(uploadedFile && {
+        //     image: {
+        //         diskType: uploadedFile.diskType,
+        //         path: uploadedFile.path,
+        //         originalName: uploadedFile.originalName,
+        //         modifiedName: uploadedFile.modifiedName,
+        //         fileId: uploadedFile.fileId
+        //     }
+        // })
+    };
+
+    // Handle question list updates
+    if (payload.questionList || payload.removeQuestions) {
+        let updatedQuestionList = [...checkTest.questionList];
+
+        // Process new questions
+        if (payload.questionList?.length) {
+            const newQuestionIds = await Promise.all(
+                payload.questionList.map(async (item:any,index:any) => {
+                    if (item.questionId) {
+                        const existingQuestion = await Question.findById(
+                            item.questionId,
+                        ).lean();
+                        if (!existingQuestion) {
+                            throw new AppError(
+                                StatusCodes.NOT_FOUND,
+                                `Question ID ${item.questionId} does not exist`,
+                            );
+                        }
+                        return new Types.ObjectId(existingQuestion._id);
+                    } else if (item.newQuestion && course) {
+                        const questionData: any = {
+                            ...item.newQuestion,
+                            category_id: course.category_id,
+                            createdBy: new Types.ObjectId(userInfo.userId)
+                        };
+
+                        // Add image if exists for this question
+                        const uploadedFile = uploadedFileMap[`image${index}`];
+                        if (uploadedFile) {
+                            questionData.hasImage = true;
+                            questionData.image = {
+                                diskType: uploadedFile.diskType,
+                                path: uploadedFile.path,
+                                originalName: uploadedFile.originalName,
+                                modifiedName: uploadedFile.modifiedName,
+                                fileId: uploadedFile.fileId
+                            };
+                        }
+                        const savedQuestion = await Question.create(questionData);
+                        return new Types.ObjectId(savedQuestion._id);
+                    }
+                }),
+            );
+
+            updatedQuestionList = [
+                ...updatedQuestionList,
+                ...newQuestionIds.filter(Boolean),
+            ];
+        }
+
+        // Remove questions if specified
+        if (payload.removeQuestions?.length) {
+            updatedQuestionList = updatedQuestionList.filter(
+                (id) => !payload.removeQuestions?.includes(id.toString()),
+            );
+        }
+
+        updateFields.questionList = updatedQuestionList;
+    }
+
+    // Update test
+    const updatedTest = await Test.findByIdAndUpdate(id, updateFields, {
+        new: true,
+        runValidators: true,
+    }).lean();
+
+    if (!updatedTest) {
+        throw new AppError(StatusCodes.BAD_REQUEST, 'Failed to update test');
+    }
+
+    return updatedTest;
+};
+
+//mark Test as completed
+
+const markTestAsCompleted = async (testId: string) => {
+    // Check if the Test exists
+    const existingTest = await Test.findById(testId);
+    if (!existingTest) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Test not found');
+    }
+
+    const markAsCompeted = await Test.findByIdAndUpdate(
+        testId,
+        { isCompleted: true },
+        { new: true },
+    );
+
+    return markAsCompeted;
 };
 
 const deleteTestByID = async (
@@ -222,4 +438,5 @@ export const TestService = {
     getTestByID,
     updateTest,
     deleteTestByID,
+    markTestAsCompleted,
 };

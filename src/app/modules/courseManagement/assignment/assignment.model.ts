@@ -80,14 +80,19 @@ const assignmentSchema = new Schema<IAssignment>(
         uploadFileResources: {
             type: [resourceSchema],
         },
+        isCompleted: {
+            type: Boolean,
+            default: false,
+        }
     },
+
     {
         timestamps: true,
         versionKey: false,
     },
 );
 
-assignmentSchema.index({ course_id: 1, lesson_id: 1 }, { unique: true });
+assignmentSchema.index({ course_id: 1, lesson_id: 1, assignmentNo: 1 }, { unique: true });
 
 // Create and export the model
 export const Assignment = model<IAssignment>('Assignment', assignmentSchema);

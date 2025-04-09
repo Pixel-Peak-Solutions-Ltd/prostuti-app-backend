@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-console */
 /* eslint-disable no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unused-vars */
@@ -13,6 +14,8 @@ import { Course } from './course.model';
 import { Express } from 'express';
 import { USER_ROLE } from '../../user/user.constant';
 import { Student } from '../../student/student.model';
+import { Teacher } from '../../teacher/teacher.model';
+import { User } from '../../user/user.model';
 
 // Create Course
 const createCourse = async (
@@ -156,6 +159,8 @@ const getCoursePreview = async (courseId: string) => {
                 totalAssignments: { $sum: '$lessons.assignmentsCount' },
                 totalTests: { $sum: '$lessons.testsCount' },
                 lessons: 1,
+                priceType: 1,
+                price: 1,
             },
         },
     ]);
@@ -218,6 +223,14 @@ const getPublishedCoursesForStudent = async (user: TJWTDecodedUser) => {
 
 const getCourseByID = async (courseId: string) => {
     const courses = await Course.findById(courseId);
+
+    return courses;
+};
+
+const getCourseByTeacherID = async (user_id: string) => {
+    const teacherId = await User.findById({ _id: user_id }).select('teacherId');
+
+    const courses = await Course.find({ teacher_id: teacherId });
 
     return courses;
 };
@@ -367,6 +380,29 @@ const approvedCourse = async (
     return updatedCourse;
 };
 
+// Get Courses Admin end
+const getCoursesForAdmins = async (query: Record<string, any>) => {
+    const { isPending, isPublished } = query;
+
+    const queryConditions: Record<string, any> = {};
+
+    // Add conditions based on query parameters
+    if (isPending !== undefined) {
+        queryConditions.isPending = true;
+    }
+
+    if (isPublished !== undefined) {
+        queryConditions.isPublished = true;
+    }
+
+    const courses = await Course.find(queryConditions).sort({ createdAt: -1 });
+
+    // Get total count of documents matching the query
+    const totalCount = await Course.countDocuments(queryConditions);
+
+    return { totalCount, courses };
+};
+
 export const courseService = {
     createCourse,
     getCoursePreview,
@@ -376,4 +412,6 @@ export const courseService = {
     updateCourse,
     deleteCourseByID,
     approvedCourse,
+    getCourseByTeacherID,
+    getCoursesForAdmins,
 };

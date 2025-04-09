@@ -38,6 +38,9 @@ router
         },
         validateRequest(resourceValidator.updateResourceValidationSchema),
         resourceController.updateResource,
-    );
+    )
+    .put('/markAsComplete/:resourceId',
+        auth(),
+        resourceController.resourceCompletion);
 
 export const resourceRoute = router;

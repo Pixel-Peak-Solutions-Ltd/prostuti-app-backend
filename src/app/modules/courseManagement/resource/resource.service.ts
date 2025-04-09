@@ -49,17 +49,17 @@ const createResource = async (
     }
 
     // Check if the resources already added for this course under that lesson
-    const isResourcesAdded = await Resource.findOne({
-        course_id: payload.course_id,
-        lesson_id: payload.lesson_id,
-    });
+    // const isResourcesAdded = await Resource.findOne({
+    //     course_id: payload.course_id,
+    //     lesson_id: payload.lesson_id,
+    // });
 
-    if (isResourcesAdded) {
-        throw new AppError(
-            StatusCodes.BAD_REQUEST,
-            'Already resource(s) added for this lesson',
-        );
-    }
+    // if (isResourcesAdded) {
+    //     throw new AppError(
+    //         StatusCodes.BAD_REQUEST,
+    //         'Already resource(s) added for this lesson',
+    //     );
+    // }
 
     // If no files were uploaded, throw an error
     if (!files.length) {
@@ -123,7 +123,12 @@ const getAllCourseResourcesWithLessons = async (courseId: string) => {
             select: 'number name',
             model: Lesson,
         })
-        .select({ uploadFileResources: 1, name: 1, resourceDate: 1 });
+        .select({
+            uploadFileResources: 1,
+            name: 1,
+            resourceDate: 1,
+            isCompleted: true,
+        });
 
     return resources;
 };
@@ -149,7 +154,7 @@ const getResourceByID = async (resourceId: string) => {
 // UpdateR Resources
 const updateResource = async (
     resourceId: string,
-    payload: Partial<IResources>,
+    payload: Partial<IResources> & { canceledResources: TResource[] },
     files: Express.Multer.File[] | [],
 ) => {
     // Check if there are fields to update
@@ -171,8 +176,8 @@ const updateResource = async (
     }
 
     // Check if the resource exists
-    const existingResource = await Resource.findById(resourceId);
-    if (!existingResource) {
+    const isResourceExist = await Resource.findById(resourceId);
+    if (!isResourceExist) {
         // Delete local files if present
         if (files) {
             files.forEach((file) => {
@@ -193,6 +198,27 @@ const updateResource = async (
         }),
     };
 
+    if (files.length === 0 && payload.canceledResources.length > 0) {
+        // Combine existing and new upload resources
+        // Extract the fieldIds from deletedFields
+        const canceledAssignmentsFileIds = payload.canceledResources.map(
+            (item) => item.fileId,
+        );
+
+        // Filter out objects
+        const newResources = isResourceExist.uploadFileResources.filter(
+            (item) => !canceledAssignmentsFileIds.includes(item.fileId),
+        );
+
+        // Combine existing and new upload resources
+        updatedPayload.uploadFileResources = [...(newResources || [])];
+
+        // Delete Canceled Assignments from backblaze
+        for (const value of payload.canceledResources) {
+            await deleteFromB2(value.fileId, value.modifiedName, 'resources');
+        }
+    }
+
     // Handle file uploads if present
     if (files.length > 0) {
         try {
@@ -210,10 +236,31 @@ const updateResource = async (
             }
 
             // Combine existing and new upload resources
+            // Extract the fieldIds from deletedFields
+            const canceledResourcesFileIds = payload.canceledResources.map(
+                (item) => item.fileId,
+            );
+
+            // Filter out objects
+            const newResources = isResourceExist.uploadFileResources.filter(
+                (item) => !canceledResourcesFileIds.includes(item.fileId),
+            );
+
             updatedPayload.uploadFileResources = [
-                ...(existingResource.uploadFileResources || []),
+                ...(newResources || []),
                 ...uploadedResources,
             ];
+
+            // Delete Canceled Resources from backblaze
+            if (payload.canceledResources.length > 0) {
+                for (const value of payload.canceledResources) {
+                    await deleteFromB2(
+                        value.fileId,
+                        value.modifiedName,
+                        'resources',
+                    );
+                }
+            }
         } catch (error) {
             // Clean up any remaining local files
             files.forEach((file) => {
@@ -245,6 +292,23 @@ const updateResource = async (
     return result;
 };
 
+//mark resource as completed
+
+const markResourceAsCompleted = async (resourceId: string) => {
+    // Check if the resource exists
+    const existingResource = await Resource.findById(resourceId);
+    if (!existingResource) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Resource not found');
+    }
+
+    const markAsCompeted = await Resource.findByIdAndUpdate(
+        resourceId,
+        { isCompleted: true },
+        { new: true },
+    );
+
+    return markAsCompeted;
+};
 // Delete Resources By ID
 const deleteResourceByID = async (resourceId: string) => {
     // Check if the course exists
@@ -295,4 +359,5 @@ export const resourceService = {
     getResourceByID,
     updateResource,
     deleteResourceByID,
+    markResourceAsCompleted,
 };

@@ -44,5 +44,37 @@ const createQuestion = z.object({
         )
         .min(1, 'Question can not be empty'),
 });
+const updateQuestion = z.object({
+    body: z
+    .object({
+        title: z.string().min(1, 'Question title is required').optional(),
+        description: z
+            .string()
+            .min(1, 'Question description is required')
+            .optional(),
+        options: z
+            .array(z.string())
+            .length(4, 'There must be exactly 4 options')
+            .optional(),
+        correctOption: z
+            .string()
+            .min(1, 'Correct answer cannot be empty')
+            .optional(),
+    })
+    .strict()
+    .refine(
+        (data) => {
+            if (data.options && data.correctOption) {
+                return data.options.includes(data.correctOption);
+            }
+            return true;
+        },
+        {
+            message:
+                'The correct option must be one of the provided options.',
+            path: ['options', 'correctOption'],
+        },
+    ),
+});
 
-export const QuestionValidation = { createQuestion };
+export const QuestionValidation = { createQuestion,updateQuestion };
