@@ -16,6 +16,8 @@ import { USER_ROLE } from '../../user/user.constant';
 import { Student } from '../../student/student.model';
 import { Teacher } from '../../teacher/teacher.model';
 import { User } from '../../user/user.model';
+import { notificationService }  from '../../notification/notification.service';
+import { Voucher }  from '../../voucher/voucher.model'
 
 // Create Course
 const createCourse = async (
@@ -363,8 +365,19 @@ const deleteCourseByID = async (courseId: string) => {
 const approvedCourse = async (
     courseId: string,
     user: TJWTDecodedUser,
-    payload: { priceType: TPriceType; price: number },
+    payload: {
+        priceType: TPriceType;
+        price: number;
+        voucher?: {
+            title: string;
+            discountType: string;
+            discountValue: number;
+            startDate: string;
+            endDate: string;
+        }
+    },
 ) => {
+    // Update the course
     const updatedCourse = await Course.findByIdAndUpdate(
         courseId,
         {
@@ -376,6 +389,54 @@ const approvedCourse = async (
         },
         { new: true, runValidators: true },
     );
+
+    if (!updatedCourse) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Course not found');
+    }
+
+    // Get the teacher ID for notification purpose
+    const teacher = await Teacher.findById(updatedCourse.teacher_id);
+    if (!teacher) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Teacher not found');
+    }
+
+    // Create voucher if provided
+    if (payload.voucher) {
+        
+
+        // Create voucher with course_id
+        await Voucher.create({
+            title: payload.voucher.title,
+            voucherType: 'Specific_Course',
+            discountType: payload.voucher.discountType,
+            discountValue: payload.voucher.discountValue,
+            startDate: new Date(payload.voucher.startDate),
+            endDate: new Date(payload.voucher.endDate),
+            course_id: courseId,
+            isActive: true,
+            isExpired: false,
+            createdBy: user.userId,
+            updatedBy: user.userId,
+        });
+    }
+
+    // Send notification to the teacher about course approval
+
+    await notificationService.createNotification(user, {
+        recipientId: teacher.user_id.toString(),
+        type: 'CourseApproved',
+        title: 'Course Approved',
+        message: `Your course "${updatedCourse.name}" has been approved by an admin.`,
+        resourceType: 'Course',
+        resourceId: courseId,
+        metaData: {
+            approvedBy: user.userId,
+            approvedAt: new Date().toISOString(),
+            priceType: payload.priceType,
+            price: payload.price,
+            hasVoucher: !!payload.voucher
+        },
+    });
 
     return updatedCourse;
 };
