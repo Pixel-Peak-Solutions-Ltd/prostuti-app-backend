@@ -119,7 +119,7 @@ const requestEdit = async (
     }
 
     // Find the teacher's user ID
-    const teacher = await Teacher.findById(teacherId);
+    const teacher = await Teacher.findOne({ user_id: teacherId });
     if (!teacher) {
         throw new AppError(
             StatusCodes.NOT_FOUND,

@@ -395,7 +395,7 @@ const approvedCourse = async (
     }
 
     // Get the teacher ID for notification purpose
-    const teacher = await Teacher.findById(updatedCourse.teacher_id);
+    const teacher = await Teacher.findOne({ user_id: updatedCourse.teacher_id });
     if (!teacher) {
         throw new AppError(StatusCodes.NOT_FOUND, 'Teacher not found');
     }
