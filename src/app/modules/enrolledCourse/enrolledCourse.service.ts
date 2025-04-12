@@ -9,12 +9,12 @@ import { EnrolledCourse } from './enrolledCourse.model';
 // @ts-ignore
 import SSLCommerzPayment from 'sslcommerz-lts';
 import config from '../../config';
-import { Payment } from '../payment/payment.model';
-import { get } from 'mongoose';
-import { EnrolledCourseSearchableFields } from './enrolledCourse.constant';
 import { calculatePagination } from '../../helpers/pagenationHelper';
-import { IEnrolledCourseFilters } from './enrolledCourse.interface';
 import { IPaginationOptions } from '../../interfaces/common';
+import { Payment } from '../payment/payment.model';
+import { Voucher } from '../voucher/voucher.model';
+import { EnrolledCourseSearchableFields } from './enrolledCourse.constant';
+import { IEnrolledCourseFilters } from './enrolledCourse.interface';
 
 const store_id = 'bakin62b84b547d1c3';
 const store_passwd = 'bakin62b84b547d1c3@ssl';
@@ -220,9 +220,9 @@ const createSubscriptionEnrolledCourse = async (
 
 const createPaidEnrolledCourse = async (
     userInfo: TJWTDecodedUser,
-    payload: { course_id: string[]; totalPrice: number },
+    payload: { course_id: string[]; voucher_id?: string },
 ): Promise<string> => {
-    const { course_id, totalPrice } = payload;
+    const { course_id,voucher_id } = payload;
 
     // Get student details
     const studentDetails = await Student.findOne({ user_id: userInfo.userId });
@@ -251,17 +251,39 @@ const createPaidEnrolledCourse = async (
     }
 
     // Calculate the total price from the selected courses
-    const calculatedTotalPrice = courses.reduce(
+    let calculatedTotalPrice = courses.reduce(
         (sum, course) => sum + course.price,
         0,
     );
 
     // Validate if the total price matches
-    if (calculatedTotalPrice !== totalPrice) {
-        throw new AppError(
-            StatusCodes.BAD_REQUEST,
-            'Total price does not match the sum of course prices.',
-        );
+    // if (calculatedTotalPrice !== totalPrice) {
+    //     throw new AppError(
+    //         StatusCodes.BAD_REQUEST,
+    //         'Total price does not match the sum of course prices.',
+    //     );
+    // }
+
+    // Verify voucher and update price if provided
+    if (voucher_id) {
+        const voucher = await Voucher.findById(voucher_id);
+        if (!voucher || !voucher.isActive || voucher.isExpired || voucher.endDate < new Date()) {
+            throw new AppError(StatusCodes.BAD_REQUEST, 'Invalid or expired voucher');
+        }
+        // Validate voucher applicability
+        if (voucher.voucherType === 'Specific_Course' && voucher.course_id && !course_id.includes(voucher.course_id.toString())) {
+            throw new AppError(StatusCodes.BAD_REQUEST, 'Voucher is not valid for the selected courses');
+        }
+        if (voucher.voucherType === 'Specific_Student' && voucher.student_id && voucher.student_id.toString() !== studentDetails._id.toString()) {
+            throw new AppError(StatusCodes.BAD_REQUEST, 'Voucher is not valid for this student');
+        }
+        // Apply discount
+        if (voucher.discountType === 'Percentage') {
+            calculatedTotalPrice *= (100 - voucher.discountValue) / 100;
+        } else {
+            calculatedTotalPrice -= voucher.discountValue;
+        }
+        if (calculatedTotalPrice < 0) calculatedTotalPrice = 0;
     }
 
     // Ensure student is not already enrolled in any of the courses
@@ -280,7 +302,7 @@ const createPaidEnrolledCourse = async (
     const transactionId = uuidv4();
 
     const paymentData = {
-        total_amount: totalPrice,
+        total_amount: calculatedTotalPrice,
         currency: 'BDT',
         tran_id: transactionId,
         success_url: `${config.backend_url}/api/v1/enroll-course/paid/success?trans_id=${transactionId}&course_id=${course_id.join(',')}`,
@@ -324,7 +346,9 @@ const createPaidEnrolledCourse = async (
     const payment = new Payment({
         student_id: studentDetails._id,
         paymentType: 'Paid',
-        amount: totalPrice,
+        amount: calculatedTotalPrice,
+        isVoucherAdded: !!voucher_id,
+        voucher_id: voucher_id ? voucher_id : null,
         transactionId,
     });
     await payment.save();

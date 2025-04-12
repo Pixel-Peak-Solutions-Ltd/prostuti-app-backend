@@ -7,6 +7,8 @@ export type IPayment = {
     paymentType: PaymentType;
     amount: number;
     status: PaymentStatus;
+    isVoucherAdded: boolean;
+    voucher_id?: Types.ObjectId;
     transactionId: string;
     createdDate: Date;
     expireDate?: Date;
@@ -24,4 +26,6 @@ export type IPaymentFilters = {
     transactionId?: string;
     createdDate?: string;
     expireDate?: string;
+    isVoucherAdded?: string;
+    voucher_id?: string;
 };
