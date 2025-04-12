@@ -29,6 +29,7 @@ import { LeaderBoard } from '../modules/leaderboard/leaderboard.model';
 import { LeaderBoardRoute } from '../modules/leaderboard/leaderboard.route';
 import { flashcardRoute } from '../modules/flashcardManagement/flashcard/flashcard.route';
 import { chatRoute } from '../modules/chat/chat.route';
+import { courseReviewRoute } from '../modules/courseReview/courseReview.route';
 
 const globalRoute = Router();
 
@@ -58,9 +59,10 @@ const routes = [
     { path: '/assignment-submission', route: assignmentSubmissionRoute },
     { path: '/voucher', route: VoucherRoute },
     { path: '/teacher-management', route: teacherManagementRoute },
-    { path: '/leaderboard', route: LeaderBoardRoute},
-    { path: '/flashcard', route: flashcardRoute},
+    { path: '/leaderboard', route: LeaderBoardRoute },
+    { path: '/flashcard', route: flashcardRoute },
     { path: '/chat', route: chatRoute },
+    { path: '/course-review', route: courseReviewRoute },
 ];
 
 routes.forEach((route) => globalRoute.use(route.path, route.route));
