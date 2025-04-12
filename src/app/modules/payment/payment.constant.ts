@@ -30,6 +30,8 @@ export const PaymentFilterableFields = [
     'transactionId',
     'createdDate',
     'expireDate',
+    'isVoucherAdded',
+    'voucher_id',
 ];
 
 //searchTerm
