@@ -31,6 +31,7 @@ const registerStudent = async (
     try {
         session.startTransaction();
 
+
         // Check if the phone number is verified
         const verifiedPhone = await PhoneVerification.findOne({
             phoneNumber: formatPhoneNumber(phone),
