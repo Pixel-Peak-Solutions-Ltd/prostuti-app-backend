@@ -61,19 +61,18 @@ const deleteUserByID = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
-// New controller method for updating student category
-const updateStudentCategory = catchAsync(async (req: Request, res: Response) => {
-    const { studentId } = req.params;
 
-    const result = await studentService.updateStudentCategory(
-        studentId,
-        req.body,
-        req.user
-    );
+
+const updateStudentCategory = catchAsync(async (req: Request, res: Response) => {
+    // Get the userId from the authenticated user (from JWT)
+    const { userId } = req.user;
+
+    // Call the service to update the student's own category
+    const result = await studentService.updateStudentCategory(userId, req.body);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
-        message: 'Student category updated successfully',
+        message: 'Your category updated successfully',
         data: result,
     });
 });

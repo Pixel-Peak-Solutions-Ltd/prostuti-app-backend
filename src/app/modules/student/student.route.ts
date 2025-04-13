@@ -26,10 +26,10 @@ router
     )
     // New route for updating student category
     .patch(
-        '/category/:studentId',
-        auth(USER_ROLE.student),
+        '/update-category',
+        auth(USER_ROLE.student), // Only students can access this route
         validateRequest(studentValidator.updateStudentCategoryValidationSchema),
-        studentController.updateStudentCategory,
+        studentController.updateStudentCategory
     );
 
 export const studentRoute = router;
