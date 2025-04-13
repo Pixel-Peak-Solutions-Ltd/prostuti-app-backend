@@ -14,8 +14,9 @@ import { formatPhoneNumber } from '../../utils/formatPhoneNumber';
 import { PhoneVerification } from '../phoneVerification/phoneVerification.model';
 import { PHONE_VERIFICATION_TYPE } from '../phoneVerification/phoneVerification.constant';
 import { convertJWTExpireTimeToSeconds } from './auth.utils';
-import { CategoryType } from '../category/category.constant';
+
 import { TJWTDecodedUser } from '../../interfaces/jwt/jwt.type';
+import { MainCategory } from './category/category.constant';
 
 // Register Student
 const registerStudent = async (
@@ -24,12 +25,13 @@ const registerStudent = async (
     email: string,
     phone: string,
     password: string,
+    categoryType: string,
+    subCategory?: string, // Add subCategory parameter
 ) => {
     const session = await mongoose.startSession();
 
     try {
         session.startTransaction();
-
 
         // Check if the phone number is verified
         const verifiedPhone = await PhoneVerification.findOne({
@@ -69,13 +71,25 @@ const registerStudent = async (
             throw new AppError(StatusCodes.BAD_REQUEST, 'Fail to create user');
         }
 
-        // Create a student to Student model (Transaction 2) - without categoryType
+        // Create the category object based on categoryType
+        const categoryObj: any = {
+            mainCategory: categoryType,
+        };
+
+        // If category is not Job and subCategory is provided, add it to the category object
+        if (categoryType !== MainCategory.JOB && subCategory) {
+            categoryObj.subCategory = subCategory;
+        }
+
+        // Create a student to Student model (Transaction 2) - with categoryType and category
         const student = {
             user_id: newUser[0]._id,
             studentId: newUser[0].registeredId,
             name: name,
             email: newUser[0].email,
             phone: newUser[0].phone,
+            categoryType: categoryType,
+            category: categoryObj,
             subscriptionStartDate: null,
             subscriptionEndDate: null,
         };

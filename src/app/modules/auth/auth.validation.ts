@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { categoryType } from '../category/category.constant';
+import { getValidSubCategories, MainCategory } from './category/category.constant';
 
 const registerStudentValidationSchema = z.object({
     body: z
@@ -18,7 +19,13 @@ const registerStudentValidationSchema = z.object({
                 .trim()
                 .min(2, 'Student name must be at least 2 characters')
                 .max(20, 'Student name cannot be more than 20 characters'),
-            // Removed categoryType validation
+            // Add categoryType validation back
+            categoryType: z.enum([...categoryType] as [string, ...string[]], {
+                required_error: 'Category type is required',
+                invalid_type_error: `Invalid category type. Allowed values are: ${categoryType.join(', ')}`,
+            }),
+            // Add subCategory
+            subCategory: z.string().optional(),
             email: z
                 .string({
                     required_error: 'Email is required',
@@ -62,6 +69,41 @@ const registerStudentValidationSchema = z.object({
         .refine((data) => data.password === data.confirmPassword, {
             message: "Passwords don't match",
             path: ['confirmPassword'],
+        })
+        .superRefine((data, ctx) => {
+            // For Job category, subCategory should not be provided
+            if (data.categoryType === MainCategory.JOB && data.subCategory) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: 'Job category should not have a subcategory',
+                    path: ['subCategory'],
+                });
+                return;
+            }
+
+            // For Academic and Admission, subCategory is required
+            if ((data.categoryType === MainCategory.ACADEMIC || data.categoryType === MainCategory.ADMISSION)
+                && !data.subCategory) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: `Subcategory is required for ${data.categoryType}`,
+                    path: ['subCategory'],
+                });
+                return;
+            }
+
+            // If subCategory is provided, it should be valid for the mainCategory
+            if (data.subCategory) {
+                const validSubcategories = getValidSubCategories(data.categoryType);
+                if (!validSubcategories.includes(data.subCategory)) {
+                    ctx.addIssue({
+                        code: z.ZodIssueCode.custom,
+                        message: `Invalid subcategory. Valid subcategories for ${data.categoryType} are: ${validSubcategories.join(', ')}`,
+                        path: ['subCategory'],
+                    });
+                    return;
+                }
+            }
         }),
 });
 
