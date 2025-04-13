@@ -61,10 +61,29 @@ const deleteUserByID = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+// New controller method for updating student category
+const updateStudentCategory = catchAsync(async (req: Request, res: Response) => {
+    const { studentId } = req.params;
+
+    const result = await studentService.updateStudentCategory(
+        studentId,
+        req.body,
+        req.user
+    );
+
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'Student category updated successfully',
+        data: result,
+    });
+});
+
+// Add to exports
 export const studentController = {
     createStudents,
     getAllStudents,
     getStudentByID,
     updateStudent,
+    updateStudentCategory, // New method
     deleteUserByID,
 };

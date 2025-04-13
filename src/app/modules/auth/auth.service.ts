@@ -22,7 +22,6 @@ const registerStudent = async (
     otpCode: string,
     name: string,
     email: string,
-    categoryType: CategoryType,
     phone: string,
     password: string,
 ) => {
@@ -69,17 +68,15 @@ const registerStudent = async (
             throw new AppError(StatusCodes.BAD_REQUEST, 'Fail to create user');
         }
 
-        // Create a student to Student model (Transaction 2)
-
+        // Create a student to Student model (Transaction 2) - without categoryType
         const student = {
             user_id: newUser[0]._id,
             studentId: newUser[0].registeredId,
             name: name,
             email: newUser[0].email,
             phone: newUser[0].phone,
-            categoryType,
-            subscriptionStartDate:null,
-            subscriptionEndDate:null,
+            subscriptionStartDate: null,
+            subscriptionEndDate: null,
         };
 
         const newStudent = await Student.create([student], { session });

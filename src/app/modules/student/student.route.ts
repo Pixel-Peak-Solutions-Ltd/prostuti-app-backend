@@ -23,6 +23,13 @@ router
         },
         validateRequest(studentValidator.updateStudentValidationSchema),
         studentController.updateStudent,
+    )
+    // New route for updating student category
+    .patch(
+        '/category/:studentId',
+        auth(USER_ROLE.student),
+        validateRequest(studentValidator.updateStudentCategoryValidationSchema),
+        studentController.updateStudentCategory,
     );
 
 export const studentRoute = router;

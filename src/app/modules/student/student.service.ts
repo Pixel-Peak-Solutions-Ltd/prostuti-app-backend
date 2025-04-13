@@ -136,10 +136,58 @@ const deleteUserByID = async () => {
     return 'deleteUserByID service';
 };
 
+// New service method for updating student category
+const updateStudentCategory = async (
+    studentId: string,
+    payload: { mainCategory: string; subCategory?: string },
+    user: TJWTDecodedUser
+) => {
+    // Check if the params studentId match to database studentId for this token
+    const userDoc = await User.findById(user.userId);
+
+    if (userDoc?.registeredId !== studentId) {
+        throw new AppError(
+            StatusCodes.UNAUTHORIZED,
+            'Access denied. You are not authorized to update this profile'
+        );
+    }
+
+    // Get existing student
+    const existingStudent = await Student.findOne({ studentId });
+    if (!existingStudent) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Student not found');
+    }
+
+    const { mainCategory, subCategory } = payload;
+
+    // Business logic validations (in addition to schema validation)
+
+    // Update the student with the new category
+    const result = await Student.findOneAndUpdate(
+        { studentId },
+        {
+            category: {
+                mainCategory,
+                subCategory
+            },
+            // Also update the legacy categoryType for backward compatibility
+            categoryType: mainCategory
+        },
+        {
+            new: true,
+            runValidators: true,
+        }
+    );
+
+    return result;
+};
+
+// Add to exports
 export const studentService = {
     createStudent,
     getAllStudents,
     getStudentByID,
     updateStudent,
+    updateStudentCategory, // New method
     deleteUserByID,
 };
