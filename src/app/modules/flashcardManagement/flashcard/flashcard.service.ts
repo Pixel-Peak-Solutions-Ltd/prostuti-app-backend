@@ -231,11 +231,12 @@ const getFlashcardByID = async (id: string, userInfo: TJWTDecodedUser) => {
         if (!checkStudent) {
             throw new AppError(StatusCodes.NOT_FOUND, 'Student does not exist');
         }
+      
 
         // Visibility check for students
         if (
             checkFlashcard.visibility === 'ONLY_ME' &&
-            checkFlashcard.studentId.toString() !== checkStudent._id.toString()
+            checkFlashcard.studentId._id.toString() !== checkStudent._id.toString()
         ) {
             throw new AppError(
                 StatusCodes.FORBIDDEN,
