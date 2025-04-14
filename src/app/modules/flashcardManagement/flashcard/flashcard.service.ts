@@ -89,6 +89,7 @@ const getAllFlashcards = async (
 ) => {
     const {
         searchTerm,
+        visibility,
         categoryType,
         categoryDivision,
         categoryUniversityType,
@@ -123,21 +124,67 @@ const getAllFlashcards = async (
             })),
         });
     }
-    
-    if (categoryType || categoryDivision || categoryUniversityType || categoryUniversityName || categoryChapter || categorySubject) {
+
+    if (
+        categoryType ||
+        categoryDivision ||
+        categoryUniversityType ||
+        categoryUniversityName ||
+        categoryChapter ||
+        categorySubject
+    ) {
         const categoryFilter: any = {};
         if (categoryType) categoryFilter.type = categoryType;
         if (categoryDivision) categoryFilter.division = categoryDivision;
-        if (categoryUniversityType) categoryFilter.universityType = categoryUniversityType;
-        if (categoryUniversityName) categoryFilter.universityName = categoryUniversityName;
+        if (categoryUniversityType)
+            categoryFilter.universityType = categoryUniversityType;
+        if (categoryUniversityName)
+            categoryFilter.universityName = categoryUniversityName;
         if (categoryChapter) categoryFilter.chapter = categoryChapter;
         if (categorySubject) categoryFilter.subject = categorySubject;
 
-        const matchingCategories = await Category.find(categoryFilter).select('_id');
-        const categoryIds = matchingCategories.map(cat => cat._id);
+        const matchingCategories =
+            await Category.find(categoryFilter).select('_id');
+        const categoryIds = matchingCategories.map((cat) => cat._id);
         andConditions.push({ categoryId: { $in: categoryIds } });
     }
 
+    // filter Visibility
+    if (userInfo.role === 'student') {
+        const checkStudent = await Student.findOne({
+            user_id: userInfo.userId,
+        });
+        if (!checkStudent) {
+            throw new AppError(StatusCodes.NOT_FOUND, 'Student does not exist');
+        }
+
+        if (visibility === 'ONLY_ME') {
+            andConditions.push({
+                visibility: 'ONLY_ME',
+                studentId: checkStudent._id,
+            });
+        } else if (visibility === 'EVERYONE') {
+            andConditions.push({
+                visibility: 'EVERYONE',
+            });
+        } else {
+            andConditions.push({
+                $or: [
+                    { visibility: 'EVERYONE' },
+                    {
+                        $and: [
+                            { visibility: 'ONLY_ME' },
+                            { studentId: checkStudent._id },
+                        ],
+                    },
+                ],
+            });
+        }
+    } else {
+        if (visibility) {
+            andConditions.push({ visibility });
+        }
+    }
 
     const sortConditions: { [key: string]: SortOrder } = {};
 
@@ -231,12 +278,12 @@ const getFlashcardByID = async (id: string, userInfo: TJWTDecodedUser) => {
         if (!checkStudent) {
             throw new AppError(StatusCodes.NOT_FOUND, 'Student does not exist');
         }
-      
 
         // Visibility check for students
         if (
             checkFlashcard.visibility === 'ONLY_ME' &&
-            checkFlashcard.studentId._id.toString() !== checkStudent._id.toString()
+            checkFlashcard.studentId._id.toString() !==
+                checkStudent._id.toString()
         ) {
             throw new AppError(
                 StatusCodes.FORBIDDEN,
