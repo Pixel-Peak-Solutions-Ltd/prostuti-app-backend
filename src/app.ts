@@ -1,58 +1,45 @@
-import bodyParser from 'body-parser';
-import cookieParser from 'cookie-parser';
-import cors from 'cors';
+// Add to your app.ts file
+
 import express, { Application } from 'express';
-import globalErrorHandler from './app/middlewares/globalErrorHandler';
-import healthCheck from './app/middlewares/healthCheck';
-import notFound from './app/middlewares/notFound';
-import globalRoute from './app/routes';
-import languageMiddleware from './app/middlewares/language';
-import i18n from './app/i18n';
+import cors from 'cors';
+import cookieParser from 'cookie-parser';
+import config from './app/config';
+import { addDevHeaders, addEnvironmentBanner } from './app/middlewares/enviroment.middleware';
 
 const app: Application = express();
 
-// cors options
+// Apply environment-specific middleware
+if (!config.isProduction()) {
+    app.use(addDevHeaders);
+
+    // Only add environment banner in development and staging
+    if (config.isDevelopment() || config.isStaging()) {
+        app.use(addEnvironmentBanner);
+    }
+}
+
+// Configure CORS based on environment
 const corsOptions = {
-    origin: [
-        '*',
-        'http://localhost:5173',
-        // 'http://localhost:63342',
-        // 'http://localhost:5500',
-        'https://prostuti-app-teacher-admin-dashb-production.up.railway.app',
-        "prostuti-app-teacher-admin-dashb-staging.up.railway.app"
-    ], // Your frontend's URL
-    credentials: true, // Allow cookies and credentials to be sent
-    optionSuccessStatus: 200,
+    origin: config.isProduction()
+        ? config.frontend_url // Strict in production
+        : [config.frontend_url, 'http://localhost:3000', 'http://localhost:3001'], // More permissive in dev/staging
+    credentials: true,
 };
 
-// Trust proxy
-app.set('trust proxy', 1);
-
-// Parser
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
 app.use(cookieParser());
 app.use(express.json());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true }));
 
-// App route
-app.use('/api/v1', globalRoute);
+// Add environment info to health check endpoint
+app.get('/health', (req, res) => {
+    res.status(200).json({
+        message: 'Server is healthy',
+        environment: config.NODE_ENV,
+        timestamp: new Date().toISOString(),
+    });
+});
 
-// Initialize i18n
-app.use(i18n.init);
-
-// Use language setting middleware
-app.use(languageMiddleware);
-
-// Server Health Check Route
-app.get('/', healthCheck);
-app.get('/health', healthCheck);
-
-// Global Error Handler
-app.use(globalErrorHandler);
-
-// Not found route
-app.use(notFound);
+// Rest of your app configuration...
 
 export default app;

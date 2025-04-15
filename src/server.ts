@@ -13,18 +13,30 @@ let socketHandler: SocketHandler;
 
 async function startServer() {
     try {
+        // Log environment and connection details (not in production)
+        if (!config.isProduction()) {
+            console.log(`Environment: ${config.NODE_ENV}`);
+            console.log(`Connecting to database: ${config.database_url.split('@')[1].split('/')[0]}`);
+        }
+
+        // Connect to MongoDB with environment-specific options
+        const mongooseOptions: mongoose.ConnectOptions = {
+            // Add environment-specific connection options
+            serverSelectionTimeoutMS: config.isProduction() ? 30000 : 5000,
+        };
+
         await mongoose.connect(config.database_url);
-        console.log('Database is connected');
+        console.log(`Database is connected (${config.NODE_ENV} environment)`);
 
         // Initialize Socket.IO after MongoDB connection is established
         socketHandler = new SocketHandler(server);
 
         server.listen(config.port || 5000, () => {
-            console.log(`Server is listening on port ${config.port}`);
+            console.log(`Server is listening on port ${config.port} (${config.NODE_ENV} environment)`);
             console.log('Socket.IO server is initialized');
         });
     } catch (error) {
-        console.log('########## Database is not connected ##########');
+        console.log(`########## Database connection failed (${config.NODE_ENV} environment) ##########`);
         console.log(error);
     }
 }
