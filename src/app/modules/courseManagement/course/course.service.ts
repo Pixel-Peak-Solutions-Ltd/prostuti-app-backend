@@ -16,8 +16,8 @@ import { USER_ROLE } from '../../user/user.constant';
 import { Student } from '../../student/student.model';
 import { Teacher } from '../../teacher/teacher.model';
 import { User } from '../../user/user.model';
-import { notificationService }  from '../../notification/notification.service';
-import { Voucher }  from '../../voucher/voucher.model'
+import { notificationService } from '../../notification/notification.service';
+import { Voucher } from '../../voucher/voucher.model';
 
 // Create Course
 const createCourse = async (
@@ -74,7 +74,24 @@ const getCoursePreview = async (courseId: string) => {
                 foreignField: 'course_id',
                 as: 'lessons',
                 pipeline: [
-                    { $sort: { number: 1 } },
+                    {
+                        $addFields: {
+                            numericNumber: {
+                                $toInt: {
+                                    $getField: {
+                                        input: {
+                                            $regexFind: {
+                                                input: '$number',
+                                                regex: '\\d+',
+                                            },
+                                        },
+                                        field: 'match',
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    { $sort: { numericNumber: 1 } },
                     {
                         $lookup: {
                             from: 'recodedclasses',
@@ -374,7 +391,7 @@ const approvedCourse = async (
             discountValue: number;
             startDate: string;
             endDate: string;
-        }
+        };
     },
 ) => {
     // Update the course
@@ -395,15 +412,15 @@ const approvedCourse = async (
     }
 
     // Get the teacher ID for notification purpose
-    const teacher = await Teacher.findOne({ user_id: updatedCourse.teacher_id });
+    const teacher = await Teacher.findOne({
+        user_id: updatedCourse.teacher_id,
+    });
     if (!teacher) {
         throw new AppError(StatusCodes.NOT_FOUND, 'Teacher not found');
     }
 
     // Create voucher if provided
     if (payload.voucher) {
-        
-
         // Create voucher with course_id
         await Voucher.create({
             title: payload.voucher.title,
@@ -434,7 +451,7 @@ const approvedCourse = async (
             approvedAt: new Date().toISOString(),
             priceType: payload.priceType,
             price: payload.price,
-            hasVoucher: !!payload.voucher
+            hasVoucher: !!payload.voucher,
         },
     });
 
