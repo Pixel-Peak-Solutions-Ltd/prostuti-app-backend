@@ -36,6 +36,10 @@ const corsOptions = {
         ? config.frontend_url // Strict in production
         : [config.frontend_url, 'http://localhost:3000', 'http://localhost:3001'], // More permissive in dev/staging
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-language', 'x-api-key'],
+    preflightContinue: false,
+    optionsSuccessStatus: 204
 };
 
 // Parser
