@@ -31,7 +31,10 @@ const sendVerificationCode = async (
         });
 
         if (userExists) {
-            throw new AppError(404, 'User already exists with this phone number');
+            throw new AppError(
+                404,
+                'User already exists with this phone number',
+            );
         }
     }
 
@@ -49,6 +52,7 @@ const sendVerificationCode = async (
     if (result.error !== 0) {
         throw new AppError(500, 'SMS service returned an error');
     }
+
     // Save to database
     await PhoneVerification.create({
         phoneNumber,
