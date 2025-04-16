@@ -7,22 +7,31 @@ import pick from "../../helpers/pick";
 import { quizFilterableFields } from "./quiz.constant";
 import { paginationFields } from "../../constant";
 
-const createQuiz = catchAsync(async (req: Request, res: Response) => {
-    const result = await QuizService.createQuiz(req.user, req.body);
+const createMockQuiz = catchAsync(async (req: Request, res: Response) => {
+    const result = await QuizService.createMockQuiz(req.user, req.body);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
-        message: 'Quiz created successfully',
+        message: 'Mock Quiz created successfully',
         data: result,
     });
 });
 
-const submitQuiz = catchAsync(async (req: Request, res: Response) => {
-    const result = await QuizService.submitQuiz(req.user, req.body);
+const submitMockQuiz = catchAsync(async (req: Request, res: Response) => {
+    const result = await QuizService.submitMockQuiz(req.user, req.body,req.params.id);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
-        message: 'Quiz submitted successfully',
+        message: 'Mock Quiz submitted successfully',
+        data: result,
+    });
+});
+const previewWrittenMockQuiz = catchAsync(async (req: Request, res: Response) => {
+    const result = await QuizService.previewWrittenMockQuiz(req.user, req.body,req.params.id);
+
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'Mock Quiz previewed successfully',
         data: result,
     });
 });
@@ -50,4 +59,4 @@ const getSingleQuiz= catchAsync(async (req: Request, res: Response) => {
 });
 
 
-export const QuizController= {createQuiz,submitQuiz,getAllQuizzes,getSingleQuiz}
+export const QuizController= {createMockQuiz,submitMockQuiz,previewWrittenMockQuiz,getAllQuizzes,getSingleQuiz}

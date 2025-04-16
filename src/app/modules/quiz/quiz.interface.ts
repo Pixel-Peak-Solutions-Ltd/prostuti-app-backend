@@ -22,6 +22,8 @@ export type IQuiz={
   rightScore: number;
   wrongScore: number;
   completedAt?: Date;
+  previewedBy?:Types.ObjectId
+  previewedAt?:Date
 }
     
 
