@@ -1,3 +1,9 @@
+export type QuizType = 'Segment'|'Mock'|"Quizzer"
+export const quizType: QuizType[] = [
+    'Segment',
+    'Mock',
+    'Quizzer'
+];
 
 export const quizFilterableFields = [
     'searchTerm',
@@ -5,6 +11,8 @@ export const quizFilterableFields = [
     'category_id',
     'type'
 ];
+
+
 
 //searchTerm
 export const quizSearchableFields = [];

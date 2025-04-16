@@ -1,6 +1,7 @@
 import { Schema, model } from 'mongoose';
 import { IQuiz, QuizModel } from './quiz.interface';
 import { QuestionTypes } from '../question/question.constant';
+import { quizType } from './quiz.constant';
 
 const QuizSchema = new Schema<IQuiz, QuizModel>(
     {
@@ -10,16 +11,36 @@ const QuizSchema = new Schema<IQuiz, QuizModel>(
             required: true,
             index: true,
         },
-        category_id: {
+        category_id: [{
             type: Schema.Types.ObjectId,
             ref: 'Category',
             required: true,
             index: true,
-        },
+        }],
         type: {
             type: String,
+            enum: quizType,
+            required: [true, 'Quiz Type is required.'],
+        },
+        time:{
+            type: Number,
+            required: true,
+            min: 1,
+        },
+        questionCount: {
+            
+            type: Number,
+            required: true,
+            min: 1,
+        },
+        isNegativeMarking: {
+            type: Boolean,
+            default: false,
+        },
+        questionType: {
+            type: String,
             enum: QuestionTypes,
-            required: [true, 'Type is required.'],
+            required: [true, 'Question Type is required.'],
         },
         questions: [
             {
@@ -39,17 +60,31 @@ const QuizSchema = new Schema<IQuiz, QuizModel>(
                     type: String,
                     required: true,
                 },
+                mark: {
+                    type: Number,
+                    default: 0,
+                },
             },
         ],
-        score: {
-            type: Number,
-            default: 0,
-            min: 0,
-        },
-        totalQuestions: {
+        totalScore: {
             type: Number,
             required: true,
-            min: 1,
+            min: 0,
+        },
+        score: {
+            type: Number,
+            required: true,
+            min: 0,
+        },
+        rightScore: {
+            type: Number,
+            required: true,
+            min: 0,
+        },
+        wrongScore: {
+            type: Number,
+            required: true,
+            min: 0,
         },
         completedAt: {
             type: Date,
