@@ -16,8 +16,8 @@ import { USER_ROLE } from '../../user/user.constant';
 import { Student } from '../../student/student.model';
 import { Teacher } from '../../teacher/teacher.model';
 import { User } from '../../user/user.model';
-import { notificationService }  from '../../notification/notification.service';
-import { Voucher }  from '../../voucher/voucher.model'
+import { notificationService } from '../../notification/notification.service';
+import { Voucher } from '../../voucher/voucher.model';
 
 // Create Course
 const createCourse = async (
@@ -40,10 +40,22 @@ const createCourse = async (
         config.backblaze_all_users_bucket_id,
         'courseCoverImage',
     );
+    const checkTeacher = await Teacher.findOne({
+        user_id: user.userId,
+    });
+    if (!checkTeacher) {
+        // Delete local file after upload
+        fs.unlinkSync(file.path);
+        // Throw Error
+        throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            'Teacher not found',
+        );
+    }
 
     // Create course object with uploaded image
     const courseData: Partial<ICourse> = {
-        teacher_id: new Types.ObjectId(user.userId),
+        teacher_id: checkTeacher._id,
         name: payload.name,
         category_id: payload.category_id,
         details: payload.details,
@@ -74,7 +86,24 @@ const getCoursePreview = async (courseId: string) => {
                 foreignField: 'course_id',
                 as: 'lessons',
                 pipeline: [
-                    { $sort: { number: 1 } },
+                    {
+                        $addFields: {
+                            numericNumber: {
+                                $toInt: {
+                                    $getField: {
+                                        input: {
+                                            $regexFind: {
+                                                input: '$number',
+                                                regex: '\\d+',
+                                            },
+                                        },
+                                        field: 'match',
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    { $sort: { numericNumber: 1 } },
                     {
                         $lookup: {
                             from: 'recodedclasses',
@@ -230,9 +259,19 @@ const getCourseByID = async (courseId: string) => {
 };
 
 const getCourseByTeacherID = async (user_id: string) => {
-    const teacherId = await User.findById({ _id: user_id }).select('teacherId');
+    const checkTeacher = await Teacher.findOne({
+        user_id: user_id,
+    });
+    if (!checkTeacher) {
+        // Throw Error
+        throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            'Teacher not found',
+        );
+    }
 
-    const courses = await Course.find({ teacher_id: teacherId });
+
+    const courses = await Course.find({ teacher_id: checkTeacher._id });
 
     return courses;
 };
@@ -374,7 +413,7 @@ const approvedCourse = async (
             discountValue: number;
             startDate: string;
             endDate: string;
-        }
+        };
     },
 ) => {
     // Update the course
@@ -395,15 +434,15 @@ const approvedCourse = async (
     }
 
     // Get the teacher ID for notification purpose
-    const teacher = await Teacher.findOne({ user_id: updatedCourse.teacher_id });
+    const teacher = await Teacher.findOne({
+        user_id: updatedCourse.teacher_id,
+    });
     if (!teacher) {
         throw new AppError(StatusCodes.NOT_FOUND, 'Teacher not found');
     }
 
     // Create voucher if provided
     if (payload.voucher) {
-        
-
         // Create voucher with course_id
         await Voucher.create({
             title: payload.voucher.title,
@@ -434,7 +473,7 @@ const approvedCourse = async (
             approvedAt: new Date().toISOString(),
             priceType: payload.priceType,
             price: payload.price,
-            hasVoucher: !!payload.voucher
+            hasVoucher: !!payload.voucher,
         },
     });
 
