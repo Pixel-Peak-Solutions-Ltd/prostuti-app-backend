@@ -40,10 +40,22 @@ const createCourse = async (
         config.backblaze_all_users_bucket_id,
         'courseCoverImage',
     );
+    const checkTeacher = await Teacher.findOne({
+        user_id: user.userId,
+    });
+    if (!checkTeacher) {
+        // Delete local file after upload
+        fs.unlinkSync(file.path);
+        // Throw Error
+        throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            'Teacher not found',
+        );
+    }
 
     // Create course object with uploaded image
     const courseData: Partial<ICourse> = {
-        teacher_id: new Types.ObjectId(user.userId),
+        teacher_id: checkTeacher._id,
         name: payload.name,
         category_id: payload.category_id,
         details: payload.details,
