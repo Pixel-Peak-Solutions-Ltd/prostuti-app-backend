@@ -259,9 +259,19 @@ const getCourseByID = async (courseId: string) => {
 };
 
 const getCourseByTeacherID = async (user_id: string) => {
-    const teacherId = await User.findById({ _id: user_id }).select('teacherId');
+    const checkTeacher = await Teacher.findOne({
+        user_id: user_id,
+    });
+    if (!checkTeacher) {
+        // Throw Error
+        throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            'Teacher not found',
+        );
+    }
 
-    const courses = await Course.find({ teacher_id: teacherId });
+
+    const courses = await Course.find({ teacher_id: checkTeacher._id });
 
     return courses;
 };
