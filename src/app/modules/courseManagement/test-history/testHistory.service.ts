@@ -88,22 +88,30 @@ const createTestHistory = async (
     let score: number = 0.0;
     let wrongScore = 0;
     let rightScore = 0;
+    const skippedQuestions=[]
+    const wrongQuestions=[]
 
     for (const answer of answers) {
-        if (answer.selectedOption === 'null') {
-            continue;
-        }
-
         const question = questions.find(
             (q) => q._id.toString() === answer.question_id.toString(),
         );
+
         if (!question) {
             throw new AppError(StatusCodes.NOT_FOUND, 'Question not found.');
         }
+
+        if (answer.selectedOption === 'null') {
+            skippedQuestions.push(answer.question_id)
+            continue;
+        }
+
+        
+        
         if (question.correctOption === answer.selectedOption) {
             score += 1.0;
             rightScore += 1;
         } else {
+            wrongQuestions.push(answer.question_id)
             score -= 0.5;
             wrongScore += 1;
         }
@@ -120,6 +128,8 @@ const createTestHistory = async (
         test_id,
         student_id: studentDetails._id,
         score: score < 0.0 ? 0.0 : score,
+        skippedQuestions,
+        wrongQuestions,
         totalScore,
         rightScore,
         wrongScore,
