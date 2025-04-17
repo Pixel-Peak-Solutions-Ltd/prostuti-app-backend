@@ -33,7 +33,7 @@ export const SOCKET_EVENTS = {
 
     // Notification events
     COURSE_ENROLLED: 'course_enrolled',
-    COURSE_NOTIFICATION: 'course_notification',
+    COURSE_NOTICE_NOTIFICATION: 'course_notice_notification',
 };
 
 // Broadcast request expiration time in hours
