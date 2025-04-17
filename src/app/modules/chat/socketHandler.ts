@@ -15,6 +15,7 @@ import { jwtHelpers } from '../../helpers/jwtHelpers/jwtHelpers';
 import config from '../../config';
 import { Types } from 'mongoose';
 import { USER_ROLE } from '../user/user.constant';
+import { Notification as NotificationModal } from '../notification/notification.model';
 
 /**
  * Class to handle all Socket.IO operations
@@ -74,7 +75,7 @@ export class SocketHandler {
     /**
      * Handle new socket connections
      */
-    private handleConnection(socket: Socket): void {
+    private async handleConnection(socket: Socket) {
         const user = socket.data.user as TJWTDecodedUser;
         console.log(`User connected: ${user.userId} (${user.role})`);
 
@@ -96,6 +97,9 @@ export class SocketHandler {
 
         // Notify the connected user that they're authenticated
         socket.emit(SOCKET_EVENTS.AUTHENTICATED, { success: true });
+
+        // Send pending notifications to user
+        await this.sendPendingNotifications(socket, user.userId);
 
         // Handle disconnections
         socket.on(SOCKET_EVENTS.DISCONNECT, () =>
@@ -459,6 +463,89 @@ export class SocketHandler {
                         : baseMessage,
                 });
             }
+        }
+    }
+
+    /**
+     * Emit course notice notification to the student
+     */
+
+    // In the class, add a method to store offline notifications
+    public async storeOfflineCourseNoticeNotification(
+        user_id: string,
+        message: string,
+    ): Promise<void> {
+        try {
+            await NotificationModal.create({
+                recipient: user_id,
+                sender: user_id,
+                type: 'General',
+                title: 'Course Notice',
+                message,
+            });
+        } catch (error) {
+            console.error('Error storing offline notification:', error);
+        }
+    }
+
+    public async emitCourseNoticeNotification(
+        studentData: { user_id: string; subscriptionEndDate?: Date },
+        courseData: { name: string },
+        notification: string,
+    ): Promise<void> {
+        const studentUser = this.connectedUsers.get(studentData.user_id);
+        const baseMessage = `New notification for "${courseData.name}": ${notification}`;
+
+        if (studentUser) {
+            const studentSocket = this.io.sockets.sockets.get(
+                studentUser.socket_id,
+            );
+            if (studentSocket) {
+                studentSocket.emit(SOCKET_EVENTS.COURSE_NOTIFICATION, {
+                    message: baseMessage,
+                });
+            } else {
+                // Student is offline — store for later
+                await this.storeOfflineCourseNoticeNotification(
+                    studentData.user_id,
+                    baseMessage,
+                );
+            }
+        } else {
+            // Student is offline — store for later
+            await this.storeOfflineCourseNoticeNotification(
+                studentData.user_id,
+                baseMessage,
+            );
+        }
+    }
+
+    // Method to send pending notifications
+    private async sendPendingNotifications(
+        socket: Socket,
+        userId: string,
+    ): Promise<void> {
+        try {
+            // Find all unread notifications for this user
+            const pendingNotifications = await NotificationModal.find({
+                recipient: userId,
+                isRead: false,
+            }).sort({ createdAt: 1 }); // Oldest first
+
+            // Send each notification
+            for (const notification of pendingNotifications) {
+                socket.emit(notification.type, {
+                    message: notification.message,
+                    created_at: notification.createdAt,
+                    notification_id: notification._id.toString(),
+                });
+
+                // Mark as read
+                notification.isRead = true;
+                await notification.save();
+            }
+        } catch (error) {
+            console.error('Error sending pending notifications:', error);
         }
     }
 }
