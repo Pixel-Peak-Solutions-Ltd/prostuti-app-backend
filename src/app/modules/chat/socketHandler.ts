@@ -99,7 +99,7 @@ export class SocketHandler {
         socket.emit(SOCKET_EVENTS.AUTHENTICATED, { success: true });
 
         // Send pending notifications to user
-        await this.sendPendingNotifications(socket, user.userId);
+        await this.sendPendingCourseNoticeNotifications(socket, user.userId);
 
         // Handle disconnections
         socket.on(SOCKET_EVENTS.DISCONNECT, () =>
@@ -501,7 +501,7 @@ export class SocketHandler {
                 studentUser.socket_id,
             );
             if (studentSocket) {
-                studentSocket.emit(SOCKET_EVENTS.COURSE_NOTIFICATION, {
+                studentSocket.emit(SOCKET_EVENTS.COURSE_NOTICE_NOTIFICATION, {
                     message: baseMessage,
                 });
             } else {
@@ -521,7 +521,7 @@ export class SocketHandler {
     }
 
     // Method to send pending notifications
-    private async sendPendingNotifications(
+    private async sendPendingCourseNoticeNotifications(
         socket: Socket,
         userId: string,
     ): Promise<void> {
@@ -534,7 +534,7 @@ export class SocketHandler {
 
             // Send each notification
             for (const notification of pendingNotifications) {
-                socket.emit(notification.type, {
+                socket.emit(SOCKET_EVENTS.COURSE_NOTICE_NOTIFICATION, {
                     message: notification.message,
                     created_at: notification.createdAt,
                     notification_id: notification._id.toString(),
