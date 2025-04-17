@@ -27,6 +27,25 @@ const submitMockQuiz = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const createQuizzerQuiz = catchAsync(async (req: Request, res: Response) => {
+    const result = await QuizService.createQuizzerQuiz(req.user, req.body);
+
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'Quizzer Quiz created successfully',
+        data: result,
+    });
+});
+
+const submitQuizzerQuiz = catchAsync(async (req: Request, res: Response) => {
+    const result = await QuizService.submitQuizzerQuiz(req.user, req.body,req.params.id);
+
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'Quizzer Quiz submitted successfully',
+        data: result,
+    });
+});
 
 const getAllQuizzes = catchAsync(async (req: Request, res: Response) => {
     const filters = pick(req.query, quizFilterableFields);
@@ -51,4 +70,4 @@ const getSingleQuiz= catchAsync(async (req: Request, res: Response) => {
 });
 
 
-export const QuizController= {createMockQuiz,submitMockQuiz,getAllQuizzes,getSingleQuiz}
+export const QuizController= {createMockQuiz,submitMockQuiz,createQuizzerQuiz,submitQuizzerQuiz, getAllQuizzes,getSingleQuiz}

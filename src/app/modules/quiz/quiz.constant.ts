@@ -5,6 +5,13 @@ export const quizType: QuizType[] = [
     'Quizzer'
 ];
 
+export type QuizzerFilter = "Favorite"|"Wrong"|"Skipped"
+export const quizzerFilter:QuizzerFilter[] = [
+    'Favorite',
+    'Wrong',
+    'Skipped'
+]
+
 export const quizFilterableFields = [
     'searchTerm',
     'student_id',
