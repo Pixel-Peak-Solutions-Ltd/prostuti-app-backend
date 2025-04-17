@@ -37,5 +37,7 @@ export type IQuizFilters = {
   searchTerm?: string;
   student_id?: string;
   category_id?: string;
-  type?:string  
+  type?:string  ,
+  questionType?:string,
+  isNegativeMarking?:string
 };

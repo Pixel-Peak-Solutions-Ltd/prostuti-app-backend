@@ -16,7 +16,9 @@ export const quizFilterableFields = [
     'searchTerm',
     'student_id',
     'category_id',
-    'type'
+    'type',
+    'isNegativeMarking',
+    'questionType'
 ];
 
 
