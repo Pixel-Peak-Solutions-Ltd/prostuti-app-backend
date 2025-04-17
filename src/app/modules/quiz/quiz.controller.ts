@@ -26,15 +26,7 @@ const submitMockQuiz = catchAsync(async (req: Request, res: Response) => {
         data: result,
     });
 });
-const previewWrittenMockQuiz = catchAsync(async (req: Request, res: Response) => {
-    const result = await QuizService.previewWrittenMockQuiz(req.user, req.body,req.params.id);
 
-    sendSuccessResponse(res, {
-        statusCode: StatusCodes.OK,
-        message: 'Mock Quiz previewed successfully',
-        data: result,
-    });
-});
 
 const getAllQuizzes = catchAsync(async (req: Request, res: Response) => {
     const filters = pick(req.query, quizFilterableFields);
@@ -59,4 +51,4 @@ const getSingleQuiz= catchAsync(async (req: Request, res: Response) => {
 });
 
 
-export const QuizController= {createMockQuiz,submitMockQuiz,previewWrittenMockQuiz,getAllQuizzes,getSingleQuiz}
+export const QuizController= {createMockQuiz,submitMockQuiz,getAllQuizzes,getSingleQuiz}

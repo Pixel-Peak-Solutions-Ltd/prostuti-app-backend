@@ -4,14 +4,13 @@ import AppError from '../../classes/errorClasses/AppError';
 import { calculatePagination } from '../../helpers/pagenationHelper';
 import { IPaginationOptions } from '../../interfaces/common';
 import { TJWTDecodedUser } from '../../interfaces/jwt/jwt.type';
+import { Category } from '../category/category.model';
 import { QuestionType } from '../question/question.constant';
 import { Question } from '../question/question.model';
 import { Student } from '../student/student.model';
 import { quizSearchableFields } from './quiz.constant';
 import { IQuizFilters } from './quiz.interface';
 import { Quiz } from './quiz.model';
-import { Category } from '../category/category.model';
-import { Teacher } from '../teacher/teacher.model';
 
 const createMockQuiz = async (
     userInfo: TJWTDecodedUser,
@@ -49,20 +48,39 @@ const createMockQuiz = async (
 
     // Get random questions from the category
 
-    const questions = await Question.aggregate([
-        {
-            $match: {
-                category_id: { $in: checkCategory.map((cat) => cat._id) },
-                type: payload.questionType,
+    // Create a $facet pipeline dynamically for each category
+    const facets = checkCategory.reduce((acc, category) => {
+        acc[category._id] = [
+            {
+                $match: {
+                    category_id: category._id,
+                    type: payload.questionType,
+                },
             },
+            {
+                $sample: { size: questionCount },
+            },
+        ];
+        return acc;
+    }, {});
+
+    const result = await Question.aggregate([
+        {
+            $facet: facets,
         },
-        { $sample: { size: questionCount } },
     ]).exec();
 
-    if (questions.length < questionCount) {
+    // Flatten the result if you want a single array of questions
+    const questionArray = Object.values(result[0]).flat();
+    // Filter out duplicates by question `_id`
+    const questions = Array.from(
+        new Map(questionArray.map((q:any) => [q._id.toString(), q])).values(),
+    );
+
+    if (questions.length < questionCount*payload.subjects.length) {
         throw new AppError(
             StatusCodes.BAD_REQUEST,
-            `Not enough questions available. Required: ${questionCount}, Found: ${questions.length}`,
+            `Not enough questions available. Required: ${questionCount*payload.subjects.length}, Found: ${questions.length}`,
         );
     }
 
@@ -148,10 +166,10 @@ const submitMockQuiz = async (
     }
 
     // Check if all questions are answered
-    if (payload.answers.length !== checkQuiz.questionCount) {
+    if (payload.answers.length !== checkQuiz.questions.length) {
         throw new AppError(
             StatusCodes.BAD_REQUEST,
-            `All questions must be answered. Expected ${checkQuiz.questionCount}, received ${payload.answers.length}`,
+            `All questions must be answered. Expected ${checkQuiz.questions.length}, received ${payload.answers.length}`,
         );
     }
 
@@ -187,7 +205,6 @@ const submitMockQuiz = async (
     let score = 0;
     let rightScore = 0;
     let wrongScore = 0;
-    const totalScore = checkQuiz.questionCount;
 
     // Handle MCQ and Written quizzes differently
     if (checkQuiz.questionType === 'MCQ') {
@@ -218,6 +235,16 @@ const submitMockQuiz = async (
         formattedAnswers.push(
             ...payload.answers.map((answer) => {
                 const question = questionMap.get(answer.question_id);
+                // Skip answer
+                if (answer.selectedOption === 'null') {
+                    return {
+                        question_id: new mongoose.Types.ObjectId(
+                            answer.question_id,
+                        ),
+                        selectedOption: answer.selectedOption,
+                        mark: 0, // Default mark for null answers
+                    };
+                }
                 const isCorrect =
                     question?.correctOption === answer.selectedOption;
                 if (isCorrect) {
@@ -230,7 +257,7 @@ const submitMockQuiz = async (
                         answer.question_id,
                     ),
                     selectedOption: answer.selectedOption,
-                    mark: isCorrect ? 1 : 0, // Include mark for MCQ
+                    mark: isCorrect ? 1 : 0,
                 };
             }),
         );
@@ -261,7 +288,7 @@ const submitMockQuiz = async (
     checkQuiz.score = score < 0 ? 0 : score;
     checkQuiz.rightScore = rightScore;
     checkQuiz.wrongScore = wrongScore;
-    checkQuiz.totalScore = totalScore;
+    
     checkQuiz.completedAt = new Date();
 
     await checkQuiz.save();
@@ -270,162 +297,6 @@ const submitMockQuiz = async (
     const result = await Quiz.findById(checkQuiz._id)
         .populate('category_id')
         .populate('student_id')
-        .lean();
-
-    return result;
-};
-
-const previewWrittenMockQuiz = async (
-    userInfo: TJWTDecodedUser,
-    payload: {
-        answers: {
-            question_id: string;
-            selectedOption: string;
-            mark: number;
-        }[];
-    },
-    quiz_id: string,
-) => {
-    // Check teacher
-    const checkTeacher = await Teacher.findOne({ user_id: userInfo.userId });
-    if (!checkTeacher) {
-        throw new AppError(StatusCodes.NOT_FOUND, 'Teacher not found');
-    }
-
-    // Check quiz and populate relevant fields
-    const checkQuiz = await Quiz.findById(quiz_id).populate(
-        'questions',
-        'title description correctOption options type',
-    );
-
-    if (!checkQuiz) {
-        throw new AppError(StatusCodes.NOT_FOUND, 'Quiz not found');
-    }
-
-    if (checkQuiz.type !== 'Mock') {
-        throw new AppError(
-            StatusCodes.FORBIDDEN,
-            'This route is only for mock quiz',
-        );
-    }
-    if (checkQuiz.questionType !== 'Written') {
-        throw new AppError(
-            StatusCodes.BAD_REQUEST,
-            'This route is only for previewing written mock quizzes',
-        );
-    }
-    // Verify quiz is submitted
-    if (!checkQuiz.completedAt) {
-        throw new AppError(
-            StatusCodes.BAD_REQUEST,
-            'Quiz has not been submitted',
-        );
-    }
-
-    // Validate payload answers
-    if (!payload.answers || payload.answers.length === 0) {
-        throw new AppError(StatusCodes.BAD_REQUEST, 'No answers provided');
-    }
-
-    // Check if all questions are answered
-    if (payload.answers.length !== checkQuiz.questionCount) {
-        throw new AppError(
-            StatusCodes.BAD_REQUEST,
-            `All questions must be answered. Expected ${checkQuiz.questionCount}, received ${payload.answers.length}`,
-        );
-    }
-
-    // Check for duplicate questionIds in answers
-    const submittedQuestionIds = payload.answers.map((a) => a.question_id);
-    const uniqueQuestionIds = new Set(submittedQuestionIds);
-    if (uniqueQuestionIds.size !== submittedQuestionIds.length) {
-        const duplicates = submittedQuestionIds.filter(
-            (id, index) => submittedQuestionIds.indexOf(id) !== index,
-        );
-        throw new AppError(
-            StatusCodes.BAD_REQUEST,
-            `Duplicate question IDs detected: ${[...new Set(duplicates)].join(', ')}`,
-        );
-    }
-
-    // Validate question IDs match quiz questions
-    const quizQuestionIds = checkQuiz.questions.map((q: any) =>
-        q._id.toString(),
-    );
-    const invalidQuestionIds = submittedQuestionIds.filter(
-        (id) => !quizQuestionIds.includes(id),
-    );
-    if (invalidQuestionIds.length > 0) {
-        throw new AppError(
-            StatusCodes.BAD_REQUEST,
-            `Invalid question IDs provided: ${invalidQuestionIds.join(', ')}`,
-        );
-    }
-
-    // Validate and prepare updated answers
-    const updatedAnswers = checkQuiz.answers.map((storedAnswer: any) => {
-        const payloadAnswer = payload.answers.find(
-            (a) => a.question_id === storedAnswer.question_id.toString(),
-        );
-        if (!payloadAnswer) {
-            throw new AppError(
-                StatusCodes.BAD_REQUEST,
-                `Missing answer for question ID: ${storedAnswer.question_id}`,
-            );
-        }
-
-        // Validate mark
-        if (
-            typeof payloadAnswer.mark !== 'number' ||
-            payloadAnswer.mark < 0 ||
-            payloadAnswer.mark > 1
-        ) {
-            throw new AppError(
-                StatusCodes.BAD_REQUEST,
-                `Mark must be between 0 and 1 for question ID: ${payloadAnswer.question_id}`,
-            );
-        }
-
-        // Validate selectedOption presence (no matching)
-        if (!payloadAnswer.selectedOption) {
-            throw new AppError(
-                StatusCodes.BAD_REQUEST,
-                `Selected option cannot be empty for question ID: ${payloadAnswer.question_id}`,
-            );
-        }
-
-        return {
-            question_id: storedAnswer.question_id,
-            selectedOption: storedAnswer.selectedOption,
-            mark: payloadAnswer.mark,
-        };
-    });
-
-    // Calculate scores based on marks
-    let score = 0;
-    let rightScore = 0;
-    updatedAnswers.forEach((answer: any) => {
-        if (answer.mark > 0) {
-            rightScore++;
-            score += answer.mark;
-        }
-    });
-    const totalScore = checkQuiz.questionCount;
-
-    // Update quiz
-    checkQuiz.answers = updatedAnswers;
-    checkQuiz.score = score;
-    checkQuiz.rightScore = rightScore;
-    checkQuiz.wrongScore = 0; // No wrong score for written quizzes
-    checkQuiz.totalScore = totalScore;
-
-    await checkQuiz.save();
-
-    // Return updated quiz with populated data
-    const result = await Quiz.findById(checkQuiz._id)
-        .populate('questions', 'title description correctOption options type')
-        .populate('category_id', 'name')
-        .populate('student_id', 'name email')
         .lean();
 
     return result;
@@ -523,7 +394,7 @@ const getSingleQuiz = async (id: string, userInfo: TJWTDecodedUser) => {
 export const QuizService = {
     createMockQuiz,
     submitMockQuiz,
-    previewWrittenMockQuiz,
+
     getAllQuizzes,
     getSingleQuiz,
 };

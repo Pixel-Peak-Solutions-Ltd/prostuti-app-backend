@@ -88,14 +88,6 @@ const QuizSchema = new Schema<IQuiz, QuizModel>(
         },
         completedAt: {
             type: Date,
-        },
-        previewedBy:{
-            type: Schema.Types.ObjectId,
-             ref: 'Teacher',
-        
-        },
-        previewedAt:{
-            type:Date
         }
     },
     {

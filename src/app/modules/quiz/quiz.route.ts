@@ -7,11 +7,10 @@ const router = express.Router();
 
 
 
-//create mock quiz
+//mock quiz
 router.post('/create-mock-quiz',auth("student"),validateRequest(quizValidation.createMockQuiz), QuizController.createMockQuiz)
-
 router.patch('/submit-mock-quiz/:id',auth("student"),validateRequest(quizValidation.submitMockQuiz), QuizController.submitMockQuiz)
-router.patch('/preview-written-mock-quiz/:id',auth("teacher"),validateRequest(quizValidation.previewWrittenMockQuiz),QuizController.previewWrittenMockQuiz)
+
 router.get('/all-quiz',auth(), QuizController.getAllQuizzes)
 router.get('/single-quiz/:id',auth(), QuizController.getSingleQuiz)
 
