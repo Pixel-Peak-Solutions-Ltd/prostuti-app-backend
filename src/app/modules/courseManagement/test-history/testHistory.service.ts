@@ -322,9 +322,12 @@ const previewWrittenTestHistory = async (
     let score: number = 0.0;
     let wrongScore = 0;
     let rightScore = 0;
+    const skippedQuestions=[]
+    const wrongQuestions=[]
 
     for (const answer of answers) {
         if (answer.selectedOption === 'null') {
+            skippedQuestions.push(answer.question_id)
             continue;
         }
 
@@ -335,7 +338,7 @@ const previewWrittenTestHistory = async (
             throw new AppError(StatusCodes.NOT_FOUND, 'Question not found.');
         }
         if (answer.mark === 0) {
-            wrongScore += 1;
+            wrongQuestions.push(answer.question_id)
         } else {
             score += answer.mark;
             rightScore += 1;
@@ -355,6 +358,8 @@ const previewWrittenTestHistory = async (
             rightScore,
             wrongScore,
             answers,
+            skippedQuestions,
+            wrongQuestions,
             isPassed,
             isChecked: true,
         },
