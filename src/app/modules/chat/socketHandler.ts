@@ -8,7 +8,7 @@ import {
     IConnectedUser,
     IBroadcastRequestPayload,
     IAcceptBroadcastPayload,
-    IChatMessagePayload
+    IChatMessagePayload,
 } from './chat.interface';
 import { chatService } from './chat.service';
 import { jwtHelpers } from '../../helpers/jwtHelpers/jwtHelpers';
@@ -31,7 +31,7 @@ export class SocketHandler {
         this.io.engine.opts.cors = {
             origin: '*',
             methods: ['GET', 'POST'],
-            credentials: true
+            credentials: true,
         };
         this.io.engine.opts.pingTimeout = 60000;
 
@@ -61,7 +61,7 @@ export class SocketHandler {
 
             const decoded = jwtHelpers.verifyToken(
                 token,
-                config.jwt_access_token_secret
+                config.jwt_access_token_secret,
             );
 
             socket.data.user = decoded;
@@ -82,7 +82,7 @@ export class SocketHandler {
         this.connectedUsers.set(user.userId, {
             user_id: user.userId,
             role: user.role,
-            socket_id: socket.id
+            socket_id: socket.id,
         });
 
         // Set up event listeners
@@ -91,14 +91,16 @@ export class SocketHandler {
         // Notify other users that this user is online
         this.io.emit(SOCKET_EVENTS.USER_CONNECTED, {
             user_id: user.userId,
-            role: user.role
+            role: user.role,
         });
 
         // Notify the connected user that they're authenticated
         socket.emit(SOCKET_EVENTS.AUTHENTICATED, { success: true });
 
         // Handle disconnections
-        socket.on(SOCKET_EVENTS.DISCONNECT, () => this.handleDisconnect(socket, user));
+        socket.on(SOCKET_EVENTS.DISCONNECT, () =>
+            this.handleDisconnect(socket, user),
+        );
     }
 
     /**
@@ -109,7 +111,8 @@ export class SocketHandler {
         if (user.role === USER_ROLE.student) {
             socket.on(
                 SOCKET_EVENTS.BROADCAST_REQUEST,
-                (payload: IBroadcastRequestPayload) => this.handleBroadcastRequest(socket, user, payload)
+                (payload: IBroadcastRequestPayload) =>
+                    this.handleBroadcastRequest(socket, user, payload),
             );
         }
 
@@ -117,39 +120,36 @@ export class SocketHandler {
         if (user.role === USER_ROLE.teacher) {
             socket.on(
                 SOCKET_EVENTS.ACCEPT_BROADCAST,
-                (payload: IAcceptBroadcastPayload) => this.handleAcceptBroadcast(socket, user, payload)
+                (payload: IAcceptBroadcastPayload) =>
+                    this.handleAcceptBroadcast(socket, user, payload),
             );
 
             socket.on(
                 SOCKET_EVENTS.DECLINE_BROADCAST,
-                (payload: IAcceptBroadcastPayload) => this.handleDeclineBroadcast(socket, user, payload)
+                (payload: IAcceptBroadcastPayload) =>
+                    this.handleDeclineBroadcast(socket, user, payload),
             );
         }
 
         // Chat messages - for both roles
-        socket.on(
-            SOCKET_EVENTS.JOIN_CONVERSATION,
-            (conversation_id: string) => this.handleJoinConversation(socket, conversation_id)
+        socket.on(SOCKET_EVENTS.JOIN_CONVERSATION, (conversation_id: string) =>
+            this.handleJoinConversation(socket, conversation_id),
         );
 
-        socket.on(
-            SOCKET_EVENTS.LEAVE_CONVERSATION,
-            (conversation_id: string) => this.handleLeaveConversation(socket, conversation_id)
+        socket.on(SOCKET_EVENTS.LEAVE_CONVERSATION, (conversation_id: string) =>
+            this.handleLeaveConversation(socket, conversation_id),
         );
 
-        socket.on(
-            SOCKET_EVENTS.SEND_MESSAGE,
-            (payload: IChatMessagePayload) => this.handleSendMessage(socket, user, payload)
+        socket.on(SOCKET_EVENTS.SEND_MESSAGE, (payload: IChatMessagePayload) =>
+            this.handleSendMessage(socket, user, payload),
         );
 
-        socket.on(
-            SOCKET_EVENTS.TYPING,
-            (conversation_id: string) => this.handleTyping(socket, user, conversation_id)
+        socket.on(SOCKET_EVENTS.TYPING, (conversation_id: string) =>
+            this.handleTyping(socket, user, conversation_id),
         );
 
-        socket.on(
-            SOCKET_EVENTS.STOP_TYPING,
-            (conversation_id: string) => this.handleStopTyping(socket, user, conversation_id)
+        socket.on(SOCKET_EVENTS.STOP_TYPING, (conversation_id: string) =>
+            this.handleStopTyping(socket, user, conversation_id),
         );
     }
 
@@ -165,7 +165,7 @@ export class SocketHandler {
         // Notify other users that this user is offline
         this.io.emit(SOCKET_EVENTS.USER_DISCONNECTED, {
             user_id: user.userId,
-            role: user.role
+            role: user.role,
         });
     }
 
@@ -175,7 +175,7 @@ export class SocketHandler {
     private async handleBroadcastRequest(
         socket: Socket,
         user: TJWTDecodedUser,
-        payload: IBroadcastRequestPayload
+        payload: IBroadcastRequestPayload,
     ): Promise<void> {
         try {
             const { message, subject } = payload;
@@ -184,7 +184,7 @@ export class SocketHandler {
             const broadcastRequest = await chatService.createBroadcastRequest(
                 user.userId,
                 message,
-                subject
+                subject,
             );
 
             // Emit to all connected teachers
@@ -193,19 +193,19 @@ export class SocketHandler {
                 student_id: broadcastRequest.student_id,
                 message: broadcastRequest.message,
                 subject: broadcastRequest.subject,
-                created_at: broadcastRequest.createdAt
+                created_at: broadcastRequest.createdAt,
             });
 
             // Confirm to the student
             socket.emit(SOCKET_EVENTS.BROADCAST_REQUEST, {
                 success: true,
-                broadcast_id: broadcastRequest._id?.toString()
+                broadcast_id: broadcastRequest._id?.toString(),
             });
         } catch (error) {
             console.error('Error creating broadcast request:', error);
             socket.emit(SOCKET_EVENTS.ERROR, {
                 event: SOCKET_EVENTS.BROADCAST_REQUEST,
-                message: 'Failed to create broadcast request'
+                message: 'Failed to create broadcast request',
             });
         }
     }
@@ -216,7 +216,7 @@ export class SocketHandler {
     private async handleAcceptBroadcast(
         socket: Socket,
         user: TJWTDecodedUser,
-        payload: IAcceptBroadcastPayload
+        payload: IAcceptBroadcastPayload,
     ): Promise<void> {
         try {
             const { broadcast_id } = payload;
@@ -224,11 +224,13 @@ export class SocketHandler {
             // Accept broadcast in database
             const broadcastRequest = await chatService.acceptBroadcastRequest(
                 broadcast_id,
-                user.userId
+                user.userId,
             );
 
             // Get the student's socket if they're online
-            const studentUser = this.connectedUsers.get(broadcastRequest.student_id.toString());
+            const studentUser = this.connectedUsers.get(
+                broadcastRequest.student_id.toString(),
+            );
 
             // Create a room for this conversation
             const roomName = broadcastRequest.conversation_id as string;
@@ -236,7 +238,9 @@ export class SocketHandler {
 
             // If student is online, add them to the room and notify them
             if (studentUser) {
-                const studentSocket = this.io.sockets.sockets.get(studentUser.socket_id);
+                const studentSocket = this.io.sockets.sockets.get(
+                    studentUser.socket_id,
+                );
                 if (studentSocket) {
                     studentSocket.join(roomName);
 
@@ -244,7 +248,7 @@ export class SocketHandler {
                     studentSocket.emit(SOCKET_EVENTS.BROADCAST_ACCEPTED, {
                         broadcast_id: broadcastRequest._id?.toString(),
                         teacher_id: user.userId,
-                        conversation_id: broadcastRequest.conversation_id
+                        conversation_id: broadcastRequest.conversation_id,
                     });
                 }
             }
@@ -252,20 +256,20 @@ export class SocketHandler {
             // Notify other teachers that this broadcast has been accepted
             this.io.emit(SOCKET_EVENTS.BROADCAST_ACCEPTED, {
                 broadcast_id: broadcastRequest._id?.toString(),
-                teacher_id: user.userId
+                teacher_id: user.userId,
             });
 
             // Confirm to the teacher
             socket.emit(SOCKET_EVENTS.ACCEPT_BROADCAST, {
                 success: true,
                 broadcast_id: broadcastRequest._id?.toString(),
-                conversation_id: broadcastRequest.conversation_id
+                conversation_id: broadcastRequest.conversation_id,
             });
         } catch (error) {
             console.error('Error accepting broadcast request:', error);
             socket.emit(SOCKET_EVENTS.ERROR, {
                 event: SOCKET_EVENTS.ACCEPT_BROADCAST,
-                message: 'Failed to accept broadcast request'
+                message: 'Failed to accept broadcast request',
             });
         }
     }
@@ -276,7 +280,7 @@ export class SocketHandler {
     private async handleDeclineBroadcast(
         socket: Socket,
         user: TJWTDecodedUser,
-        payload: IAcceptBroadcastPayload
+        payload: IAcceptBroadcastPayload,
     ): Promise<void> {
         try {
             const { broadcast_id } = payload;
@@ -284,19 +288,19 @@ export class SocketHandler {
             // Decline broadcast in database
             await chatService.declineBroadcastRequest(
                 broadcast_id,
-                user.userId
+                user.userId,
             );
 
             // Confirm to the teacher
             socket.emit(SOCKET_EVENTS.DECLINE_BROADCAST, {
                 success: true,
-                broadcast_id
+                broadcast_id,
             });
         } catch (error) {
             console.error('Error declining broadcast request:', error);
             socket.emit(SOCKET_EVENTS.ERROR, {
                 event: SOCKET_EVENTS.DECLINE_BROADCAST,
-                message: 'Failed to decline broadcast request'
+                message: 'Failed to decline broadcast request',
             });
         }
     }
@@ -304,22 +308,28 @@ export class SocketHandler {
     /**
      * Handle joining a conversation
      */
-    private handleJoinConversation(socket: Socket, conversation_id: string): void {
+    private handleJoinConversation(
+        socket: Socket,
+        conversation_id: string,
+    ): void {
         socket.join(conversation_id);
         socket.emit(SOCKET_EVENTS.JOIN_CONVERSATION, {
             success: true,
-            conversation_id
+            conversation_id,
         });
     }
 
     /**
      * Handle leaving a conversation
      */
-    private handleLeaveConversation(socket: Socket, conversation_id: string): void {
+    private handleLeaveConversation(
+        socket: Socket,
+        conversation_id: string,
+    ): void {
         socket.leave(conversation_id);
         socket.emit(SOCKET_EVENTS.LEAVE_CONVERSATION, {
             success: true,
-            conversation_id
+            conversation_id,
         });
     }
 
@@ -329,7 +339,7 @@ export class SocketHandler {
     private async handleSendMessage(
         socket: Socket,
         user: TJWTDecodedUser,
-        payload: IChatMessagePayload
+        payload: IChatMessagePayload,
     ): Promise<void> {
         try {
             const { conversation_id, message, recipient_id } = payload;
@@ -341,7 +351,7 @@ export class SocketHandler {
                 recipient_id: new Types.ObjectId(recipient_id),
                 conversation_id,
                 message,
-                read: false
+                read: false,
             });
 
             // Emit message to the conversation room
@@ -352,14 +362,19 @@ export class SocketHandler {
                 recipient_id: chatMessage.recipient_id,
                 conversation_id: chatMessage.conversation_id,
                 message: chatMessage.message,
-                created_at: chatMessage.createdAt
+                created_at: chatMessage.createdAt,
             });
 
             // If recipient is not in the conversation room but is online, send notification
             const recipientUser = this.connectedUsers.get(recipient_id);
             if (recipientUser) {
-                const recipientSocket = this.io.sockets.sockets.get(recipientUser.socket_id);
-                if (recipientSocket && !recipientSocket.rooms.has(conversation_id)) {
+                const recipientSocket = this.io.sockets.sockets.get(
+                    recipientUser.socket_id,
+                );
+                if (
+                    recipientSocket &&
+                    !recipientSocket.rooms.has(conversation_id)
+                ) {
                     recipientSocket.emit(SOCKET_EVENTS.RECEIVE_MESSAGE, {
                         id: chatMessage._id?.toString(),
                         sender_id: chatMessage.sender_id,
@@ -368,7 +383,7 @@ export class SocketHandler {
                         conversation_id: chatMessage.conversation_id,
                         message: chatMessage.message,
                         created_at: chatMessage.createdAt,
-                        as_notification: true
+                        as_notification: true,
                     });
                 }
             }
@@ -376,13 +391,13 @@ export class SocketHandler {
             // Confirm to sender
             socket.emit(SOCKET_EVENTS.SEND_MESSAGE, {
                 success: true,
-                message_id: chatMessage._id?.toString()
+                message_id: chatMessage._id?.toString(),
             });
         } catch (error) {
             console.error('Error sending message:', error);
             socket.emit(SOCKET_EVENTS.ERROR, {
                 event: SOCKET_EVENTS.SEND_MESSAGE,
-                message: 'Failed to send message'
+                message: 'Failed to send message',
             });
         }
     }
@@ -390,20 +405,28 @@ export class SocketHandler {
     /**
      * Handle typing indicator
      */
-    private handleTyping(socket: Socket, user: TJWTDecodedUser, conversation_id: string): void {
+    private handleTyping(
+        socket: Socket,
+        user: TJWTDecodedUser,
+        conversation_id: string,
+    ): void {
         socket.to(conversation_id).emit(SOCKET_EVENTS.TYPING, {
             user_id: user.userId,
-            conversation_id
+            conversation_id,
         });
     }
 
     /**
      * Handle stop typing indicator
      */
-    private handleStopTyping(socket: Socket, user: TJWTDecodedUser, conversation_id: string): void {
+    private handleStopTyping(
+        socket: Socket,
+        user: TJWTDecodedUser,
+        conversation_id: string,
+    ): void {
         socket.to(conversation_id).emit(SOCKET_EVENTS.STOP_TYPING, {
             user_id: user.userId,
-            conversation_id
+            conversation_id,
         });
     }
 
@@ -412,5 +435,30 @@ export class SocketHandler {
      */
     public getIO(): Server {
         return this.io;
+    }
+
+    /**
+     * Emit course enrolled notification to the student
+     */
+    public emitCourseEnrolledNotification(
+        studentData: { user_id: string; subscriptionEndDate?: Date },
+        courseData: { name: string },
+    ) {
+        const studentUser = this.connectedUsers.get(studentData.user_id);
+
+        if (studentUser) {
+            const studentSocket = this.io.sockets.sockets.get(
+                studentUser.socket_id,
+            );
+            if (studentSocket) {
+                const baseMessage = `You have successfully enrolled in "${courseData.name}". Enjoy and share your review.`;
+
+                studentSocket.emit(SOCKET_EVENTS.COURSE_ENROLLED, {
+                    message: studentData.subscriptionEndDate
+                        ? `${baseMessage} You have subscription till ${studentData.subscriptionEndDate.toDateString()}.`
+                        : baseMessage,
+                });
+            }
+        }
     }
 }
