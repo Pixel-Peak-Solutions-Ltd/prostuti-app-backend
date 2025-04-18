@@ -17,7 +17,8 @@ import { Payment } from '../payment/payment.model';
 import { Voucher } from '../voucher/voucher.model';
 import { EnrolledCourseSearchableFields } from './enrolledCourse.constant';
 import { IEnrolledCourseFilters } from './enrolledCourse.interface';
-import { socketHandler } from '../../../server';
+import { studentNotificationService } from '../studentNotification/studentNotification.service';
+import { StudentNotification } from '../studentNotification/studentNotification.modal';
 
 const store_id = 'bakin62b84b547d1c3';
 const store_passwd = 'bakin62b84b547d1c3@ssl';
@@ -109,20 +110,16 @@ const createFreeEnrolledCourse = async (
                 );
             }
 
-            //Emit socket notification after successful enrollment
-            const studentData = {
-                user_id: studentDetails.user_id.toString(),
-                subscriptionEndDate: studentDetails.subscriptionEndDate,
-            };
+            // Create Notification
+            const baseMessage = `You have successfully enrolled in "${course.name}". Enjoy and share your review.`;
 
-            const courseData = { name: course.name };
-
-            if (socketHandler) {
-                socketHandler.emitCourseEnrolledNotification(
-                    studentData,
-                    courseData,
-                );
-            }
+            studentNotificationService.createStudentNotification({
+                student_id: studentDetails._id,
+                title: 'Course Enrollment',
+                message: studentDetails.subscriptionEndDate
+                    ? `${baseMessage} You have subscription till ${studentDetails.subscriptionEndDate.toDateString()}.`
+                    : baseMessage,
+            });
         }
 
         await session.commitTransaction();
@@ -229,20 +226,17 @@ const createSubscriptionEnrolledCourse = async (
                     'Failed to update student enrollment.',
                 );
             }
-            //Emit socket notification after successful enrollment
-            const studentData = {
-                user_id: studentDetails.user_id.toString(),
-                subscriptionEndDate: studentDetails.subscriptionEndDate,
-            };
 
-            const courseData = { name: course.name };
+            // Create Notification
+            const baseMessage = `You have successfully enrolled in "${course.name}". Enjoy and share your review.`;
 
-            if (socketHandler) {
-                socketHandler.emitCourseEnrolledNotification(
-                    studentData,
-                    courseData,
-                );
-            }
+            studentNotificationService.createStudentNotification({
+                student_id: studentDetails._id,
+                title: 'Course Enrollment',
+                message: studentDetails.subscriptionEndDate
+                    ? `${baseMessage} You have subscription till ${studentDetails.subscriptionEndDate.toDateString()}.`
+                    : baseMessage,
+            });
         }
 
         await session.commitTransaction();
@@ -476,21 +470,30 @@ const createPaidEnrolledCourseSuccess = async (
         );
     }
 
-    //Emit socket notification after successful enrollment
-    // const student = await Student.findById(paymentDetails.student_id);
-    const studentData = {
-        user_id: updatedStudent.user_id.toString(),
-        subscriptionEndDate: updatedStudent.subscriptionEndDate,
-    };
+    // Create Notifications for all enrolled courses at once
+    const student = await Student.findById(paymentDetails.student_id);
     const allCourses = await Course.find({ _id: { $in: course_id } });
-    for (const course of allCourses) {
-        const courseData = { name: course.name };
 
-        if (socketHandler) {
-            socketHandler.emitCourseEnrolledNotification(
-                studentData,
-                courseData,
-            );
+    // Create notification payloads for all courses in one go
+    const notificationPayloads = allCourses.map((course) => {
+        const baseMessage = `You have successfully enrolled in "${course.name}". Enjoy and share your review.`;
+
+        return {
+            student_id: paymentDetails.student_id,
+            title: 'Course Enrollment',
+            message: student?.subscriptionEndDate
+                ? `${baseMessage} You have subscription till ${student.subscriptionEndDate.toDateString()}.`
+                : baseMessage,
+        };
+    });
+
+    // Use bulk insert if possible
+    if (notificationPayloads.length > 0) {
+        try {
+            await StudentNotification.insertMany(notificationPayloads);
+        } catch (error) {
+            console.error('Failed to create enrollment notifications:', error);
+            // Continue execution - notifications aren't critical to the enrollment process
         }
     }
 };
