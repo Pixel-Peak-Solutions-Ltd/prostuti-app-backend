@@ -5,8 +5,7 @@ import { Course } from '../course/course.model';
 import { INotice, TCreateNoticePayload } from './notice.interface';
 import { Notice } from './notice.model';
 import { EnrolledCourse } from '../../enrolledCourse/enrolledCourse.model';
-import { Types } from 'mongoose';
-import { socketHandler } from '../../../../server';
+import { StudentNotification } from '../../studentNotification/studentNotification.modal';
 
 // Create Notice
 const createNotice = async (payload: TCreateNoticePayload) => {
@@ -31,38 +30,30 @@ const createNotice = async (payload: TCreateNoticePayload) => {
         })),
     );
 
-    // **********Send notification
-    const enrolledStudents = await EnrolledCourse.find({
-        course_id,
-    }).populate<{
-        student_id: {
-            _id: Types.ObjectId;
-            user_id: string;
-            subscriptionEndDate: Date;
-        };
-    }>({
-        path: 'student_id',
-        select: 'user_id subscriptionEndDate',
-    });
-
+    // Create a Notification
     const notification = notices
         .map((n, index) => `${index + 1}. ${n.notice}`)
         .join(' | ');
 
-    for (const student of enrolledStudents) {
-        const studentData = {
-            user_id: student.student_id.user_id,
-            subscriptionEndDate: student.student_id.subscriptionEndDate,
-        };
-        const courseData = { name: courseExists.name };
+    const enrolledStudents = await EnrolledCourse.find(
+        { course_id },
+        { student_id: 1, _id: 0 },
+    );
 
-        if (socketHandler) {
-            socketHandler.emitCourseNoticeNotification(
-                studentData,
-                courseData,
-                notification,
-            );
-        }
+    // Create notifications in bulk with a single operation
+    const notificationPayloads = enrolledStudents.map((student) => ({
+        student_id: student.student_id,
+        title: `Notice for "${courseExists.name}"`,
+        message: notification,
+    }));
+
+    try {
+        await StudentNotification.insertMany(notificationPayloads);
+    } catch (error) {
+        console.error(
+            'Failed to create student course notice notifications:',
+            error,
+        );
     }
 
     return newNotice;

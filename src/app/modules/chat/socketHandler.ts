@@ -99,7 +99,7 @@ export class SocketHandler {
         socket.emit(SOCKET_EVENTS.AUTHENTICATED, { success: true });
 
         // Send pending notifications to user
-        await this.sendPendingCourseNoticeNotifications(socket, user.userId);
+        // await this.sendPendingCourseNoticeNotifications(socket, user.userId);
 
         // Handle disconnections
         socket.on(SOCKET_EVENTS.DISCONNECT, () =>
