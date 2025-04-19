@@ -5,3 +5,6 @@ dist
 .vscode
 uploads/*
 !uploads/.gitkeep
+
+logs/*
+!logs/.gitkeep
