@@ -23,7 +23,7 @@ const myFormat = printf(({ level, message, timestamp, ...metadata }) => {
 const transports = [];
 
 // Add file transport only in production
-if (process.env.NODE_ENV === 'production') {
+
   const errorTransport = new DailyRotateFile({
     filename: path.join(logDir, 'error-%DATE%.log'),
     datePattern: 'YYYY-MM-DD',
@@ -33,10 +33,10 @@ if (process.env.NODE_ENV === 'production') {
     level: 'error'
   });
   transports.push(errorTransport);
-}
+
 
 // Always add console transport
-transports.push(new winston.transports.Console());
+// transports.push(new winston.transports.Console());
 
 // Create logger
 const logger = winston.createLogger({
