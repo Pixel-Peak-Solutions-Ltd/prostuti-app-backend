@@ -89,6 +89,7 @@ const VoucherSchema = new Schema<IVoucher, VoucherModel>(
 );
 
 VoucherSchema.index({ title: 1, startDate: 1 }, { unique: true });
+VoucherSchema.index({ endDate: 1 });
 
 
 export const Voucher = model<IVoucher, VoucherModel>('Voucher', VoucherSchema);

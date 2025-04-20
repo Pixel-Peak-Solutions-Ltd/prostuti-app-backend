@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import config from './app/config';
 import http from 'http';
 import { SocketHandler } from './app/modules/chat/socketHandler';
+import "./app/Scheduler/scheduler"
 
 // Create HTTP server
 const server = http.createServer(app);
