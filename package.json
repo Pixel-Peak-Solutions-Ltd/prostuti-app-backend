@@ -52,6 +52,8 @@
         "sslcommerz-lts": "^1.1.0",
         "uuid": "^11.0.3",
         "validator": "^13.11.0",
+        "winston": "^3.17.0",
+        "winston-daily-rotate-file": "^5.0.0",
         "zod": "^3.23.4"
     },
     "devDependencies": {

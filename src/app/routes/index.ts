@@ -32,6 +32,7 @@ import { chatRoute } from '../modules/chat/chat.route';
 import { notificationRoute } from '../modules/notification/notification.route';
 import { editRequestRoute } from '../modules/editRequest/editRequest.route';
 import { courseReviewRoute } from '../modules/courseReview/courseReview.route';
+import { studentNotificationRoute } from '../modules/studentNotification/studentNotification.route';
 
 const globalRoute = Router();
 
@@ -67,6 +68,7 @@ const routes = [
     { path: '/notifications', route: notificationRoute },
     { path: '/edit-requests', route: editRequestRoute },
     { path: '/course-review', route: courseReviewRoute },
+    { path: '/student-notification', route: studentNotificationRoute },
 ];
 
 routes.forEach((route) => globalRoute.use(route.path, route.route));

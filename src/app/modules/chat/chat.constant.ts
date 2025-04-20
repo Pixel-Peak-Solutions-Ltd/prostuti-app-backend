@@ -29,7 +29,11 @@ export const SOCKET_EVENTS = {
     USER_DISCONNECTED: 'user_disconnected',
 
     // Error events
-    ERROR: 'error'
+    ERROR: 'error',
+
+    // Notification events
+    COURSE_ENROLLED: 'course_enrolled',
+    COURSE_NOTICE_NOTIFICATION: 'course_notice_notification',
 };
 
 // Broadcast request expiration time in hours
@@ -39,12 +43,12 @@ export const BROADCAST_EXPIRY_HOURS = 24;
 export const CHAT_PAGINATION = {
     DEFAULT_PAGE: 1,
     DEFAULT_LIMIT: 20,
-    MAX_LIMIT: 100
+    MAX_LIMIT: 100,
 };
 
 export const BROADCAST_STATUS = {
     PENDING: 'pending',
     ACCEPTED: 'accepted',
     DECLINED: 'declined',
-    EXPIRED: 'expired'
+    EXPIRED: 'expired',
 };
