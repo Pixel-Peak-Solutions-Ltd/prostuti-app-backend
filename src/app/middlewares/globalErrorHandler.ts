@@ -6,7 +6,7 @@ import errorPreprocessor from '../helpers/errorHelpers/errorPreprocessor';
 import sendErrorResponse from '../utils/sendErrorResponse';
 import { ZodError } from 'zod';
 import AppError from '../classes/errorClasses/AppError';
-import logger from './logger';
+import logger from '../logger/logger';
 
 const globalErrorHandler: ErrorRequestHandler = (error, req, res, next) => {
     // Default Error response object

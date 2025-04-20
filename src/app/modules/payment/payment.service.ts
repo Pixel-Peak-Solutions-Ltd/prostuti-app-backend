@@ -150,6 +150,7 @@ const createSubscriptionPaymentSuccess = async (
         {
             subscriptionStartDate: new Date(),
             subscriptionEndDate: paymentDetails.expireDate,
+            isSubscribed:true
         },
         { new: true },
     );
