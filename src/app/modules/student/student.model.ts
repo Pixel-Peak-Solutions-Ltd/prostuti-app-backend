@@ -128,6 +128,10 @@ const studentSchema = new Schema<IStudent>(
         ],
         subscriptionStartDate: { type: Date },
         subscriptionEndDate: { type: Date },
+        isSubscribed:{
+            type:Boolean,
+            default:false,
+        }
     },
     {
         timestamps: true,
@@ -142,6 +146,8 @@ studentSchema.pre('save', function (next) {
     }
     next();
 });
+
+studentSchema.index({ subscriptionEndDate: 1 });
 
 // Create a Model
 export const Student = model<IStudent>('Student', studentSchema);

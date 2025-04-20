@@ -212,7 +212,11 @@ const updateAssignment = async (
 
         // Delete Canceled Assignments from backblaze
         for (const value of payload.canceledAssignments) {
-            await deleteFromB2(value.fileId, value.modifiedName, 'resources');
+            await deleteFromB2(
+                value.fileId,
+                value.modifiedName,
+                'courseAssignments',
+            );
         }
     }
 
@@ -227,7 +231,7 @@ const updateAssignment = async (
                     file,
                     config.backblaze_all_users_bucket_name,
                     config.backblaze_all_users_bucket_id,
-                    'resources',
+                    'courseAssignments',
                 );
                 uploadedResources.push(uploadedResource);
             }

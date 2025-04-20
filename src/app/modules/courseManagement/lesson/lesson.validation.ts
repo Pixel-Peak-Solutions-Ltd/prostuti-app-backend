@@ -32,10 +32,6 @@ const updateLessonValidationSchema = z.object({
             )
             .optional(),
         name: z.string().min(3).max(100).optional(),
-        course_id: z
-            .string()
-            .transform((val) => new Types.ObjectId(val))
-            .optional(),
     }),
 });
 
