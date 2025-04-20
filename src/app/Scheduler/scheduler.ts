@@ -1,17 +1,16 @@
 import cron from 'node-cron';
 import { Voucher } from '../modules/voucher/voucher.model';
 import { Subscription } from '../modules/subscription/subscription.model';
+import { Student } from '../modules/student/student.model';
 import cronLogger from '../logger/cronLogger';
 
 // Schedule task to run daily at midnight (00:00)
-cron.schedule('0 0 * * *', async () => {
+cron.schedule('*/30 * * * * *', async () => {
   const currentDate = new Date();
 
   // Update Vouchers
   try {
     cronLogger.info('Starting daily voucher expiration check');
-
-    // Update vouchers and mark them
     const voucherResult = await Voucher.updateMany(
       {
         endDate: { $lt: currentDate },
@@ -21,25 +20,21 @@ cron.schedule('0 0 * * *', async () => {
         $set: {
           isExpired: true,
           isActive: false,
-          markedForExpirationUpdate: true, 
+          markedForExpirationUpdate: true,
         },
       }
     );
 
     if (voucherResult.modifiedCount > 0) {
-      // Fetch updated voucher IDs
       const updatedVouchers = await Voucher.find(
         { markedForExpirationUpdate: true },
         { _id: 1 }
       ).lean();
       const voucherIds = updatedVouchers.map((v) => v._id.toString());
-
-      // Clear the temporary flag
       await Voucher.updateMany(
         { markedForExpirationUpdate: true },
         { $unset: { markedForExpirationUpdate: '' } }
       );
-
       cronLogger.info('Vouchers updated successfully', {
         modifiedCount: voucherResult.modifiedCount,
         updatedIds: voucherIds,
@@ -55,8 +50,6 @@ cron.schedule('0 0 * * *', async () => {
   // Update Subscriptions
   try {
     cronLogger.info('Starting daily subscription expiration check');
-
-    // Update subscriptions and mark them
     const subscriptionResult = await Subscription.updateMany(
       {
         endDate: { $lt: currentDate },
@@ -65,25 +58,21 @@ cron.schedule('0 0 * * *', async () => {
       {
         $set: {
           status: 'Expired',
-          markedForExpirationUpdate: true, 
+          markedForExpirationUpdate: true,
         },
       }
     );
 
     if (subscriptionResult.modifiedCount > 0) {
-      // Fetch updated subscription IDs
       const updatedSubscriptions = await Subscription.find(
         { markedForExpirationUpdate: true },
         { _id: 1 }
       ).lean();
       const subscriptionIds = updatedSubscriptions.map((s) => s._id.toString());
-
-      // Clear the temporary flag
       await Subscription.updateMany(
         { markedForExpirationUpdate: true },
         { $unset: { markedForExpirationUpdate: '' } }
       );
-
       cronLogger.info('Subscriptions updated successfully', {
         modifiedCount: subscriptionResult.modifiedCount,
         updatedIds: subscriptionIds,
@@ -95,9 +84,47 @@ cron.schedule('0 0 * * *', async () => {
       stack: error.stack,
     });
   }
+
+  // Update Students
+  try {
+    cronLogger.info('Starting daily student subscription expiration check');
+    const studentResult = await Student.updateMany(
+      {
+        subscriptionEndDate: { $lt: currentDate },
+        isSubscribed: true,
+      },
+      {
+        $set: {
+          isSubscribed: false,
+          markedForExpirationUpdate: true,
+        },
+      }
+    );
+
+    if (studentResult.modifiedCount > 0) {
+      const updatedStudents = await Student.find(
+        { markedForExpirationUpdate: true },
+        { _id: 1 }
+      ).lean();
+      const studentIds = updatedStudents.map((s) => s._id.toString());
+      await Student.updateMany(
+        { markedForExpirationUpdate: true },
+        { $unset: { markedForExpirationUpdate: '' } }
+      );
+      cronLogger.info('Student subscriptions updated successfully', {
+        modifiedCount: studentResult.modifiedCount,
+        updatedIds: studentIds,
+      });
+    }
+  } catch (error:any) {
+    cronLogger.error('Failed to update student subscriptions', {
+      error: error.message,
+      stack: error.stack,
+    });
+  }
 });
 
 cronLogger.info('Expiration scheduler initialized', {
   interval: 'daily at midnight',
-  models: ['Voucher', 'Subscription'],
+  models: ['Voucher', 'Subscription', 'Student'],
 });

@@ -26,6 +26,7 @@ export interface IStudent {
     enrolledCourses?: Types.ObjectId[],
     subscriptionStartDate?: Date;
     subscriptionEndDate?: Date;
+    isSubscribed:boolean
 }
 
 // Define allowed update fields type
