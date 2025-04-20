@@ -1,7 +1,7 @@
 import { Student } from '../modules/student/student.model';
 import cronLogger from '../logger/cronLogger';
 
-export async function updateStudents(currentDate) {
+export async function updateStudents(currentDate:any) {
   try {
     cronLogger.info('Starting daily student subscription expiration check');
     const studentResult = await Student.updateMany(
@@ -32,7 +32,7 @@ export async function updateStudents(currentDate) {
         updatedIds: studentIds,
       });
     }
-  } catch (error) {
+  } catch (error:any) {
     cronLogger.error('Failed to update student subscriptions', {
       error: error.message,
       stack: error.stack,
