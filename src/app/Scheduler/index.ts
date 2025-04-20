@@ -5,7 +5,7 @@ import { updateSubscriptions } from './subscription.scheduler';
 import { updateVouchers } from './voucher.scheduler';
 
 // Schedule task to run daily at midnight (00:00)
-cron.schedule('*/30 * * * * *', async () => {
+cron.schedule('0 0 * * *', async () => {
   const currentDate = new Date();
 
    // Update Vouchers
