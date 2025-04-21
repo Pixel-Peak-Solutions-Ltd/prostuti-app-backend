@@ -115,115 +115,95 @@ const updateLesson = async (lessonId: string, payload: Partial<ILesson>) => {
 };
 
 const deleteLessonByID = async (lessonId: string) => {
-    // 1. Find the lesson to delete and verify it exists
     const lesson = await Lesson.findById(lessonId);
     if (!lesson) {
         throw new AppError(StatusCodes.NOT_FOUND, 'Lesson not found');
     }
+
+    // Pre-fetch related documents (no transaction needed here)
+    const [assignments, recordedClasses, resources] = await Promise.all([
+        Assignment.find({ lesson_id: lessonId }).lean(),
+        RecodedClass.find({ lesson_id: lessonId }).lean(),
+        Resource.find({ lesson_id: lessonId }).lean(),
+    ]);
+
+    const session = await mongoose.startSession();
+
     try {
-        // 2. Start a transaction for MongoDB operations
-        const session = await mongoose.startSession();
         session.startTransaction();
 
-        try {
-            // 3. Delete all MongoDB documents in parallel
-            await Promise.all([
-                Assignment.deleteMany({ lesson_id: lessonId }).session(session),
-                RecodedClass.deleteMany({ lesson_id: lessonId }).session(
-                    session,
-                ),
-                Resource.deleteMany({ lesson_id: lessonId }).session(session),
-                Test.deleteMany({ lesson_id: lessonId }).session(session),
-                Lesson.findByIdAndDelete(lessonId).session(session),
-            ]);
+        // Each operation must await serially with session binding
+        await Assignment.deleteMany({ lesson_id: lessonId }).session(session);
+        await RecodedClass.deleteMany({ lesson_id: lessonId }).session(session);
+        await Resource.deleteMany({ lesson_id: lessonId }).session(session);
+        await Test.deleteMany({ lesson_id: lessonId }).session(session);
+        await Lesson.findByIdAndDelete(lessonId).session(session);
 
-            // 4. Commit the MongoDB transaction
-            await session.commitTransaction();
-            session.endSession();
-
-            // 5. Fetch resource info for B2 deletion (can do this after MongoDB transaction)
-            const [assignments, recordedClasses, resources] = await Promise.all(
-                [
-                    Assignment.find({ lesson_id: lessonId }).lean(),
-                    RecodedClass.find({ lesson_id: lessonId }).lean(),
-                    Resource.find({ lesson_id: lessonId }).lean(),
-                ],
-            );
-
-            // 6. Collect all B2 deletion tasks into a single array
-            const b2DeletionTasks: Promise<void>[] = [];
-
-            // Process assignments
-            assignments.forEach((assignment) => {
-                if (assignment.uploadFileResources?.length > 0) {
-                    assignment.uploadFileResources.forEach((resource) => {
-                        b2DeletionTasks.push(
-                            deleteFromB2(
-                                resource.fileId,
-                                resource.modifiedName,
-                                'courseAssignments',
-                            ),
-                        );
-                    });
-                }
-            });
-
-            // Process recorded classes
-            recordedClasses.forEach((recordedClass) => {
-                if (recordedClass.classVideoURL) {
-                    b2DeletionTasks.push(
-                        deleteFromB2(
-                            recordedClass.classVideoURL.fileId,
-                            recordedClass.classVideoURL.modifiedName,
-                            'videos',
-                        ),
-                    );
-                }
-            });
-
-            // Process resources
-            resources.forEach((resource) => {
-                if (resource.uploadFileResources?.length > 0) {
-                    resource.uploadFileResources.forEach((fileResource) => {
-                        b2DeletionTasks.push(
-                            deleteFromB2(
-                                fileResource.fileId,
-                                fileResource.modifiedName,
-                                'courseResources',
-                            ),
-                        );
-                    });
-                }
-            });
-
-            // 7. Execute B2 deletions in batches to avoid overwhelming the B2 API
-            // Process 10 files at a time
-            const BATCH_SIZE = 10;
-            for (let i = 0; i < b2DeletionTasks.length; i += BATCH_SIZE) {
-                const batch = b2DeletionTasks.slice(i, i + BATCH_SIZE);
-                await Promise.all(batch);
-            }
-
-            return null;
-        } catch (error) {
-            // If any error occurs in MongoDB operations, abort the transaction
-            await session.abortTransaction();
-            session.endSession();
-            throw error;
-        }
+        await session.commitTransaction();
     } catch (error) {
-        // Log the error for debugging
-        console.error('Error in deleteLessonByID:', error);
-
-        // Re-throw the error for the controller to handle
-        if (error instanceof AppError) {
-            throw error;
-        }
+        await session.abortTransaction();
+        console.error('Mongo transaction error:', error);
         throw new AppError(
             StatusCodes.INTERNAL_SERVER_ERROR,
-            'Failed to delete lesson and its resources',
+            'Failed to delete from database',
         );
+    } finally {
+        session.endSession();
     }
+
+    // B2 deletions (do not affect API response)
+    const b2Tasks: Promise<void>[] = [];
+
+    assignments.forEach((assignment) => {
+        assignment.uploadFileResources?.forEach((res) => {
+            if (res?.fileId && res?.modifiedName) {
+                b2Tasks.push(
+                    deleteFromB2(
+                        res.fileId,
+                        res.modifiedName,
+                        'courseAssignments',
+                    ),
+                );
+            }
+        });
+    });
+
+    recordedClasses.forEach((rc) => {
+        if (rc?.classVideoURL?.fileId && rc?.classVideoURL?.modifiedName) {
+            b2Tasks.push(
+                deleteFromB2(
+                    rc.classVideoURL.fileId,
+                    rc.classVideoURL.modifiedName,
+                    'videos',
+                ),
+            );
+        }
+    });
+
+    resources.forEach((res) => {
+        res.uploadFileResources?.forEach((file) => {
+            if (file?.fileId && file?.modifiedName) {
+                b2Tasks.push(
+                    deleteFromB2(
+                        file.fileId,
+                        file.modifiedName,
+                        'courseResources',
+                    ),
+                );
+            }
+        });
+    });
+
+    // Fire and forget
+    Promise.allSettled(b2Tasks).then((results) => {
+        results.forEach((result) => {
+            if (result.status === 'rejected') {
+                console.error('B2 deletion failed:', result.reason);
+            }
+        });
+    });
+
+    return null;
 };
 
 export const lessonService = {
