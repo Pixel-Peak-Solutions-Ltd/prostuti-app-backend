@@ -113,13 +113,20 @@ const createFreeEnrolledCourse = async (
             // Create Notification
             const baseMessage = `You have successfully enrolled in "${course.name}". Enjoy and share your review.`;
 
-            studentNotificationService.createStudentNotification({
-                student_id: studentDetails._id,
-                title: 'Course Enrollment',
-                message: studentDetails.subscriptionEndDate
-                    ? `${baseMessage} You have subscription till ${studentDetails.subscriptionEndDate.toDateString()}.`
-                    : baseMessage,
-            });
+            try {
+                await StudentNotification.create({
+                    student_id: studentDetails._id,
+                    title: 'Course Enrollment (Free Course)',
+                    message: studentDetails.subscriptionEndDate
+                        ? `${baseMessage} You have subscription till ${studentDetails.subscriptionEndDate.toDateString()}.`
+                        : baseMessage,
+                });
+            } catch (notificationError) {
+                console.error(
+                    'Failed to create student free course notification:',
+                    notificationError,
+                );
+            }
         }
 
         await session.commitTransaction();
@@ -230,13 +237,20 @@ const createSubscriptionEnrolledCourse = async (
             // Create Notification
             const baseMessage = `You have successfully enrolled in "${course.name}". Enjoy and share your review.`;
 
-            studentNotificationService.createStudentNotification({
-                student_id: studentDetails._id,
-                title: 'Course Enrollment',
-                message: studentDetails.subscriptionEndDate
-                    ? `${baseMessage} You have subscription till ${studentDetails.subscriptionEndDate.toDateString()}.`
-                    : baseMessage,
-            });
+            try {
+                await StudentNotification.create({
+                    student_id: studentDetails._id,
+                    title: 'Course Enrollment (Subscription Course)',
+                    message: studentDetails.subscriptionEndDate
+                        ? `${baseMessage} You have subscription till ${studentDetails.subscriptionEndDate.toDateString()}.`
+                        : baseMessage,
+                });
+            } catch (notificationError) {
+                console.error(
+                    'Failed to create student free course notification:',
+                    notificationError,
+                );
+            }
         }
 
         await session.commitTransaction();
@@ -480,7 +494,7 @@ const createPaidEnrolledCourseSuccess = async (
 
         return {
             student_id: paymentDetails.student_id,
-            title: 'Course Enrollment',
+            title: 'Course Enrollment (Paid Course)',
             message: student?.subscriptionEndDate
                 ? `${baseMessage} You have subscription till ${student.subscriptionEndDate.toDateString()}.`
                 : baseMessage,
