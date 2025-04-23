@@ -18,6 +18,7 @@ import { Teacher } from '../../teacher/teacher.model';
 import { User } from '../../user/user.model';
 import { notificationService } from '../../notification/notification.service';
 import { Voucher } from '../../voucher/voucher.model';
+import QueryBuilder from './courseQueryBuilder';
 
 // Create Course
 const createCourse = async (
@@ -47,10 +48,7 @@ const createCourse = async (
         // Delete local file after upload
         fs.unlinkSync(file.path);
         // Throw Error
-        throw new AppError(
-            StatusCodes.BAD_REQUEST,
-            'Teacher not found',
-        );
+        throw new AppError(StatusCodes.BAD_REQUEST, 'Teacher not found');
     }
 
     // Create course object with uploaded image
@@ -258,20 +256,27 @@ const getCourseByID = async (courseId: string) => {
     return courses;
 };
 
-const getCourseByTeacherID = async (user_id: string) => {
+const getCourseByTeacherID = async (
+    user_id: string,
+    query: Record<string, unknown>,
+) => {
     const checkTeacher = await Teacher.findOne({
         user_id: user_id,
     });
     if (!checkTeacher) {
         // Throw Error
-        throw new AppError(
-            StatusCodes.BAD_REQUEST,
-            'Teacher not found',
-        );
+        throw new AppError(StatusCodes.BAD_REQUEST, 'Teacher not found');
     }
 
+    const coursesQuery = new QueryBuilder(
+        Course.find({ teacher_id: checkTeacher._id }),
+        query,
+    )
+        .filter()
+        .sort()
+        .paginate();
 
-    const courses = await Course.find({ teacher_id: checkTeacher._id });
+    const courses = await coursesQuery.modelQuery;
 
     return courses;
 };

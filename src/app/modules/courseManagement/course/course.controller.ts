@@ -60,7 +60,7 @@ const getCourseByID = catchAsync(async (req: Request, res: Response) => {
 
 const getCourseByTeacherID = catchAsync(async (req: Request, res: Response) => {
     const { userId } = req.user;
-    const result = await courseService.getCourseByTeacherID(userId);
+    const result = await courseService.getCourseByTeacherID(userId, req.query);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
