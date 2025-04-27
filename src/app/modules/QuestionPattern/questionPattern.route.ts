@@ -10,8 +10,8 @@ const router = express.Router();
 router
     .post('/create-question-pattern',auth("admin"),validateRequest(questionPatternValidation.createQuestionPatternSchema), QuestionPatternController.createQuestionPattern)
     .get('/all-question-pattern',auth(), QuestionPatternController.getAllQuestionPatterns)
-    .get('/:id', QuestionPatternController.getQuestionPatternByID)
-    .delete('/:id', QuestionPatternController.deleteQuestionPatternByID)
+    .get('/single-question-pattern/:id',auth(), QuestionPatternController.getQuestionPatternByID)
+    .delete('/:id',auth("admin"), QuestionPatternController.deleteQuestionPatternByID)
     .patch('/:id', QuestionPatternController.updateQuestionPattern);
 
 export const questionPatternRoute = router;

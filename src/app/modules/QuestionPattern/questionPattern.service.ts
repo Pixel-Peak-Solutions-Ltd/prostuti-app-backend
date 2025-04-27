@@ -130,16 +130,42 @@ const getAllQuestionPatterns = async ( filters: IQuestionPatternFilters,
       };
 };
 
-const getQuestionPatternByID = async () => {
-    return 'getQuestionPatternByID service';
+const getQuestionPatternByID = async (id:string) => {
+    const questionPattern = await QuestionPattern.findById(id)
+        .populate('category_id')
+        .populate('createdBy');
+    if (!questionPattern) {
+
+        throw new AppError(StatusCodes.NOT_FOUND, 'Question pattern not found');
+    }
+    return questionPattern;
+    
 };
 
 const updateQuestionPattern = async () => {
     return 'updateQuestionPattern service';
 };
 
-const deleteQuestionPatternByID = async () => {
-    return 'deleteQuestionPatternByID service';
+const deleteQuestionPatternByID = async (id:string,userInfo:TJWTDecodedUser) => {
+  //check admin is exist or not
+  const checkAdmin = await Admin.findOne({ user_id: userInfo.userId });
+  if(!checkAdmin) {
+      throw new AppError(StatusCodes.NOT_FOUND, 'Admin not found');
+  }
+  //check question pattern is exist or not
+  const checkQuestionPattern = await QuestionPattern.findById(id);
+  if(!checkQuestionPattern) {
+      throw new AppError(StatusCodes.NOT_FOUND, 'Question pattern not found');
+  }
+  if(checkQuestionPattern.createdBy.toString() !== checkAdmin._id.toString()) {
+      throw new AppError(StatusCodes.UNAUTHORIZED, 'You are not authorized to delete this question pattern');
+  }
+
+  const result = await QuestionPattern.findByIdAndDelete(id);
+  if (!result) {
+      throw new AppError(StatusCodes.BAD_REQUEST, 'Question pattern not deleted');
+  }
+  return result;
 };
 
 export const QuestionPatternService = {

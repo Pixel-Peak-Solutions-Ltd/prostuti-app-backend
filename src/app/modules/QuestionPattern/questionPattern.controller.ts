@@ -32,7 +32,7 @@ const getAllQuestionPatterns = catchAsync(async (req: Request, res: Response) =>
 });
 
 const getQuestionPatternByID = catchAsync(async (req: Request, res: Response) => {
-    const result = await QuestionPatternService.getQuestionPatternByID();
+    const result = await QuestionPatternService.getQuestionPatternByID(req.params.id);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
@@ -52,7 +52,7 @@ const updateQuestionPattern = catchAsync(async (req: Request, res: Response) => 
 });
 
 const deleteQuestionPatternByID = catchAsync(async (req: Request, res: Response) => {
-    const result = await QuestionPatternService.deleteQuestionPatternByID();
+    const result = await QuestionPatternService.deleteQuestionPatternByID(req.params.id,req.user);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
