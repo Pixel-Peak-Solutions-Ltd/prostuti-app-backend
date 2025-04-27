@@ -1,7 +1,10 @@
 node_modules
 dist
-.env
+.env*
 .idea
 .vscode
 uploads/*
 !uploads/.gitkeep
+
+logs/*
+!logs/.gitkeep
