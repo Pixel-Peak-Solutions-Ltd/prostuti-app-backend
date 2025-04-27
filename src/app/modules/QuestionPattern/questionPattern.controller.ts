@@ -42,7 +42,7 @@ const getQuestionPatternByID = catchAsync(async (req: Request, res: Response) =>
 });
 
 const updateQuestionPattern = catchAsync(async (req: Request, res: Response) => {
-    const result = await QuestionPatternService.updateQuestionPattern();
+    const result = await QuestionPatternService.updateQuestionPattern(req.params.id, req.body,req.user);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,

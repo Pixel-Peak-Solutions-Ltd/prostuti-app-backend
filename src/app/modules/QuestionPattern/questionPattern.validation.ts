@@ -27,6 +27,23 @@ const createQuestionPatternSchema = z.object({
     }),
 });
 
+const updateQuestionPatternSchema = z.object({
+    body: z.object({
+      category_id: z
+        .array(
+          z.string().refine((val) => Types.ObjectId.isValid(val), {
+            message: 'Invalid category ID',
+          }),
+        )
+        .min(1, 'At least one category ID is required')
+        .optional(),
+      time: z.number().positive('Time must be a positive number').min(1, 'Time must be at least 1 minute').optional(),
+      mainSubjects: z.array(SubjectSchema).min(1, 'At least one main subject is required').optional(),
+      optionalSubjects: z.array(SubjectSchema).optional(),
+    })
+})
+
 export const questionPatternValidation = {
-    createQuestionPatternSchema
+    createQuestionPatternSchema,
+    updateQuestionPatternSchema,
 };

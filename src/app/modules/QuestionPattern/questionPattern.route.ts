@@ -12,6 +12,6 @@ router
     .get('/all-question-pattern',auth(), QuestionPatternController.getAllQuestionPatterns)
     .get('/single-question-pattern/:id',auth(), QuestionPatternController.getQuestionPatternByID)
     .delete('/:id',auth("admin"), QuestionPatternController.deleteQuestionPatternByID)
-    .patch('/:id', QuestionPatternController.updateQuestionPattern);
+    .patch('/:id',auth("admin"),validateRequest(questionPatternValidation.updateQuestionPatternSchema), QuestionPatternController.updateQuestionPattern);
 
 export const questionPatternRoute = router;

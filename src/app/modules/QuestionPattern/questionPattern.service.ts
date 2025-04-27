@@ -142,8 +142,51 @@ const getQuestionPatternByID = async (id:string) => {
     
 };
 
-const updateQuestionPattern = async () => {
-    return 'updateQuestionPattern service';
+const updateQuestionPattern = async (id:string,payload:Partial<IQuestionPattern>,userInfo:TJWTDecodedUser) => {
+  //check admin is exist or not
+  const checkAdmin = await Admin.findOne({ user_id: userInfo.userId });
+  if(!checkAdmin) { 
+      throw new AppError(StatusCodes.NOT_FOUND, 'Admin not found');
+  }
+
+  //check question pattern is exist or not
+  const checkQuestionPattern = await QuestionPattern.findById(id);
+  if(!checkQuestionPattern) {
+      throw new AppError(StatusCodes.NOT_FOUND, 'Question pattern not found');
+  }
+  if(checkQuestionPattern.createdBy.toString() !== checkAdmin._id.toString()) {
+      throw new AppError(StatusCodes.UNAUTHORIZED, 'You are not authorized to update this question pattern');
+  }
+  // Check category exists
+  if (payload.category_id) {
+    await Promise.all(
+      payload.category_id.map(async (categoryId: Types.ObjectId) => {
+        const checkCategory = await Category.findOne({ _id: categoryId });
+        if (!checkCategory) {
+          throw new AppError(StatusCodes.NOT_FOUND, `Category ${categoryId} not found`);
+        }
+      })
+    );
+  }
+  //update question pattern
+  const questionPattern = await QuestionPattern.findByIdAndUpdate(
+      id, 
+      { 
+        ...(payload.category_id && { category_id: payload.category_id }),
+        ...(payload.time && { time: payload.time }),
+        ...(payload.mainSubjects && { mainSubjects: payload.mainSubjects }),
+        ...(payload.optionalSubjects && { optionalSubjects: payload.optionalSubjects }),
+        updatedBy: checkAdmin._id,
+       },
+      { new: true, runValidators: true }
+  ).populate('category_id')
+  .populate('createdBy'); 
+
+  if (!questionPattern) {
+      throw new AppError(StatusCodes.BAD_REQUEST, 'Question pattern not updated');
+  }
+  return questionPattern;
+    
 };
 
 const deleteQuestionPatternByID = async (id:string,userInfo:TJWTDecodedUser) => {
