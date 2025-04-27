@@ -3,6 +3,9 @@ import { StatusCodes } from 'http-status-codes';
 import catchAsync from '../../utils/catchAsync';
 import sendSuccessResponse from '../../utils/sendSuccessResponse';
 import { QuestionPatternService } from './questionPattern.service';
+import { questionPatternFilterableFields } from './questionPattern.constant';
+import pick from '../../helpers/pick';
+import { paginationFields } from '../../constant';
 
 
 
@@ -17,7 +20,9 @@ const createQuestionPattern = catchAsync(async (req: Request, res: Response) => 
 });
 
 const getAllQuestionPatterns = catchAsync(async (req: Request, res: Response) => {
-    const result = await QuestionPatternService.getAllQuestionPatterns();
+    const filters = pick(req.query, questionPatternFilterableFields);
+    const paginationOptions = pick(req.query, paginationFields);
+    const result = await QuestionPatternService.getAllQuestionPatterns(filters, paginationOptions,req.user);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,

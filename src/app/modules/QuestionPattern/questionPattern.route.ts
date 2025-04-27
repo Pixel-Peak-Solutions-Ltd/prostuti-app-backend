@@ -9,7 +9,7 @@ const router = express.Router();
 
 router
     .post('/create-question-pattern',auth("admin"),validateRequest(questionPatternValidation.createQuestionPatternSchema), QuestionPatternController.createQuestionPattern)
-    .get('/', QuestionPatternController.getAllQuestionPatterns)
+    .get('/all-question-pattern',auth(), QuestionPatternController.getAllQuestionPatterns)
     .get('/:id', QuestionPatternController.getQuestionPatternByID)
     .delete('/:id', QuestionPatternController.deleteQuestionPatternByID)
     .patch('/:id', QuestionPatternController.updateQuestionPattern);
