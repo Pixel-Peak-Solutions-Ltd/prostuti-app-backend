@@ -47,6 +47,27 @@ const submitQuizzerQuiz = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const createSegmentQuiz = catchAsync(async (req: Request, res: Response) => {
+    const result = await QuizService.createSegmentQuiz(req.user, req.body);
+
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'Segment Quiz created successfully',
+        data: result,
+    });
+
+});
+
+const submitSegmentQuiz = catchAsync(async (req: Request, res: Response) => {
+    const result = await QuizService.submitSegmentQuiz(req.user, req.body,req.params.id);
+
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'Segment Quiz submitted successfully',
+        data: result,
+    });
+});
+
 const getAllQuizzes = catchAsync(async (req: Request, res: Response) => {
     const filters = pick(req.query, quizFilterableFields);
   const paginationOptions = pick(req.query, paginationFields);
@@ -70,4 +91,4 @@ const getSingleQuiz= catchAsync(async (req: Request, res: Response) => {
 });
 
 
-export const QuizController= {createMockQuiz,submitMockQuiz,createQuizzerQuiz,submitQuizzerQuiz, getAllQuizzes,getSingleQuiz}
+export const QuizController= {createMockQuiz,submitMockQuiz,createQuizzerQuiz,submitQuizzerQuiz,createSegmentQuiz,submitSegmentQuiz, getAllQuizzes,getSingleQuiz}

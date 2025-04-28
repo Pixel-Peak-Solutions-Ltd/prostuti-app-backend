@@ -16,6 +16,11 @@ router.post('/create-quizzer-quiz',auth("student"),validateRequest(quizValidatio
 router.patch('/submit-quizzer-quiz/:id',auth("student"),validateRequest(quizValidation.submitQuizzerQuiz), QuizController.submitQuizzerQuiz)
 
 
+//segment quiz
+router.post('/create-segment-quiz',auth("student"),validateRequest(quizValidation.createSegmentQuiz), QuizController.createSegmentQuiz) 
+router.post('/submit-segment-quiz',auth("student"),validateRequest(quizValidation.submitSegmentQuiz), QuizController.submitSegmentQuiz) 
+
+
 router.get('/all-quiz',auth(), QuizController.getAllQuizzes)
 router.get('/single-quiz/:id',auth(), QuizController.getSingleQuiz)
 

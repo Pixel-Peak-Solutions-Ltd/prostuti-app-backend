@@ -76,13 +76,13 @@ const createMockQuiz = async (
     const questionArray = Object.values(result[0]).flat();
     // Filter out duplicates by question `_id`
     const questions = Array.from(
-        new Map(questionArray.map((q:any) => [q._id.toString(), q])).values(),
+        new Map(questionArray.map((q: any) => [q._id.toString(), q])).values(),
     );
 
-    if (questions.length < questionCount*payload.subjects.length) {
+    if (questions.length < questionCount * payload.subjects.length) {
         throw new AppError(
             StatusCodes.BAD_REQUEST,
-            `Not enough questions available. Required: ${questionCount*payload.subjects.length}, Found: ${questions.length}`,
+            `Not enough questions available. Required: ${questionCount * payload.subjects.length}, Found: ${questions.length}`,
         );
     }
 
@@ -290,7 +290,7 @@ const submitMockQuiz = async (
     checkQuiz.score = score < 0 ? 0 : score;
     checkQuiz.rightScore = rightScore;
     checkQuiz.wrongScore = wrongScore;
-    
+
     checkQuiz.completedAt = new Date();
 
     await checkQuiz.save();
@@ -309,7 +309,7 @@ const createQuizzerQuiz = async (
     payload: {
         questionType: QuestionType;
         subjects: string[];
-        questionFilters:QuizzerFilter[]
+        questionFilters: QuizzerFilter[];
         questionCount: number;
         isNegativeMarking: boolean;
         time: number;
@@ -339,118 +339,119 @@ const createQuizzerQuiz = async (
     // Set default question count
     const questionCount = payload.questionCount || 10;
 
-     // Get question IDs based on filters
-     let questionIds: Types.ObjectId[] = [];
-     const categoryIds = checkCategory.map((cat) => cat._id);
- 
-     for (const filter of payload.questionFilters) {
-         switch (filter) {
-             case 'Favorite':
-                 const favorite = await FavouriteQuestion.findOne({
-                     student_id: checkStudent._id,
-                 }).lean();
-                 if (favorite && favorite.favourite_questions.length > 0) {
-                     const validFavorites = await Question.find({
-                         _id: { $in: favorite.favourite_questions },
-                         category_id: { $in: categoryIds },
-                         type: payload.questionType,
-                     }).distinct('_id');
-                     questionIds.push(
-                         ...validFavorites.map(
-                             (id) => new mongoose.Types.ObjectId(id),
-                         ),
-                     );
-                 }
-                 break;
- 
-             case 'Wrong':
-                 const wrongQuestions = await TestHistory.find({
-                     student_id: checkStudent._id,
-                     wrongQuestions: { $ne: [] },
-                 }).distinct('wrongQuestions');
-                 const validWrong = await Question.find({
-                     _id: { $in: wrongQuestions },
-                     category_id: { $in: categoryIds },
-                     type: payload.questionType,
-                 }).distinct('_id');
-                 questionIds.push(
-                     ...validWrong.map((id) => new mongoose.Types.ObjectId(id)),
-                 );
-                 break;
- 
-             case 'Skipped':
-                 const skippedQuestions = await TestHistory.find({
-                     student_id: checkStudent._id,
-                     skippedQuestions: { $ne: [] },
-                 }).distinct('skippedQuestions');
-                 const validSkipped = await Question.find({
-                     _id: { $in: skippedQuestions },
-                     category_id: { $in: categoryIds },
-                     type: payload.questionType,
-                 }).distinct('_id');
-                 questionIds.push(
-                     ...validSkipped.map((id) => new mongoose.Types.ObjectId(id)),
-                 );
-                 break;
-         }
-     }
- 
-     // Deduplicate question IDs
-     questionIds = [
-         ...new Set(questionIds.map((id) => id.toString())),
-     ].map((id) => new mongoose.Types.ObjectId(id));
- 
-     // Check if any questions were found
-     if (questionIds.length === 0) {
-         throw new AppError(
-             StatusCodes.BAD_REQUEST,
-             `No questions found for filters '${payload.questionFilters.join(
-                 ', ',
-             )}' in the specified categories and question type`,
-         );
-     }
- 
-     // Aggregate questions
-     const facets = checkCategory.reduce((acc, category) => {
-         acc[category._id] = [
-             {
-                 $match: {
-                     _id: { $in: questionIds },
-                     category_id: category._id,
-                     type: payload.questionType,
-                 },
-             },
-             {
-                 $sample: { size: questionCount },
-             },
-         ];
-         return acc;
-     }, {});
- 
-     const result = await Question.aggregate([
-         {
-             $facet: facets,
-         },
-     ]).exec();
- 
-     // Flatten and deduplicate questions
-     const questionArray = Object.values(result[0]).flat();
-     const questions = Array.from(
-         new Map(questionArray.map((q: any) => [q._id.toString(), q])).values(),
-     );
- 
-     // Validate question count
-     if (questions.length < questionCount * payload.subjects.length) {
-         throw new AppError(
-             StatusCodes.BAD_REQUEST,
-             `Not enough questions available for filters '${payload.questionFilters.join(
-                 ', ',
-             )}'. Required: ${questionCount * payload.subjects.length}, Found: ${
-                 questions.length
-             }`,
-         );
-     }
-    
+    // Get question IDs based on filters
+    let questionIds: Types.ObjectId[] = [];
+    const categoryIds = checkCategory.map((cat) => cat._id);
+
+    for (const filter of payload.questionFilters) {
+        switch (filter) {
+            case 'Favorite':
+                const favorite = await FavouriteQuestion.findOne({
+                    student_id: checkStudent._id,
+                }).lean();
+                if (favorite && favorite.favourite_questions.length > 0) {
+                    const validFavorites = await Question.find({
+                        _id: { $in: favorite.favourite_questions },
+                        category_id: { $in: categoryIds },
+                        type: payload.questionType,
+                    }).distinct('_id');
+                    questionIds.push(
+                        ...validFavorites.map(
+                            (id) => new mongoose.Types.ObjectId(id),
+                        ),
+                    );
+                }
+                break;
+
+            case 'Wrong':
+                const wrongQuestions = await TestHistory.find({
+                    student_id: checkStudent._id,
+                    wrongQuestions: { $ne: [] },
+                }).distinct('wrongQuestions');
+                const validWrong = await Question.find({
+                    _id: { $in: wrongQuestions },
+                    category_id: { $in: categoryIds },
+                    type: payload.questionType,
+                }).distinct('_id');
+                questionIds.push(
+                    ...validWrong.map((id) => new mongoose.Types.ObjectId(id)),
+                );
+                break;
+
+            case 'Skipped':
+                const skippedQuestions = await TestHistory.find({
+                    student_id: checkStudent._id,
+                    skippedQuestions: { $ne: [] },
+                }).distinct('skippedQuestions');
+                const validSkipped = await Question.find({
+                    _id: { $in: skippedQuestions },
+                    category_id: { $in: categoryIds },
+                    type: payload.questionType,
+                }).distinct('_id');
+                questionIds.push(
+                    ...validSkipped.map(
+                        (id) => new mongoose.Types.ObjectId(id),
+                    ),
+                );
+                break;
+        }
+    }
+
+    // Deduplicate question IDs
+    questionIds = [...new Set(questionIds.map((id) => id.toString()))].map(
+        (id) => new mongoose.Types.ObjectId(id),
+    );
+
+    // Check if any questions were found
+    if (questionIds.length === 0) {
+        throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            `No questions found for filters '${payload.questionFilters.join(
+                ', ',
+            )}' in the specified categories and question type`,
+        );
+    }
+
+    // Aggregate questions
+    const facets = checkCategory.reduce((acc, category) => {
+        acc[category._id] = [
+            {
+                $match: {
+                    _id: { $in: questionIds },
+                    category_id: category._id,
+                    type: payload.questionType,
+                },
+            },
+            {
+                $sample: { size: questionCount },
+            },
+        ];
+        return acc;
+    }, {});
+
+    const result = await Question.aggregate([
+        {
+            $facet: facets,
+        },
+    ]).exec();
+
+    // Flatten and deduplicate questions
+    const questionArray = Object.values(result[0]).flat();
+    const questions = Array.from(
+        new Map(questionArray.map((q: any) => [q._id.toString(), q])).values(),
+    );
+
+    // Validate question count
+    if (questions.length < questionCount * payload.subjects.length) {
+        throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            `Not enough questions available for filters '${payload.questionFilters.join(
+                ', ',
+            )}'. Required: ${questionCount * payload.subjects.length}, Found: ${
+                questions.length
+            }`,
+        );
+    }
 
     // Create quiz
     const quizData = {
@@ -508,7 +509,7 @@ const submitQuizzerQuiz = async (
     if (!checkQuiz) {
         throw new AppError(StatusCodes.NOT_FOUND, 'Quiz not found');
     }
-    if (checkQuiz.type !== "Quizzer") {
+    if (checkQuiz.type !== 'Quizzer') {
         throw new AppError(
             StatusCodes.FORBIDDEN,
             'This route is only for quizzer quiz',
@@ -656,7 +657,7 @@ const submitQuizzerQuiz = async (
     checkQuiz.score = score < 0 ? 0 : score;
     checkQuiz.rightScore = rightScore;
     checkQuiz.wrongScore = wrongScore;
-    
+
     checkQuiz.completedAt = new Date();
 
     await checkQuiz.save();
@@ -670,6 +671,328 @@ const submitQuizzerQuiz = async (
     return result;
 };
 
+const createSegmentQuiz = async (
+    userInfo: TJWTDecodedUser,
+    payload: {
+        questionType: QuestionType;
+        mainSubjects: { subject: string; questionCount: number }[];
+        optionalSubjects?: { subject: string; questionCount: number }[];
+        category_id: string[];
+        isNegativeMarking: boolean;
+        time: number;
+    },
+) => {
+    //check student
+    const checkStudent = await Student.findOne({ user_id: userInfo.userId });
+    if (!checkStudent) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Student not found');
+    }
+
+    //check category
+
+    const checkCategories = await Category.find({
+        _id: { $in: payload.category_id },
+    })
+        .select({ _id: 1, subject: 1 })
+        .lean();
+    if (
+        !checkCategories ||
+        checkCategories.length !== payload.category_id.length
+    ) {
+        throw new AppError(
+            StatusCodes.NOT_FOUND,
+            'One or more categories not found',
+        );
+    }
+
+    // Extract all subjects and their required question counts
+    const allSubjects = [
+        ...payload.mainSubjects,
+        ...(payload.optionalSubjects || []),
+    ];
+
+    // Validate subjects against categories
+    const categorySubjects = checkCategories.map((cat) =>
+        cat.subject.toLowerCase(),
+    );
+    const invalidSubjects = allSubjects.filter(
+        (sub) => !categorySubjects.includes(sub.subject.toLowerCase()),
+    );
+    if (invalidSubjects.length > 0) {
+        throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            `Subjects ${invalidSubjects.map((s) => s.subject).join(', ')} do not belong to the specified categories`,
+        );
+    }
+
+    // Fetch questions for each subject and validate counts
+    const questionPromises = allSubjects.map(async (sub) => {
+        const categoryForSubject = checkCategories.find(
+            (cat) => cat.subject.toLowerCase() === sub.subject.toLowerCase(),
+        );
+        if (!categoryForSubject) return [];
+
+        const questions = await Question.aggregate([
+            {
+                $match: {
+                    category_id: categoryForSubject._id,
+                    type: payload.questionType,
+                },
+            },
+            {
+                $sample: { size: sub.questionCount },
+            },
+        ]).exec();
+
+        // Check if sufficient questions are available for this subject
+        if (questions.length < sub.questionCount) {
+            throw new AppError(
+                StatusCodes.BAD_REQUEST,
+                `Not enough ${payload.questionType} questions for subject "${sub.subject}". Required: ${sub.questionCount}, Found: ${questions.length}`,
+            );
+        }
+
+        return questions;
+    });
+    const questionArrays = await Promise.all(questionPromises);
+    const questions = questionArrays.flat();
+
+    // Filter out duplicates by question `_id`
+    const uniqueQuestions = Array.from(
+        new Map(questions.map((q: any) => [q._id.toString(), q])).values(),
+    );
+
+    // Calculate total required questions
+    const totalQuestionCount = allSubjects.reduce(
+        (sum, sub) => sum + sub.questionCount,
+        0,
+    );
+
+    // This check is now redundant due to per-subject validation, but kept for extra safety
+    if (uniqueQuestions.length < totalQuestionCount) {
+        throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            `Not enough questions available after deduplication. Required: ${totalQuestionCount}, Found: ${uniqueQuestions.length}`,
+        );
+    }
+
+    // Create quiz
+    const quizData = {
+        student_id: checkStudent._id,
+        category_id: payload.category_id,
+        type: 'Segment',
+        time: payload.time,
+        questionCount: totalQuestionCount,
+        isNegativeMarking: payload.isNegativeMarking,
+        questionType: payload.questionType,
+        questions: uniqueQuestions.map((q) => q._id),
+        answers: [],
+        totalScore: uniqueQuestions.length,
+        score: 0,
+        rightScore: 0,
+        wrongScore: 0,
+    };
+
+    const quiz = await Quiz.create(quizData);
+
+    // Return populated quiz
+    const populatedQuiz = await Quiz.findById(quiz._id)
+        .populate('questions')
+        .populate('category_id')
+        .populate('student_id')
+        .lean();
+
+    if (!populatedQuiz) {
+        throw new AppError(
+            StatusCodes.INTERNAL_SERVER_ERROR,
+            'Failed to create quiz',
+        );
+    }
+
+    return populatedQuiz;
+};
+
+const submitSegmentQuiz = async (
+    userInfo: TJWTDecodedUser,
+    payload: {
+        answers: { question_id: string; selectedOption: string }[];
+    },
+    quiz_id: string,
+) => {
+    //check student
+    const checkStudent = await Student.findOne({ user_id: userInfo.userId });
+    if (!checkStudent) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Student not found');
+    }
+    //check quiz
+    const checkQuiz = await Quiz.findById(quiz_id).populate(
+        'questions',
+        'correctOption',
+    );
+    if (!checkQuiz) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Quiz not found');
+    }
+    if (checkQuiz.type !== 'Segment') {
+        throw new AppError(
+            StatusCodes.FORBIDDEN,
+            'This route is only for segment quiz',
+        );
+    }
+
+    // Verify checkQuiz belongs to the student
+    if (checkQuiz.student_id.toString() !== checkStudent._id.toString()) {
+        throw new AppError(
+            StatusCodes.FORBIDDEN,
+            'You are not authorized to submit this Quiz',
+        );
+    }
+
+    // Check if quiz is already completed
+    if (checkQuiz.completedAt) {
+        throw new AppError(StatusCodes.BAD_REQUEST, 'Quiz already completed');
+    }
+
+    // Validate answers
+    if (!payload.answers || payload.answers.length === 0) {
+        throw new AppError(StatusCodes.BAD_REQUEST, 'No answers provided');
+    }
+
+    // Check if all questions are answered
+    if (payload.answers.length !== checkQuiz.questions.length) {
+        throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            `All questions must be answered. Expected ${checkQuiz.questions.length}, received ${payload.answers.length}`,
+        );
+    }
+
+    // Check for duplicate questionIds in answers
+    const submittedQuestionIds = payload.answers.map((a) => a.question_id);
+    const uniqueQuestionIds = new Set(submittedQuestionIds);
+    if (uniqueQuestionIds.size !== submittedQuestionIds.length) {
+        const duplicates = submittedQuestionIds.filter(
+            (id, index) => submittedQuestionIds.indexOf(id) !== index,
+        );
+        throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            `Duplicate question IDs detected: ${[...new Set(duplicates)].join(', ')}`,
+        );
+    }
+
+    // Validate question IDs match quiz questions
+    const quizQuestionIds = checkQuiz.questions.map((q: any) =>
+        q._id.toString(),
+    );
+    const invalidQuestionIds = submittedQuestionIds.filter(
+        (id) => !quizQuestionIds.includes(id),
+    );
+    if (invalidQuestionIds.length > 0) {
+        throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            `Invalid question IDs provided: ${invalidQuestionIds.join(', ')}`,
+        );
+    }
+
+    // Initialize formatted answers
+    const formattedAnswers = [];
+    let score = 0;
+    let rightScore = 0;
+    let wrongScore = 0;
+
+    // Handle MCQ and Written quizzes differently
+    if (checkQuiz.questionType === 'MCQ') {
+        // Validate selectedOption for MCQ questions
+        const questionMap = new Map(
+            checkQuiz.questions.map((q: any) => [
+                q._id.toString(),
+                { correctOption: q.correctOption, options: q.options || [] },
+            ]),
+        );
+        const invalidOptions = payload.answers.filter((answer) => {
+            const question = questionMap.get(answer.question_id);
+            return question && question.options.length > 0
+                ? !question.options.includes(answer.selectedOption)
+                : false;
+        });
+        if (invalidOptions.length > 0) {
+            throw new AppError(
+                StatusCodes.BAD_REQUEST,
+                `Invalid selected options for question IDs: ${invalidOptions
+                    .map((a) => a.question_id)
+                    .join(', ')}`,
+            );
+        }
+
+        // Calculate scores for MCQ
+        const negativeMarkingValue = checkQuiz.isNegativeMarking ? 0.5 : 0;
+        formattedAnswers.push(
+            ...payload.answers.map((answer) => {
+                const question = questionMap.get(answer.question_id);
+                // Skip answer
+                if (answer.selectedOption === 'null') {
+                    return {
+                        question_id: new mongoose.Types.ObjectId(
+                            answer.question_id,
+                        ),
+                        selectedOption: answer.selectedOption,
+                        mark: 0, // Default mark for null answers
+                    };
+                }
+                const isCorrect =
+                    question?.correctOption === answer.selectedOption;
+                if (isCorrect) {
+                    rightScore++;
+                } else {
+                    wrongScore++;
+                }
+                return {
+                    question_id: new mongoose.Types.ObjectId(
+                        answer.question_id,
+                    ),
+                    selectedOption: answer.selectedOption,
+                    mark: isCorrect ? 1 : 0,
+                };
+            }),
+        );
+
+        // Calculate final score
+        score = rightScore - wrongScore * negativeMarkingValue;
+    } else if (checkQuiz.questionType === 'Written') {
+        // No scoring for written quizzes
+        score = 0;
+        rightScore = 0;
+        wrongScore = 0;
+
+        formattedAnswers.push(
+            ...payload.answers.map((answer) => ({
+                question_id: new mongoose.Types.ObjectId(answer.question_id),
+                selectedOption: answer.selectedOption, // No mark for written
+            })),
+        );
+    } else {
+        throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            `Unsupported question type: ${checkQuiz.questionType}`,
+        );
+    }
+
+    // Update quiz
+    checkQuiz.answers = formattedAnswers;
+    checkQuiz.score = score < 0 ? 0 : score;
+    checkQuiz.rightScore = rightScore;
+    checkQuiz.wrongScore = wrongScore;
+
+    checkQuiz.completedAt = new Date();
+
+    await checkQuiz.save();
+
+    // Return result with populated data
+    const result = await Quiz.findById(checkQuiz._id)
+        .populate('category_id')
+        .populate('student_id')
+        .lean();
+
+    return result;
+};
 const getAllQuizzes = async (
     filters: IQuizFilters,
     paginationOptions: IPaginationOptions,
@@ -764,7 +1087,8 @@ export const QuizService = {
     submitMockQuiz,
     createQuizzerQuiz,
     submitQuizzerQuiz,
-
+    createSegmentQuiz,
+    submitSegmentQuiz,
     getAllQuizzes,
     getSingleQuiz,
 };
