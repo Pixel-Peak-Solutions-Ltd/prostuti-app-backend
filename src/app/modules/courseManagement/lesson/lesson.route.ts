@@ -14,10 +14,17 @@ router
         validateRequest(lessonValidator.createLessonValidationSchema),
         lessonController.createLesson,
     )
-    .get('/', lessonController.getAllLessons)
-    .get('/course/:courseId', lessonController.getAllLessonsByCourseId)
-    .get('/:lessonId', lessonController.getLessonByID)
-    .delete('/:lessonId', lessonController.deleteLessonByID)
-    .patch('/:lessonId', lessonController.updateLesson);
+    .get('/course/:courseId', auth(), lessonController.getAllLessonsByCourseId)
+    .patch(
+        '/:lessonId',
+        auth(USER_ROLE.teacher),
+        validateRequest(lessonValidator.updateLessonValidationSchema),
+        lessonController.updateLesson,
+    )
+    .delete(
+        '/:lessonId',
+        auth(USER_ROLE.teacher),
+        lessonController.deleteLessonByID,
+    );
 
 export const lessonRoute = router;

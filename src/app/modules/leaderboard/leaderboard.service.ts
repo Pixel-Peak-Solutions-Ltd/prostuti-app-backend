@@ -48,6 +48,7 @@ const getGlobalLeaderBoard = async (
         course_id: null,
         ...whereConditions,
     })
+        .populate('student_id')
         .sort(sortConditions)
         .skip(skip)
         .limit(limit);
@@ -62,7 +63,7 @@ const getGlobalLeaderBoard = async (
     };
 };
 const getCourseLeaderBoard = async (
-  courseId:string,
+    courseId: string,
     filters: ILeaderBoardFilters,
     paginationOptions: IPaginationOptions,
 ) => {
@@ -105,6 +106,7 @@ const getCourseLeaderBoard = async (
         course_id: courseId,
         ...whereConditions,
     })
+        .populate('student_id')
         .sort(sortConditions)
         .skip(skip)
         .limit(limit);
@@ -121,5 +123,5 @@ const getCourseLeaderBoard = async (
 
 export const LeaderBoardService = {
     getGlobalLeaderBoard,
-    getCourseLeaderBoard
+    getCourseLeaderBoard,
 };

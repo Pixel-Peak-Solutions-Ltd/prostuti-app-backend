@@ -11,6 +11,7 @@ import AppError from '../../classes/errorClasses/AppError';
 import { Student } from './student.model';
 import { deleteFromB2, uploadToB2 } from '../../utils/backBlaze';
 import config from '../../config';
+import { getValidSubCategories, MainCategory } from '../auth/category/category.constant';
 
 const createStudent = async () => {
     return 'createStudent service';
@@ -136,10 +137,62 @@ const deleteUserByID = async () => {
     return 'deleteUserByID service';
 };
 
+
+
+const updateStudentCategory = async (userId: string, payload: { mainCategory: string; subCategory?: string }) => {
+    // Validate that this is a valid category combination
+    if (payload.mainCategory !== MainCategory.JOB && !payload.subCategory) {
+        throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            `Subcategory is required for ${payload.mainCategory}`
+        );
+    }
+
+    // If there's a subcategory, validate it
+    if (payload.subCategory) {
+        const validSubcategories = getValidSubCategories(payload.mainCategory);
+        if (!validSubcategories.includes(payload.subCategory)) {
+            throw new AppError(
+                StatusCodes.BAD_REQUEST,
+                `Invalid subcategory. Valid subcategories for ${payload.mainCategory} are: ${validSubcategories.join(', ')}`
+            );
+        }
+    }
+
+    // For Job category, remove any subcategory
+    if (payload.mainCategory === MainCategory.JOB) {
+        delete payload.subCategory;
+    }
+
+    // Create the category object
+    const categoryObj = {
+        mainCategory: payload.mainCategory,
+        ...(payload.subCategory && { subCategory: payload.subCategory }),
+    };
+
+    // Find the student by the user_id and update their category
+    const updatedStudent = await Student.findOneAndUpdate(
+        { user_id: userId }, // Find by user_id from JWT token
+        {
+            categoryType: payload.mainCategory,
+            category: categoryObj
+        },
+        { new: true }
+    );
+
+    if (!updatedStudent) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Student not found');
+    }
+
+    return updatedStudent;
+};
+
+// Add to exports
 export const studentService = {
     createStudent,
     getAllStudents,
     getStudentByID,
     updateStudent,
+    updateStudentCategory, // New method
     deleteUserByID,
 };

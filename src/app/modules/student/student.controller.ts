@@ -61,10 +61,28 @@ const deleteUserByID = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+
+
+const updateStudentCategory = catchAsync(async (req: Request, res: Response) => {
+    // Get the userId from the authenticated user (from JWT)
+    const { userId } = req.user;
+
+    // Call the service to update the student's own category
+    const result = await studentService.updateStudentCategory(userId, req.body);
+
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'Your category updated successfully',
+        data: result,
+    });
+});
+
+// Add to exports
 export const studentController = {
     createStudents,
     getAllStudents,
     getStudentByID,
     updateStudent,
+    updateStudentCategory, // New method
     deleteUserByID,
 };

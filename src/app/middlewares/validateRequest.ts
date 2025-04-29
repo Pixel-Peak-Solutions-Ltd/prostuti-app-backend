@@ -1,19 +1,34 @@
-import { ZodSchema } from 'zod';
+import { ZodType, ZodObject, AnyZodObject } from 'zod';
 import { NextFunction, Request, Response } from 'express';
 import catchAsync from '../utils/catchAsync';
 
-const validateRequest = (schema: ZodSchema) => {
+const validateRequest = (schema: ZodObject<any>) => {
     return catchAsync(
         async (req: Request, res: Response, next: NextFunction) => {
-            const { body, cookies } = await schema.parseAsync({
+            // Attempt to validate the entire schema
+            const result = await schema.safeParseAsync({
                 body: req.body,
-                cookies: req.cookies,
+                params: req.params,
+                query: req.query,
+                cookies: req.cookies
             });
-            if (body) {
-                req.body = body;
+
+            if (!result.success) {
+                throw result.error;
             }
-            if (cookies) {
-                req.cookies = cookies;
+
+            // Update request object with validated data
+            if (result.data.body) {
+                req.body = result.data.body;
+            }
+            if (result.data.params) {
+                req.params = result.data.params;
+            }
+            if (result.data.query) {
+                req.query = result.data.query;
+            }
+            if (result.data.cookies) {
+                req.cookies = result.data.cookies;
             }
 
             next();
