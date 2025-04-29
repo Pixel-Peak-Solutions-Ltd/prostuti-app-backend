@@ -33,6 +33,9 @@ import { notificationRoute } from '../modules/notification/notification.route';
 import { editRequestRoute } from '../modules/editRequest/editRequest.route';
 import { courseReviewRoute } from '../modules/courseReview/courseReview.route';
 import { studentNotificationRoute } from '../modules/studentNotification/studentNotification.route';
+import { quizRoute } from '../modules/quiz/quiz.route';
+import { questionPatternRoute } from '../modules/QuestionPattern/questionPattern.route';
+
 
 const globalRoute = Router();
 
@@ -68,7 +71,10 @@ const routes = [
     { path: '/notifications', route: notificationRoute },
     { path: '/edit-requests', route: editRequestRoute },
     { path: '/course-review', route: courseReviewRoute },
-    { path: '/student-notification', route: studentNotificationRoute },
+    { path: '/student-notification', route: studentNotificationRoute }
+    { path: '/quiz', route: quizRoute},
+    {path:"/question-pattern", route:questionPatternRoute},
+
 ];
 
 routes.forEach((route) => globalRoute.use(route.path, route.route));
