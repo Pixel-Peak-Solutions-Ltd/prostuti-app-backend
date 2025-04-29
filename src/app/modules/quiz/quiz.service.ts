@@ -51,7 +51,7 @@ const createMockQuiz = async (
     // Get random questions from the category
 
     // Create a $facet pipeline dynamically for each category
-    const facets = checkCategory.reduce((acc, category) => {
+    const facets = checkCategory.reduce((acc:any, category:any) => {
         acc[category._id] = [
             {
                 $match: {
@@ -413,7 +413,7 @@ const createQuizzerQuiz = async (
     }
 
     // Aggregate questions
-    const facets = checkCategory.reduce((acc, category) => {
+    const facets = checkCategory.reduce((acc:any, category:any) => {
         acc[category._id] = [
             {
                 $match: {
