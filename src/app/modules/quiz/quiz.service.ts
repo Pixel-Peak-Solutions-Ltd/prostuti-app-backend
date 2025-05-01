@@ -237,10 +237,15 @@ const submitMockQuiz = async (
         // Calculate scores for MCQ
         const negativeMarkingValue = checkQuiz.isNegativeMarking ? 0.5 : 0;
         formattedAnswers.push(
-            ...payload.answers.map((answer) => {
+            ...payload.answers.map(async(answer) => {
                 const question = questionMap.get(answer.question_id);
                 // Skip answer
                 if (answer.selectedOption === 'null') {
+                    await SkippedQuestion.findOneAndUpdate(
+                        { student_id: checkStudent._id },
+                        { $addToSet: { question_id: answer.question_id } },
+                        { upsert: true }
+                    );
                     return {
                         question_id: new mongoose.Types.ObjectId(
                             answer.question_id,
@@ -254,6 +259,11 @@ const submitMockQuiz = async (
                 if (isCorrect) {
                     rightScore++;
                 } else {
+                    await WrongQuestion.findOneAndUpdate(
+                        { student_id: checkStudent._id },
+                        { $addToSet: { question_id: answer.question_id } },
+                        { upsert: true }
+                    );
                     wrongScore++;
                 }
                 return {
@@ -288,7 +298,7 @@ const submitMockQuiz = async (
     }
 
     // Update quiz
-    checkQuiz.answers = formattedAnswers;
+    checkQuiz.answers = await Promise.all(formattedAnswers);
     checkQuiz.score = score < 0 ? 0 : score;
     checkQuiz.rightScore = rightScore;
     checkQuiz.wrongScore = wrongScore;
@@ -610,10 +620,15 @@ const submitQuizzerQuiz = async (
         // Calculate scores for MCQ
         const negativeMarkingValue = checkQuiz.isNegativeMarking ? 0.5 : 0;
         formattedAnswers.push(
-            ...payload.answers.map((answer) => {
+            ...payload.answers.map(async(answer) => {
                 const question = questionMap.get(answer.question_id);
                 // Skip answer
                 if (answer.selectedOption === 'null') {
+                    await SkippedQuestion.findOneAndUpdate(
+                        { student_id: checkStudent._id },
+                        { $addToSet: { question_id: answer.question_id } },
+                        { upsert: true }
+                    );
                     return {
                         question_id: new mongoose.Types.ObjectId(
                             answer.question_id,
@@ -627,6 +642,11 @@ const submitQuizzerQuiz = async (
                 if (isCorrect) {
                     rightScore++;
                 } else {
+                    await WrongQuestion.findOneAndUpdate(
+                        { student_id: checkStudent._id },
+                        { $addToSet: { question_id: answer.question_id } },
+                        { upsert: true }
+                    );
                     wrongScore++;
                 }
                 return {
@@ -661,7 +681,7 @@ const submitQuizzerQuiz = async (
     }
 
     // Update quiz
-    checkQuiz.answers = formattedAnswers;
+    checkQuiz.answers = await Promise.all(formattedAnswers);
     checkQuiz.score = score < 0 ? 0 : score;
     checkQuiz.rightScore = rightScore;
     checkQuiz.wrongScore = wrongScore;
@@ -933,10 +953,15 @@ const submitSegmentQuiz = async (
         // Calculate scores for MCQ
         const negativeMarkingValue = checkQuiz.isNegativeMarking ? 0.5 : 0;
         formattedAnswers.push(
-            ...payload.answers.map((answer) => {
+            ...payload.answers.map(async(answer) => {
                 const question = questionMap.get(answer.question_id);
                 // Skip answer
                 if (answer.selectedOption === 'null') {
+                    await SkippedQuestion.findOneAndUpdate(
+                        { student_id: checkStudent._id },
+                        { $addToSet: { question_id: answer.question_id } },
+                        { upsert: true }
+                    );
                     return {
                         question_id: new mongoose.Types.ObjectId(
                             answer.question_id,
@@ -950,6 +975,11 @@ const submitSegmentQuiz = async (
                 if (isCorrect) {
                     rightScore++;
                 } else {
+                    await WrongQuestion.findOneAndUpdate(
+                        { student_id: checkStudent._id },
+                        { $addToSet: { question_id: answer.question_id } },
+                        { upsert: true }
+                    );
                     wrongScore++;
                 }
                 return {
@@ -984,7 +1014,7 @@ const submitSegmentQuiz = async (
     }
 
     // Update quiz
-    checkQuiz.answers = formattedAnswers;
+    checkQuiz.answers = await Promise.all(formattedAnswers);
     checkQuiz.score = score < 0 ? 0 : score;
     checkQuiz.rightScore = rightScore;
     checkQuiz.wrongScore = wrongScore;
