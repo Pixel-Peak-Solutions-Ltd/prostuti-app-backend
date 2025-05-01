@@ -239,6 +239,7 @@ const updateQuestionPattern = async (
     {
       ...(payload.category_id && { category_id: payload.category_id }),
       ...(payload.time && { time: payload.time }),
+      ...(payload.questionType && { questionType: payload.questionType }),
       ...(payload.mainSubjects && { mainSubjects: payload.mainSubjects }),
       ...(payload.optionalSubjects && { optionalSubjects: payload.optionalSubjects }),
       updatedBy: checkAdmin._id,
