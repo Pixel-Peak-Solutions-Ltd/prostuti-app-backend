@@ -22,25 +22,20 @@ const QuestionPatternSchema = new Schema<
             required: [true, 'Category is required'],
         },
         time: { type: Number, required: true },
+        questionType: {
+            type: String,
+            enum: QuestionTypes,
+            required: [true, 'Question type is required'],
+        },
         mainSubjects: [
             {
                 subject: { type: String, required: true },
-                questionType: {
-                    type: String,
-                    enum: QuestionTypes,
-                    required: true,
-                },
                 questionCount: { type: Number, required: true },
             },
         ],
         optionalSubjects: [
             {
                 subject: { type: String, required: true },
-                questionType: {
-                    type: String,
-                    enum: QuestionTypes,
-                    required: true,
-                },
                 questionCount: { type: Number, required: true },
             },
         ],
@@ -59,9 +54,10 @@ const QuestionPatternSchema = new Schema<
     },
 );
 
-// Add unique index on category_id
+// Add unique compound index for category_id and questionType
+
 QuestionPatternSchema.index(
-    { category_id: 1 },
+    { category_id: 1, questionType: 1 },
     { unique: true }
   );
 

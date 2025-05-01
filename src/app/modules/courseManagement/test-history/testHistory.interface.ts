@@ -15,8 +15,6 @@ export type ITestHistory = {
         selectedOption: string;
         mark?: number;
     }[];
-    skippedQuestions?:Types.ObjectId[]
-    wrongQuestions?:Types.ObjectId[]
     isPassed: boolean;
     isChecked: boolean;
     timeTaken: number;

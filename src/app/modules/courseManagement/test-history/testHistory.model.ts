@@ -66,14 +66,6 @@ const TestHistorySchema = new Schema<ITestHistory, TestHistoryModel>(
                 },
             },
         ],
-        skippedQuestions: {
-            type: [{ type: Schema.Types.ObjectId, ref: 'Question' }],
-            default: [],
-        },
-        wrongQuestions: {
-            type: [{ type: Schema.Types.ObjectId, ref: 'Question' }],
-            default: [],
-        },
         isPassed: {
             type: Boolean,
             required: true,

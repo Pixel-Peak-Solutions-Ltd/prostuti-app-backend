@@ -13,6 +13,8 @@ import { IQuizFilters } from './quiz.interface';
 import { Quiz } from './quiz.model';
 import { FavouriteQuestion } from '../favouriteQuestion/favouriteQuestion.model';
 import { TestHistory } from '../courseManagement/test-history/testHistory.model';
+import { WrongQuestion } from '../wrongQuestion/wrongQuestion.model';
+import { SkippedQuestion } from '../skippedQuestion/skippedQuestion.model';
 
 const createMockQuiz = async (
     userInfo: TJWTDecodedUser,
@@ -235,10 +237,15 @@ const submitMockQuiz = async (
         // Calculate scores for MCQ
         const negativeMarkingValue = checkQuiz.isNegativeMarking ? 0.5 : 0;
         formattedAnswers.push(
-            ...payload.answers.map((answer) => {
+            ...payload.answers.map(async(answer) => {
                 const question = questionMap.get(answer.question_id);
                 // Skip answer
                 if (answer.selectedOption === 'null') {
+                    await SkippedQuestion.findOneAndUpdate(
+                        { student_id: checkStudent._id },
+                        { $addToSet: { question_id: answer.question_id } },
+                        { upsert: true }
+                    );
                     return {
                         question_id: new mongoose.Types.ObjectId(
                             answer.question_id,
@@ -252,6 +259,11 @@ const submitMockQuiz = async (
                 if (isCorrect) {
                     rightScore++;
                 } else {
+                    await WrongQuestion.findOneAndUpdate(
+                        { student_id: checkStudent._id },
+                        { $addToSet: { question_id: answer.question_id } },
+                        { upsert: true }
+                    );
                     wrongScore++;
                 }
                 return {
@@ -286,7 +298,7 @@ const submitMockQuiz = async (
     }
 
     // Update quiz
-    checkQuiz.answers = formattedAnswers;
+    checkQuiz.answers = await Promise.all(formattedAnswers);
     checkQuiz.score = score < 0 ? 0 : score;
     checkQuiz.rightScore = rightScore;
     checkQuiz.wrongScore = wrongScore;
@@ -364,36 +376,42 @@ const createQuizzerQuiz = async (
                 break;
 
             case 'Wrong':
-                const wrongQuestions = await TestHistory.find({
+                const wrong = await WrongQuestion.findOne({
                     student_id: checkStudent._id,
-                    wrongQuestions: { $ne: [] },
-                }).distinct('wrongQuestions');
-                const validWrong = await Question.find({
-                    _id: { $in: wrongQuestions },
-                    category_id: { $in: categoryIds },
-                    type: payload.questionType,
-                }).distinct('_id');
-                questionIds.push(
-                    ...validWrong.map((id) => new mongoose.Types.ObjectId(id)),
-                );
+                }).lean();
+                if (wrong && wrong.question_id.length > 0) {
+                    const validWrongs = await Question.find({
+                        _id: { $in: wrong.question_id },
+                        category_id: { $in: categoryIds },
+                        type: payload.questionType,
+                    }).distinct('_id');
+                    questionIds.push(
+                        ...validWrongs.map(
+                            (id) => new mongoose.Types.ObjectId(id),
+                        ),
+                    );
+                }
                 break;
+                
 
             case 'Skipped':
-                const skippedQuestions = await TestHistory.find({
+                const skipped = await SkippedQuestion.findOne({
                     student_id: checkStudent._id,
-                    skippedQuestions: { $ne: [] },
-                }).distinct('skippedQuestions');
-                const validSkipped = await Question.find({
-                    _id: { $in: skippedQuestions },
-                    category_id: { $in: categoryIds },
-                    type: payload.questionType,
-                }).distinct('_id');
-                questionIds.push(
-                    ...validSkipped.map(
-                        (id) => new mongoose.Types.ObjectId(id),
-                    ),
-                );
+                }).lean();
+                if (skipped && skipped.question_id.length > 0) {
+                    const validSkippeds = await Question.find({
+                        _id: { $in: skipped.question_id },
+                        category_id: { $in: categoryIds },
+                        type: payload.questionType,
+                    }).distinct('_id');
+                    questionIds.push(
+                        ...validSkippeds.map(
+                            (id) => new mongoose.Types.ObjectId(id),
+                        ),
+                    );
+                }
                 break;
+                
         }
     }
 
@@ -602,10 +620,15 @@ const submitQuizzerQuiz = async (
         // Calculate scores for MCQ
         const negativeMarkingValue = checkQuiz.isNegativeMarking ? 0.5 : 0;
         formattedAnswers.push(
-            ...payload.answers.map((answer) => {
+            ...payload.answers.map(async(answer) => {
                 const question = questionMap.get(answer.question_id);
                 // Skip answer
                 if (answer.selectedOption === 'null') {
+                    await SkippedQuestion.findOneAndUpdate(
+                        { student_id: checkStudent._id },
+                        { $addToSet: { question_id: answer.question_id } },
+                        { upsert: true }
+                    );
                     return {
                         question_id: new mongoose.Types.ObjectId(
                             answer.question_id,
@@ -619,6 +642,11 @@ const submitQuizzerQuiz = async (
                 if (isCorrect) {
                     rightScore++;
                 } else {
+                    await WrongQuestion.findOneAndUpdate(
+                        { student_id: checkStudent._id },
+                        { $addToSet: { question_id: answer.question_id } },
+                        { upsert: true }
+                    );
                     wrongScore++;
                 }
                 return {
@@ -653,7 +681,7 @@ const submitQuizzerQuiz = async (
     }
 
     // Update quiz
-    checkQuiz.answers = formattedAnswers;
+    checkQuiz.answers = await Promise.all(formattedAnswers);
     checkQuiz.score = score < 0 ? 0 : score;
     checkQuiz.rightScore = rightScore;
     checkQuiz.wrongScore = wrongScore;
@@ -925,10 +953,15 @@ const submitSegmentQuiz = async (
         // Calculate scores for MCQ
         const negativeMarkingValue = checkQuiz.isNegativeMarking ? 0.5 : 0;
         formattedAnswers.push(
-            ...payload.answers.map((answer) => {
+            ...payload.answers.map(async(answer) => {
                 const question = questionMap.get(answer.question_id);
                 // Skip answer
                 if (answer.selectedOption === 'null') {
+                    await SkippedQuestion.findOneAndUpdate(
+                        { student_id: checkStudent._id },
+                        { $addToSet: { question_id: answer.question_id } },
+                        { upsert: true }
+                    );
                     return {
                         question_id: new mongoose.Types.ObjectId(
                             answer.question_id,
@@ -942,6 +975,11 @@ const submitSegmentQuiz = async (
                 if (isCorrect) {
                     rightScore++;
                 } else {
+                    await WrongQuestion.findOneAndUpdate(
+                        { student_id: checkStudent._id },
+                        { $addToSet: { question_id: answer.question_id } },
+                        { upsert: true }
+                    );
                     wrongScore++;
                 }
                 return {
@@ -976,7 +1014,7 @@ const submitSegmentQuiz = async (
     }
 
     // Update quiz
-    checkQuiz.answers = formattedAnswers;
+    checkQuiz.answers = await Promise.all(formattedAnswers);
     checkQuiz.score = score < 0 ? 0 : score;
     checkQuiz.rightScore = rightScore;
     checkQuiz.wrongScore = wrongScore;

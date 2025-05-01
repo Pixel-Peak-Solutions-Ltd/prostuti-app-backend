@@ -3,6 +3,7 @@
 //filter
 export const questionPatternFilterableFields = [
     'searchTerm',
+    'questionType',
     'categoryType',
     'categoryDivision',
     'categoryUniversityType',

@@ -4,17 +4,16 @@ import { QuestionType } from '../question/question.constant';
 export type IQuestionPattern = {
     category_id: Types.ObjectId[];
     time: number;
+    questionType: QuestionType;   
     mainSubjects: [
         {
             subject: string;
-            questionType: QuestionType;
             questionCount: number;
         },
     ];
     optionalSubjects: [
         {
             subject: string;
-            questionType: QuestionType;
             questionCount: number;
         },
     ];
@@ -30,6 +29,7 @@ export type QuestionPatternModel = Model<
 export type IQuestionPatternFilters = {
     searchTerm?: string;
     createdBy?: string;
+    questionType?: string;
     categoryType?: string;
     categoryDivision?: string;
     categoryUniversityType?: string;
