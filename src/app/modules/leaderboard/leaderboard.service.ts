@@ -4,6 +4,12 @@ import { IPaginationOptions } from '../../interfaces/common';
 import { ILeaderBoardFilters } from './leaderboard.interface';
 import { LeaderBoard } from './leaderboard.model';
 import { leaderBoardSearchableFields } from './leaderboard.constant';
+import { Course } from '../courseManagement/course/course.model';
+import AppError from '../../classes/errorClasses/AppError';
+import { StatusCodes } from 'http-status-codes';
+import { Student } from '../student/student.model';
+import { AssignmentSubmission } from '../assignmentSubmission/assignmentSubmission.model';
+import { TestHistory } from '../courseManagement/test-history/testHistory.model';
 
 const getGlobalLeaderBoard = async (
     filters: ILeaderBoardFilters,
@@ -62,6 +68,7 @@ const getGlobalLeaderBoard = async (
         data: result,
     };
 };
+
 const getCourseLeaderBoard = async (
     courseId: string,
     filters: ILeaderBoardFilters,
@@ -121,7 +128,52 @@ const getCourseLeaderBoard = async (
     };
 };
 
+const getStudentAllAssignmentTestOfACourse = async (
+    courseId: string,
+    studentId: string,
+) => {
+    const course = await Course.findById(courseId);
+
+    if (!course) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Course not found');
+    }
+
+    const student = await Student.findById(studentId);
+    if (!student) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Student not found');
+    }
+
+    const assignments = await AssignmentSubmission.find({
+        course_id: courseId,
+        studentProfile_id: studentId,
+    })
+        .populate({
+            path: 'assignment_id',
+            select: 'assignmentNo',
+        })
+        .populate({
+            path: 'studentProfile_id',
+            select: 'name',
+        });
+
+    const tests = await TestHistory.find({
+        course_id: courseId,
+        student_id: studentId,
+    })
+        .populate({
+            path: 'test_id',
+            select: 'name',
+        })
+        .populate({
+            path: 'student_id',
+            select: 'name',
+        });
+
+    return { assignments, tests };
+};
+
 export const LeaderBoardService = {
     getGlobalLeaderBoard,
     getCourseLeaderBoard,
+    getStudentAllAssignmentTestOfACourse,
 };
