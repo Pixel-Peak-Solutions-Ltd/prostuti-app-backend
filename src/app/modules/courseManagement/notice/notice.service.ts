@@ -1,8 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { StatusCodes } from 'http-status-codes';
 import AppError from '../../../classes/errorClasses/AppError';
 import { Course } from '../course/course.model';
 import { INotice, TCreateNoticePayload } from './notice.interface';
 import { Notice } from './notice.model';
+import { EnrolledCourse } from '../../enrolledCourse/enrolledCourse.model';
+import { StudentNotification } from '../../studentNotification/studentNotification.modal';
 
 // Create Notice
 const createNotice = async (payload: TCreateNoticePayload) => {
@@ -17,31 +20,6 @@ const createNotice = async (payload: TCreateNoticePayload) => {
     if (notices.length === 0) {
         throw new AppError(StatusCodes.BAD_REQUEST, 'Empty notice data');
     }
-    // Check for duplicate lesson numbers within the same course
-    // const noticeIDs = notices.map((l) => l!.noticeId);
-    // const duplicateWithinInput = noticeIDs.some(
-    //     (number, index) => noticeIDs.indexOf(number) !== index,
-    // );
-    // if (duplicateWithinInput) {
-    //     throw new AppError(
-    //         StatusCodes.BAD_REQUEST,
-    //         'Duplicate notice id within the input',
-    //     );
-    // }
-
-    // Check for existing lessons with same number in the course
-    // const existingNotice = await Notice.find({
-    //     course_id,
-    //     noticeId: { $in: noticeIDs },
-    // });
-
-    // if (existingNotice.length > 0) {
-    //     const existingNumbers = existingNotice.map((l) => l.noticeId);
-    //     throw new AppError(
-    //         StatusCodes.BAD_REQUEST,
-    //         `Notice(s) already exist for this course: ${existingNumbers.join(', ')}`,
-    //     );
-    // }
 
     // Create multiple lesson documents in a single operation
     const newNotice = await Notice.insertMany(
@@ -51,6 +29,32 @@ const createNotice = async (payload: TCreateNoticePayload) => {
             // noticeId: l!.noticeId,
         })),
     );
+
+    // Create a Notification
+    const notification = notices
+        .map((n, index) => `${index + 1}. ${n.notice}`)
+        .join(' | ');
+
+    const enrolledStudents = await EnrolledCourse.find(
+        { course_id },
+        { student_id: 1, _id: 0 },
+    );
+
+    // Create notifications in bulk with a single operation
+    const notificationPayloads = enrolledStudents.map((student) => ({
+        student_id: student.student_id,
+        title: `Notice for "${courseExists.name}"`,
+        message: notification,
+    }));
+
+    try {
+        await StudentNotification.insertMany(notificationPayloads);
+    } catch (error) {
+        console.error(
+            'Failed to create student course notice notifications:',
+            error,
+        );
+    }
 
     return newNotice;
 };

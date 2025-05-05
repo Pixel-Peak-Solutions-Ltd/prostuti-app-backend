@@ -14,16 +14,6 @@ const createLesson = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
-const getAllLessons = catchAsync(async (req: Request, res: Response) => {
-    const result = await lessonService.getAllLessons();
-
-    sendSuccessResponse(res, {
-        statusCode: StatusCodes.OK,
-        message: 'Lessons retrieved successfully',
-        data: result,
-    });
-});
-
 const getAllLessonsByCourseId = catchAsync(
     async (req: Request, res: Response) => {
         const { courseId } = req.params;
@@ -38,18 +28,10 @@ const getAllLessonsByCourseId = catchAsync(
     },
 );
 
-const getLessonByID = catchAsync(async (req: Request, res: Response) => {
-    const result = await lessonService.getLessonByID();
-
-    sendSuccessResponse(res, {
-        statusCode: StatusCodes.OK,
-        message: 'Lesson retrieved successfully',
-        data: result,
-    });
-});
-
 const updateLesson = catchAsync(async (req: Request, res: Response) => {
-    const result = await lessonService.updateLesson();
+    const { lessonId } = req.params;
+
+    const result = await lessonService.updateLesson(lessonId, req.body);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
@@ -59,7 +41,8 @@ const updateLesson = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteLessonByID = catchAsync(async (req: Request, res: Response) => {
-    const result = await lessonService.deleteLessonByID();
+    const { lessonId } = req.params;
+    const result = await lessonService.deleteLessonByID(lessonId);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
@@ -70,9 +53,7 @@ const deleteLessonByID = catchAsync(async (req: Request, res: Response) => {
 
 export const lessonController = {
     createLesson,
-    getAllLessons,
     getAllLessonsByCourseId,
-    getLessonByID,
     updateLesson,
     deleteLessonByID,
 };

@@ -17,6 +17,7 @@ import {
 } from './payment.constant';
 import { IPaymentFilters } from './payment.interface';
 import { Payment } from './payment.model';
+import { StudentNotification } from '../studentNotification/studentNotification.modal';
 
 const store_id = 'bakin62b84b547d1c3';
 const store_passwd = 'bakin62b84b547d1c3@ssl';
@@ -150,6 +151,7 @@ const createSubscriptionPaymentSuccess = async (
         {
             subscriptionStartDate: new Date(),
             subscriptionEndDate: paymentDetails.expireDate,
+            isSubscribed: true,
         },
         { new: true },
     );
@@ -157,6 +159,20 @@ const createSubscriptionPaymentSuccess = async (
         throw new AppError(
             StatusCodes.BAD_REQUEST,
             'Failed to update student subscription details.',
+        );
+    }
+
+    // Fire and forget Notification (non-blocking)
+    try {
+        await StudentNotification.create({
+            student_id: paymentDetails.student_id,
+            title: 'Course Subscription',
+            message: `You have successfully subscribed to the ${requestedPlan} plan. Your subscription is valid until ${updateStudentDetails!.subscriptionEndDate!.toLocaleDateString()}.`,
+        });
+    } catch (notificationError) {
+        console.error(
+            'Failed to create student subscription notification:',
+            notificationError,
         );
     }
 };

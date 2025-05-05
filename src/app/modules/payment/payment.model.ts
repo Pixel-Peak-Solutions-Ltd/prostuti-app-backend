@@ -20,6 +20,18 @@ const PaymentSchema = new Schema<IPayment, PaymentModel>(
             required: true,
         },
         amount: { type: Number, required: true },
+        isVoucherAdded: { type: Boolean, default: false },
+        voucher_id: {
+            type: Schema.Types.ObjectId,
+            ref: 'Voucher',
+            required: false,
+            validate: {
+                validator: function (this: IPayment, value: string) {
+                    return this.isVoucherAdded ? !!value : true;
+                },
+                message: 'Voucher id is required',
+            },
+        },
         status: {
             type: String,
             enum: PaymentStatus,

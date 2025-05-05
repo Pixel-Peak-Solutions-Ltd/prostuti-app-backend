@@ -6,15 +6,17 @@ import { Request, Response } from 'express';
 import config from '../../config';
 
 const registerStudent = catchAsync(async (req: Request, res: Response) => {
-    const { otpCode, name, email, categoryType, phone, password } = req.body;
+    const { otpCode, name, email, phone, password, categoryType, subCategory } = req.body;
+    // Add subCategory to destructuring
 
     const result = await authService.registerStudent(
         otpCode,
         name,
         email,
-        categoryType,
         phone,
         password,
+        categoryType,
+        subCategory, // Pass subCategory to service
     );
 
     sendSuccessResponse(res, {

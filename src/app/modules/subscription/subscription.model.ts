@@ -43,6 +43,8 @@ const SubscriptionSchema = new Schema<ISubscription, SubscriptionModel>(
     },
 );
 
+SubscriptionSchema.index({ endDate: 1 });
+
 export const Subscription = model<ISubscription, SubscriptionModel>(
     'Subscription',
     SubscriptionSchema,

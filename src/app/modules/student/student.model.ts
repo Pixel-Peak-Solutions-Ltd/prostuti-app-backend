@@ -1,7 +1,7 @@
 import { Schema, model } from 'mongoose';
-import { IStudent, TImage } from './student.interface';
+import { IStudent, TImage, IStudentCategory } from './student.interface';
 import { formatPhoneNumber } from '../../utils/formatPhoneNumber';
-import { categoryType } from '../category/category.constant';
+import { categoryType, mainCategories, getValidSubCategories, MainCategory } from '../auth/category/category.constant';
 
 const imageSchema = new Schema<TImage>(
     {
@@ -29,6 +29,42 @@ const imageSchema = new Schema<TImage>(
     { _id: false, versionKey: false },
 );
 
+// Category schema
+const categorySchema = new Schema<IStudentCategory>(
+    {
+        mainCategory: {
+            type: String,
+            enum: {
+                values: mainCategories as unknown as string[],
+                message: `{VALUE} is not a valid main category. Allowed values are: ${mainCategories.join(', ')}`,
+            },
+            required: [true, 'Main category is required'],
+        },
+        subCategory: {
+            type: String,
+            validate: {
+                validator: function(this: IStudentCategory, subCat: string) {
+                    if (!subCat) {
+                        return this.mainCategory === MainCategory.JOB; // Only Job can have no subcategory
+                    }
+
+                    const validSubcategories = getValidSubCategories(this.mainCategory);
+                    return validSubcategories.includes(subCat);
+                },
+                message: function(props) {
+                    const mainCat = (props as any).parent.mainCategory as string;
+                    const validSubcategories = getValidSubCategories(mainCat);
+                    if (validSubcategories.length === 0) {
+                        return 'This category should not have a subcategory';
+                    }
+                    return `Invalid subcategory. Valid subcategories for ${mainCat} are: ${validSubcategories.join(', ')}`;
+                }
+            }
+        },
+    },
+    { _id: false, versionKey: false },
+);
+
 // Student Schema
 const studentSchema = new Schema<IStudent>(
     {
@@ -47,13 +83,17 @@ const studentSchema = new Schema<IStudent>(
             trim: true,
             maxlength: [20, 'Student name cannot be more than 20 characters'],
         },
+        // Keeping old categoryType for backward compatibility
         categoryType: {
             type: String,
             enum: {
-                values: categoryType,
-                message: `{VALUE} is not a valid categoryType. Allowed values are: ${Object.values(categoryType).join(', ')}`,
+                values: categoryType as unknown as string[],
+                message: `{VALUE} is not a valid categoryType. Allowed values are: ${categoryType.join(', ')}`,
             },
-            required: [true, 'Category type is required'],
+        },
+        // New category field
+        category: {
+            type: categorySchema,
         },
         phone: {
             type: String,
@@ -88,6 +128,10 @@ const studentSchema = new Schema<IStudent>(
         ],
         subscriptionStartDate: { type: Date },
         subscriptionEndDate: { type: Date },
+        isSubscribed:{
+            type:Boolean,
+            default:false,
+        }
     },
     {
         timestamps: true,
@@ -102,6 +146,8 @@ studentSchema.pre('save', function (next) {
     }
     next();
 });
+
+studentSchema.index({ subscriptionEndDate: 1 });
 
 // Create a Model
 export const Student = model<IStudent>('Student', studentSchema);

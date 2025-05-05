@@ -1,20 +1,22 @@
 import { StatusCodes } from 'http-status-codes';
+import { SortOrder } from 'mongoose';
 import AppError from '../../../classes/errorClasses/AppError';
+import { calculatePagination } from '../../../helpers/pagenationHelper';
+import { IPaginationOptions } from '../../../interfaces/common';
 import { TJWTDecodedUser } from '../../../interfaces/jwt/jwt.type';
 import { EnrolledCourse } from '../../enrolledCourse/enrolledCourse.model';
+import { updateLeaderboard } from '../../leaderboard/leaderboard.utils';
 import { Question } from '../../question/question.model';
+import { SkippedQuestion } from '../../skippedQuestion/skippedQuestion.model';
 import { Student } from '../../student/student.model';
 import { Teacher } from '../../teacher/teacher.model';
+import { WrongQuestion } from '../../wrongQuestion/wrongQuestion.model';
 import { Course } from '../course/course.model';
 import { Lesson } from '../lesson/lesson.model';
 import { Test } from '../test/test.model';
-import { TestHistory } from './testHistory.model';
-import { ITestHistoryFilters } from './testHistory.interface';
-import { IPaginationOptions } from '../../../interfaces/common';
-import { calculatePagination } from '../../../helpers/pagenationHelper';
 import { TestHistorySearchableFields } from './testHistory.constant';
-import { SortOrder } from 'mongoose';
-import { updateLeaderboard } from '../../leaderboard/leaderboard.utils';
+import { ITestHistoryFilters } from './testHistory.interface';
+import { TestHistory } from './testHistory.model';
 
 const createTestHistory = async (
     userInfo: TJWTDecodedUser,
@@ -88,22 +90,37 @@ const createTestHistory = async (
     let score: number = 0.0;
     let wrongScore = 0;
     let rightScore = 0;
+    
 
     for (const answer of answers) {
-        if (answer.selectedOption === 'null') {
-            continue;
-        }
-
         const question = questions.find(
             (q) => q._id.toString() === answer.question_id.toString(),
         );
+
         if (!question) {
             throw new AppError(StatusCodes.NOT_FOUND, 'Question not found.');
         }
+
+        if (answer.selectedOption === 'null') {
+            await SkippedQuestion.findOneAndUpdate(
+                { student_id: studentDetails._id },
+                { $addToSet: { question_id: answer.question_id } },
+                { upsert: true }
+            );
+            continue;
+        }
+
+        
+        
         if (question.correctOption === answer.selectedOption) {
             score += 1.0;
             rightScore += 1;
         } else {
+            await WrongQuestion.findOneAndUpdate(
+                { student_id: studentDetails._id },
+                { $addToSet: { question_id: answer.question_id } },
+                { upsert: true }
+            );
             score -= 0.5;
             wrongScore += 1;
         }
@@ -312,9 +329,15 @@ const previewWrittenTestHistory = async (
     let score: number = 0.0;
     let wrongScore = 0;
     let rightScore = 0;
+    
 
     for (const answer of answers) {
         if (answer.selectedOption === 'null') {
+            await SkippedQuestion.findOneAndUpdate(
+                { student_id: testHistory.student_id },
+                { $addToSet: { question_id: answer.question_id } },
+                { upsert: true }
+            );
             continue;
         }
 
@@ -325,7 +348,12 @@ const previewWrittenTestHistory = async (
             throw new AppError(StatusCodes.NOT_FOUND, 'Question not found.');
         }
         if (answer.mark === 0) {
-            wrongScore += 1;
+            await WrongQuestion.findOneAndUpdate(
+                { student_id: testHistory.student_id },
+                { $addToSet: { question_id: answer.question_id } },
+                { upsert: true }
+            );
+            
         } else {
             score += answer.mark;
             rightScore += 1;

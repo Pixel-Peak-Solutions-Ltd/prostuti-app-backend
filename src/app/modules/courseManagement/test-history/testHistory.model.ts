@@ -36,7 +36,7 @@ const TestHistorySchema = new Schema<ITestHistory, TestHistoryModel>(
         totalScore: {
             type: Number,
             required: true,
-            min: 1,
+            min: 0,
         },
 
         wrongScore: {

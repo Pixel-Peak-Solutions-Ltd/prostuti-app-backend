@@ -16,6 +16,9 @@ import { USER_ROLE } from '../../user/user.constant';
 import { Student } from '../../student/student.model';
 import { Teacher } from '../../teacher/teacher.model';
 import { User } from '../../user/user.model';
+import { notificationService } from '../../notification/notification.service';
+import { Voucher } from '../../voucher/voucher.model';
+import QueryBuilder from './courseQueryBuilder';
 
 // Create Course
 const createCourse = async (
@@ -38,10 +41,19 @@ const createCourse = async (
         config.backblaze_all_users_bucket_id,
         'courseCoverImage',
     );
+    const checkTeacher = await Teacher.findOne({
+        user_id: user.userId,
+    });
+    if (!checkTeacher) {
+        // Delete local file after upload
+        fs.unlinkSync(file.path);
+        // Throw Error
+        throw new AppError(StatusCodes.BAD_REQUEST, 'Teacher not found');
+    }
 
     // Create course object with uploaded image
     const courseData: Partial<ICourse> = {
-        teacher_id: new Types.ObjectId(user.userId),
+        teacher_id: checkTeacher._id,
         name: payload.name,
         category_id: payload.category_id,
         details: payload.details,
@@ -72,7 +84,24 @@ const getCoursePreview = async (courseId: string) => {
                 foreignField: 'course_id',
                 as: 'lessons',
                 pipeline: [
-                    { $sort: { number: 1 } },
+                    {
+                        $addFields: {
+                            numericNumber: {
+                                $toInt: {
+                                    $getField: {
+                                        input: {
+                                            $regexFind: {
+                                                input: '$number',
+                                                regex: '\\d+',
+                                            },
+                                        },
+                                        field: 'match',
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    { $sort: { numericNumber: 1 } },
                     {
                         $lookup: {
                             from: 'recodedclasses',
@@ -227,10 +256,27 @@ const getCourseByID = async (courseId: string) => {
     return courses;
 };
 
-const getCourseByTeacherID = async (user_id: string) => {
-    const teacherId = await User.findById({ _id: user_id }).select('teacherId');
+const getCourseByTeacherID = async (
+    user_id: string,
+    query: Record<string, unknown>,
+) => {
+    const checkTeacher = await Teacher.findOne({
+        user_id: user_id,
+    });
+    if (!checkTeacher) {
+        // Throw Error
+        throw new AppError(StatusCodes.BAD_REQUEST, 'Teacher not found');
+    }
 
-    const courses = await Course.find({ teacher_id: teacherId });
+    const coursesQuery = new QueryBuilder(
+        Course.find({ teacher_id: checkTeacher._id }),
+        query,
+    )
+        .filter()
+        .sort()
+        .paginate();
+
+    const courses = await coursesQuery.modelQuery;
 
     return courses;
 };
@@ -363,8 +409,19 @@ const deleteCourseByID = async (courseId: string) => {
 const approvedCourse = async (
     courseId: string,
     user: TJWTDecodedUser,
-    payload: { priceType: TPriceType; price: number },
+    payload: {
+        priceType: TPriceType;
+        price: number;
+        voucher?: {
+            title: string;
+            discountType: string;
+            discountValue: number;
+            startDate: string;
+            endDate: string;
+        };
+    },
 ) => {
+    // Update the course
     const updatedCourse = await Course.findByIdAndUpdate(
         courseId,
         {
@@ -376,6 +433,54 @@ const approvedCourse = async (
         },
         { new: true, runValidators: true },
     );
+
+    if (!updatedCourse) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Course not found');
+    }
+
+    // Get the teacher ID for notification purpose
+    const teacher = await Teacher.findOne({
+        user_id: updatedCourse.teacher_id,
+    });
+    if (!teacher) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Teacher not found');
+    }
+
+    // Create voucher if provided
+    if (payload.voucher) {
+        // Create voucher with course_id
+        await Voucher.create({
+            title: payload.voucher.title,
+            voucherType: 'Specific_Course',
+            discountType: payload.voucher.discountType,
+            discountValue: payload.voucher.discountValue,
+            startDate: new Date(payload.voucher.startDate),
+            endDate: new Date(payload.voucher.endDate),
+            course_id: courseId,
+            isActive: true,
+            isExpired: false,
+            createdBy: user.userId,
+            updatedBy: user.userId,
+        });
+    }
+
+    // Send notification to the teacher about course approval
+
+    await notificationService.createNotification(user, {
+        recipientId: teacher.user_id.toString(),
+        type: 'CourseApproved',
+        title: 'Course Approved',
+        message: `Your course "${updatedCourse.name}" has been approved by an admin.`,
+        resourceType: 'Course',
+        resourceId: courseId,
+        metaData: {
+            approvedBy: user.userId,
+            approvedAt: new Date().toISOString(),
+            priceType: payload.priceType,
+            price: payload.price,
+            hasVoucher: !!payload.voucher,
+        },
+    });
 
     return updatedCourse;
 };
