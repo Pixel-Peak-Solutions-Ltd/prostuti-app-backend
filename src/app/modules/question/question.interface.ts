@@ -2,6 +2,7 @@ import { Model, Types } from "mongoose";
 import { QuestionType } from "./question.constant";
 import { TImage } from "../../interfaces/common";
 
+export type ApprovalStatus = 'pending' | 'approved' | 'rejected';
 
 export type IQuestion={
     type: QuestionType
@@ -13,7 +14,11 @@ export type IQuestion={
     options?:string[],
     correctOption?:string,
     createdBy:Types.ObjectId,
-    updatedBy:Types.ObjectId
+    updatedBy:Types.ObjectId,
+    approvalStatus: ApprovalStatus;
+    approvedBy?: Types.ObjectId;
+    approvedAt?: Date;
+    rejectionReason?: string;
   }
 
 

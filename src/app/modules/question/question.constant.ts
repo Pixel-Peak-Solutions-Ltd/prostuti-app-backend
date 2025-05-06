@@ -16,7 +16,8 @@ export const QuestionFilterableFields = [
     'unit',
     'type',
     "ownQuestion",
-    "hasImage"
+    "hasImage",
+    'approvalStatus',
 ];
 
 //searchTerm

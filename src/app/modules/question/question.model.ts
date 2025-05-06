@@ -10,6 +10,7 @@ const QuestionSchema = new Schema<IQuestion, QuestionModel>(
             enum: QuestionTypes,
             required: [true, 'Type is required.'],
         },
+
         category_id: {
             type: Schema.Types.ObjectId,
             ref: 'Category',
@@ -76,7 +77,25 @@ const QuestionSchema = new Schema<IQuestion, QuestionModel>(
                 return this.createdBy;
             },
         },
+        approvalStatus: {
+            type: String,
+            enum: ['pending', 'approved', 'rejected'],
+            default: 'pending',
+            required: true,
+        },
+        approvedBy: {
+            type: Schema.Types.ObjectId,
+            ref: 'User',
+        },
+        approvedAt: {
+            type: Date,
+        },
+        rejectionReason: {
+            type: String,
+        },
     },
+
+
     {
         timestamps: true,
     },

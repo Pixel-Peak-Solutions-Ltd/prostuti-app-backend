@@ -77,4 +77,17 @@ const updateQuestion = z.object({
     ),
 });
 
-export const QuestionValidation = { createQuestion,updateQuestion };
+const approveQuestionSchema = z.object({
+    body: z.object({
+        // Empty object as we don't need additional data for approval
+    }).strict(),
+});
+
+const rejectQuestionSchema = z.object({
+    body: z.object({
+        rejectionReason: z.string().min(1, 'Rejection reason is required'),
+    }).strict(),
+});
+
+export const QuestionValidation = { createQuestion,updateQuestion, approveQuestionSchema,
+    rejectQuestionSchema, };

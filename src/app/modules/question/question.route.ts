@@ -4,6 +4,7 @@ import auth from '../../middlewares/auth';
 import { QuestionValidation } from './question.validation';
 import validateRequest from '../../middlewares/validateRequest';
 import { upload } from '../../middlewares/multerConfig';
+import checkAssignedWork from '../../middlewares/checkAssignedWork ';
 
 const router = express.Router();
 
@@ -32,6 +33,27 @@ router
         },
         validateRequest(QuestionValidation.updateQuestion),
         QuestionController.updateQuestion,
+    );
+router
+    .get(
+        '/pending-approval',
+        auth('teacher'),
+        checkAssignedWork('ProofChecker'),
+        QuestionController.getPendingQuestions
+    )
+    .patch(
+        '/approve/:id',
+        auth('teacher'),
+        checkAssignedWork('ProofChecker'),
+        validateRequest(QuestionValidation.approveQuestionSchema),
+        QuestionController.approveQuestion
+    )
+    .patch(
+        '/reject/:id',
+        auth('teacher'),
+        checkAssignedWork('ProofChecker'),
+        validateRequest(QuestionValidation.rejectQuestionSchema),
+        QuestionController.rejectQuestion
     );
 
 export const QuestionRoute = router;

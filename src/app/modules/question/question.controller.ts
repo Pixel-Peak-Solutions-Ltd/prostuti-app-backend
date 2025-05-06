@@ -64,10 +64,52 @@ const deleteQuestionByID = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const getPendingQuestions = catchAsync(async (req: Request, res: Response) => {
+    const filters = pick(req.query, QuestionFilterableFields);
+    const paginationOptions = pick(req.query, paginationFields);
+    const result = await QuestionService.getPendingQuestions(
+        filters,
+        paginationOptions,
+    );
+
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'Pending questions retrieved successfully',
+        data: result,
+    });
+});
+
+const approveQuestion = catchAsync(async (req: Request, res: Response) => {
+    const result = await QuestionService.approveQuestion(req.user, req.params.id);
+
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'Question approved successfully',
+        data: result,
+    });
+});
+
+const rejectQuestion = catchAsync(async (req: Request, res: Response) => {
+    const result = await QuestionService.rejectQuestion(
+        req.user,
+        req.params.id,
+        req.body.rejectionReason,
+    );
+
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'Question rejected successfully',
+        data: result,
+    });
+});
+
 export const QuestionController = {
     createQuestion,
     getAllQuestions,
     getQuestionByID,
     updateQuestion,
     deleteQuestionByID,
+    getPendingQuestions,
+    approveQuestion,
+    rejectQuestion,
 };
