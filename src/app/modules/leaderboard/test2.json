@@ -1,0 +1,20 @@
+{
+    "success": true,
+    "message": "Student all assignment test of a course",
+    "data": {
+        "statistics": [
+            {
+                "_id": "${assignments._id}",
+                "studentName": "${assignments.studentProfile_id.name }",
+                "name": "${assignment_id.assignmentNo}",
+                "marks": "${assignments.givenMark}"
+            },
+            {
+                "_id": "${tests._id}",
+                "studentName": "${assignments.student_id.name }",
+                "name": "${test_id.name}",
+                "marks": "${tests.totalScore}"
+            }
+        ]
+    }
+}

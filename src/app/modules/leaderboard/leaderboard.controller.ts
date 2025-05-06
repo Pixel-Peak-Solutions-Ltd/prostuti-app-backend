@@ -51,7 +51,8 @@ const getStudentAllAssignmentTestOfACourse = catchAsync(
 
         sendSuccessResponse(res, {
             statusCode: StatusCodes.OK,
-            message: 'Student all assignment test of a course',
+            message:
+                'Student’s assignment submissions and test results retrieved successfully',
             data: result,
         });
     },
