@@ -31,8 +31,12 @@ export type IQuestionFilters = {
   universityType?: string;
   universityName?: string;
   unit?: string;
+  jobType?: string;
+  jobName?: string;
+  lesson?: string;
   type?:string,
   ownQuestion?: string;
   hasImage?:string
+
 
 };
