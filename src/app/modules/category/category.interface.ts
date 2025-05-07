@@ -27,5 +27,8 @@ export type ICategoryFilters = {
     chapter?: string;
     universityType?: string;
     universityName?: string;
+    unit?: string;
+    jobType?: string;
+    jobName?: string;
     // unit?: string;
 };

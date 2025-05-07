@@ -9,6 +9,9 @@ import {
     categoryChapterFilterableFields,
     categoryDivisionFilterableFields,
     categoryFilterableFields,
+    categoryJobNameFilterableFields,
+    categoryJobTypeFilterableFields,
+    categoryLessonFilterableFields,
     categorySubjectFilterableFields,
     categoryTypeFilterableFields,
     categoryUnitFilterableFields,
@@ -16,6 +19,7 @@ import {
     categoryUniversityTypeFilterableFields,
 } from './category.constant';
 import { TJWTDecodedUser } from '../../interfaces/jwt/jwt.type';
+import { get } from 'http';
 
 const createCategory = catchAsync(async (req: Request, res: Response) => {
     const result = await CategoryService.createCategory(
@@ -133,6 +137,38 @@ const getAllCategoriesUnit = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const getAllCategoriesJobType = catchAsync(async (req: Request, res: Response) => {
+    const filters = pick(req.query, categoryJobTypeFilterableFields);
+    const paginationOptions = pick(req.query, paginationFields);
+    const result = await CategoryService.getAllCategoriesJobType(
+        filters,
+        paginationOptions,
+        req.user as TJWTDecodedUser,
+    );
+
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'Job types are retrieved successfully',
+        data: result.data,
+        meta: result.meta,
+    });
+});
+const getAllCategoriesJobName = catchAsync(async (req: Request, res: Response) => {
+    const filters = pick(req.query, categoryJobNameFilterableFields);
+    const paginationOptions = pick(req.query, paginationFields);
+    const result = await CategoryService.getAllCategoriesJobName(
+        filters,
+        paginationOptions,
+        req.user as TJWTDecodedUser,
+    );
+
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'Job names are retrieved successfully',
+        data: result.data,
+        meta: result.meta,
+    });
+});
 const getAllCategoriesSubject = catchAsync(
     async (req: Request, res: Response) => {
         const filters = pick(req.query, categorySubjectFilterableFields);
@@ -164,6 +200,24 @@ const getAllCategoriesChapter = catchAsync(
         sendSuccessResponse(res, {
             statusCode: StatusCodes.OK,
             message: 'Categories are retrieved successfully',
+            data: result.data,
+            meta: result.meta,
+        });
+    },
+);
+const getAllCategoriesLesson = catchAsync(
+    async (req: Request, res: Response) => {
+        const filters = pick(req.query, categoryLessonFilterableFields);
+        const paginationOptions = pick(req.query, paginationFields);
+        const result = await CategoryService.getAllCategoriesLesson(
+            filters,
+            paginationOptions,
+            req.user as TJWTDecodedUser,
+        );
+
+        sendSuccessResponse(res, {
+            statusCode: StatusCodes.OK,
+            message: 'Lessons are retrieved successfully',
             data: result.data,
             meta: result.meta,
         });
@@ -218,8 +272,11 @@ export const CategoryController = {
     getAllCategoriesUniversityType,
     getAllCategoriesUniversityName,
     getAllCategoriesUnit,
+    getAllCategoriesJobType,
+    getAllCategoriesJobName,
     getAllCategoriesSubject,
     getAllCategoriesChapter,
+    getAllCategoriesLesson,
     getCategoryByID,
     updateCategory,
     deleteCategoryByID,

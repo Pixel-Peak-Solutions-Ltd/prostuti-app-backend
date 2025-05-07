@@ -29,6 +29,9 @@ export const categoryFilterableFields = [
     'subject',
     'universityType',
     'universityName',
+    "unit",
+    'jobType',
+    'jobName',
     // 'unit',
 ];
 export const categoryTypeFilterableFields = ['searchTerm'];
@@ -45,19 +48,48 @@ export const categoryUnitFilterableFields = [
     'universityType',
     'universityName',
 ];
+export const categoryJobTypeFilterableFields = [
+    'searchTerm',
+    'type',   
+];
+export const categoryJobNameFilterableFields = [
+    'searchTerm',
+    'type',
+    'jobType',
+];
+
 export const categorySubjectFilterableFields = [
     'searchTerm',
     'type',
     'division',
     'universityType',
     'universityName',
+    'jobType',
+    'jobName',
     // 'unit',
 ];
 export const categoryChapterFilterableFields = [
     'searchTerm',
     'type',
     'division',
+    'universityType',
+    'universityName',
+    'jobType',
+    'jobName',
+    'unit',
     'subject',
+];
+export const categoryLessonFilterableFields = [
+    'searchTerm',
+    'type',
+    'division',
+    'universityType',
+    'universityName',
+    'jobType',
+    'jobName',
+    'unit',
+    'subject',
+    'chapter',
 ];
 //searchTerm
 export const categorySearchableFields = [
@@ -67,5 +99,10 @@ export const categorySearchableFields = [
     'subject',
     'universityType',
     'universityName',
-    // 'unit',
+    'unit',
+    'jobType',
+    'jobName',
+    'chapter',
+    'lesson',
+    
 ];
