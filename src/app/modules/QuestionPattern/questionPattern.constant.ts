@@ -10,6 +10,10 @@ export const questionPatternFilterableFields = [
     'categoryUniversityName',
     'categoryChapter',
     'categorySubject',
+    'categoryJobType',
+    'categoryJobName',
+    'categoryUnit',
+    'categoryLesson',
     "createdBy",
 ];
 
