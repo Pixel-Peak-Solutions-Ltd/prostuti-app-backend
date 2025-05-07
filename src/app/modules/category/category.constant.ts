@@ -1,6 +1,9 @@
 export type CategoryType = 'Academic' | 'Admission' | 'Job';
-// export type CategoryClass = '9' | '10' | '11' | '12';
+
+//academic
 export type CategoryDivision = 'Science' | 'Commerce' | 'Arts'| 'Common';
+
+//Admission
 export type CategoryUniversityType = 'Engineering' | 'Medical' |'University';
 
 export const categoryType: CategoryType[] = ['Academic', 'Admission', 'Job'];

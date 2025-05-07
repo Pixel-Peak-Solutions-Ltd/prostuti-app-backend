@@ -42,7 +42,10 @@ const createCategory = async (
             type: payload.type,
             universityType: payload.universityType,
             universityName: payload.universityName,
+            ...(payload.unit && { unit: payload.unit }),
             subject: payload.subject,
+            ...(payload.chapter && { chapter: payload.chapter }),
+            ...(payload.lesson && { lesson: payload.lesson }),
         };
     } else {
         newCategory = {

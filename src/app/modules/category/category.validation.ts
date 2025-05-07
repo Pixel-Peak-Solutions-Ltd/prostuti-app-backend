@@ -33,6 +33,18 @@ const createCategory = z.object({
             universityName: z
                 .string()
                 .min(1, 'University name cannot be an empty string')
+                .optional(),
+            unit: z
+                .string()   
+                .min(1, 'Unit cannot be an empty string')
+                .optional(),
+            jobType: z
+                .string()
+                .min(1, 'Job type cannot be an empty string')
+                .optional(),
+            jobName: z
+                .string()
+                .min(1, 'Job name cannot be an empty string')
                 .optional()
         })
         .strict()
@@ -68,13 +80,17 @@ const createCategory = z.object({
         .refine(
             (data) => {
                 if (data.type === 'Job') {
-                    return data.subject;
+                    return (
+                        data.jobType &&
+                        data.jobName &&
+                        data.subject
+                    )
                 }
                 return true;
             },
             {
-                message: 'Subject is required for Job type.',
-                path: ['subject'],
+                message: 'Job Type, Job Name, and Subject are required for Job type.',
+                path: ['jobType', 'jobName', 'subject'],
             },
         ),
 });

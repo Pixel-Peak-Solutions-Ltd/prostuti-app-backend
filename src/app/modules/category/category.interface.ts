@@ -10,7 +10,10 @@ export type ICategory = {
     lesson?: string;
     universityType?: CategoryUniversityType;
     universityName?: string;
-    // unit?: string;
+    unit?: string;
+    jobType?: string;
+    jobName?: string;
+    
 };
 
 export type CategoryModel = Model<ICategory, Record<string, unknown>>;
