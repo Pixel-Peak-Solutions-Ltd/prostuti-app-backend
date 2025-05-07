@@ -33,7 +33,9 @@ const createCategory = async (
             type: payload.type,
             division: payload.division,
             subject: payload.subject,
-            chapter: payload.chapter ,
+            ...(payload.chapter && { chapter: payload.chapter }),
+            ...(payload.lesson && { lesson: payload.lesson }),
+            
         };
     } else if (payload.type === 'Admission') {
         newCategory = {

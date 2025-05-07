@@ -24,6 +24,11 @@ const CategorySchema = new Schema<ICategory, CategoryModel>(
         },
         chapter: {
             type: String,
+            default: 'All',
+        },
+        lesson: {
+            type: String,
+            default: 'All',
         },
         universityType: {
             type: String,
@@ -40,7 +45,7 @@ const CategorySchema = new Schema<ICategory, CategoryModel>(
 
 // Create unique compound indexes based on the `type`
 CategorySchema.index(
-    { type: 1, division: 1, subject: 1, chapter: 1 },
+    { type: 1, division: 1, subject: 1, chapter: 1, lesson: 1 },
     { unique: true, partialFilterExpression: { type: 'Academic' } },
 );
 CategorySchema.index(

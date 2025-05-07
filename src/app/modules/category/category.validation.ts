@@ -23,6 +23,10 @@ const createCategory = z.object({
                 .string()
                 .min(1, 'Chapter cannot be an empty string')
                 .optional(),
+            lesson: z
+                .string()
+                .min(1, 'Lesson cannot be an empty string')
+                .optional(),
             universityType: z
                 .enum([...categoryUniversityType] as [string, ...string[]])
                 .optional(),
@@ -35,13 +39,13 @@ const createCategory = z.object({
         .refine(
             (data) => {
                 if (data.type === 'Academic') {
-                    return data.division && data.subject && data.chapter
+                    return data.division && data.subject 
                 }
                 return true;
             },
             {
-                message: 'Division , Subject and Chapter are required for Academic type.',
-                path: ['division', 'subject','chapter'],
+                message: 'Division and Subject are required for Academic type.',
+                path: ['division', 'subject'],
             },
         )
         .refine(

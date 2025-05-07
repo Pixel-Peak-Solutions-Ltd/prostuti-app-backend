@@ -7,6 +7,7 @@ export type ICategory = {
     division?: CategoryDivision;
     subject: string;
     chapter?: string;
+    lesson?: string;
     universityType?: CategoryUniversityType;
     universityName?: string;
     // unit?: string;
