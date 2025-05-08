@@ -13,6 +13,8 @@ export const QuestionFilterableFields = [
     'chapter',
     'universityType',
     'universityName',
+    'jobType',
+    'jobName',
     'unit',
     'type',
     "ownQuestion",

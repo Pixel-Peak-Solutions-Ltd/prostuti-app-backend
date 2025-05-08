@@ -36,4 +36,8 @@ export type IQuestionPatternFilters = {
     categoryUniversityName?: string;
     categoryChapter?: string;
     categorySubject?: string;
+    categoryJobType?: string;
+    categoryJobName?: string;
+    categoryUnit?: string;
+    categoryLesson?: string;
 };

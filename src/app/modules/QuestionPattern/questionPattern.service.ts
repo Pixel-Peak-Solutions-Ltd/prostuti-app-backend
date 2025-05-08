@@ -90,6 +90,10 @@ const getAllQuestionPatterns = async (
         categoryUniversityName,
         categoryChapter,
         categorySubject,
+        categoryJobType,
+        categoryJobName,
+        categoryUnit,
+        categoryLesson,
         ...filtersData
     } = filters;
     const { page, limit, skip, sortBy, sortOrder } =
@@ -123,7 +127,12 @@ const getAllQuestionPatterns = async (
         categoryUniversityType ||
         categoryUniversityName ||
         categoryChapter ||
-        categorySubject
+        categorySubject ||
+        categoryJobType ||
+        categoryJobName ||
+        categoryUnit ||
+        categoryLesson
+
     ) {
         const categoryFilter: any = {};
         if (categoryType) categoryFilter.type = categoryType;
@@ -134,6 +143,11 @@ const getAllQuestionPatterns = async (
             categoryFilter.universityName = categoryUniversityName;
         if (categoryChapter) categoryFilter.chapter = categoryChapter;
         if (categorySubject) categoryFilter.subject = categorySubject;
+        if (categoryJobType) categoryFilter.jobType = categoryJobType;
+        if (categoryJobName) categoryFilter.jobName = categoryJobName;
+        if (categoryUnit) categoryFilter.unit = categoryUnit;
+        if (categoryLesson) categoryFilter.lesson = categoryLesson;
+        
 
         const matchingCategories =
             await Category.find(categoryFilter).select('_id');
