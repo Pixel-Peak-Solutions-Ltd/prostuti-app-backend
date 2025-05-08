@@ -9,7 +9,7 @@ import AppError from '../../../classes/errorClasses/AppError';
 import config from '../../../config';
 import { TJWTDecodedUser } from '../../../interfaces/jwt/jwt.type';
 import { deleteFromB2, uploadToB2 } from '../../../utils/backBlaze';
-import { ICourse, TPriceType } from './course.interface';
+import { ICourse, ICourseFilters, TPriceType } from './course.interface';
 import { Course } from './course.model';
 import { Express } from 'express';
 import { USER_ROLE } from '../../user/user.constant';
@@ -19,6 +19,8 @@ import { User } from '../../user/user.model';
 import { notificationService } from '../../notification/notification.service';
 import { Voucher } from '../../voucher/voucher.model';
 import QueryBuilder from './courseQueryBuilder';
+import { IFlashcardFilters } from '../../flashcardManagement/flashcard/flashcard.interface';
+import { http } from 'winston';
 
 // Create Course
 const createCourse = async (
@@ -201,8 +203,38 @@ const getCoursePreview = async (courseId: string) => {
     return coursePreview[0];
 };
 
-const getPublishedCoursesForStudent = async (user: TJWTDecodedUser) => {
+const getPublishedCoursesForStudent = async (user: TJWTDecodedUser,filters:ICourseFilters) => {
+    const {
+        categoryDivision,
+        categoryUniversityType,
+        categoryUniversityName,
+        categoryChapter,
+        categorySubject,
+        categoryJobType,
+        categoryJobName,
+        categoryUnit,
+        categoryLesson        
+    } = filters;
     const studentProfile = await Student.findOne({ user_id: user.userId });
+    if (!studentProfile) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Student not found')
+    }
+
+    // Build filter criteria for categories
+    const categoryFilters: any = {
+        'category.type': studentProfile.categoryType, 
+    };
+
+     // Add optional filters based on what's provided
+     if (categoryDivision) categoryFilters['category.division'] = categoryDivision;
+     if (categoryUniversityType) categoryFilters['category.universityType'] = categoryUniversityType;
+     if (categoryUniversityName) categoryFilters['category.universityName'] = categoryUniversityName;
+     if (categoryChapter) categoryFilters['category.chapter'] = categoryChapter;
+     if (categorySubject) categoryFilters['category.subject'] = categorySubject;
+     if (categoryJobType) categoryFilters['category.jobType'] = categoryJobType;
+     if (categoryJobName) categoryFilters['category.jobName'] = categoryJobName;
+     if (categoryUnit) categoryFilters['category.unit'] = categoryUnit;
+     if (categoryLesson) categoryFilters['category.lesson'] = categoryLesson;
 
     // Get all  courses
     // Use aggregation to efficiently filter courses
@@ -229,9 +261,7 @@ const getPublishedCoursesForStudent = async (user: TJWTDecodedUser) => {
         },
         // Filter courses matching student's categoryType
         {
-            $match: {
-                'category.type': studentProfile!.categoryType,
-            },
+            $match: categoryFilters,
         },
         // Optional: Project only needed fields to reduce payload
         {
