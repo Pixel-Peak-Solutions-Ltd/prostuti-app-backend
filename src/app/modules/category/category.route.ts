@@ -19,8 +19,11 @@ router
     .get('/university-type', CategoryController.getAllCategoriesUniversityType)
     .get('/university-name', CategoryController.getAllCategoriesUniversityName)
     .get('/unit', CategoryController.getAllCategoriesUnit)
+    .get('/job-type', CategoryController.getAllCategoriesJobType)
+    .get('/job-name', CategoryController.getAllCategoriesJobName)
     .get('/subject', CategoryController.getAllCategoriesSubject)
     .get('/chapter', CategoryController.getAllCategoriesChapter)
+    .get("/lesson", CategoryController.getAllCategoriesLesson)
     .get('/:id', CategoryController.getCategoryByID)
     .delete('/:id', auth('admin'), CategoryController.deleteCategoryByID)
     .patch(

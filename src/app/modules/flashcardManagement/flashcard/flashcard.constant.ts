@@ -12,6 +12,10 @@ export const flashcardFilterableFields = [
     'categoryUniversityName',
     'categoryChapter',
     'categorySubject',
+    'categoryJobType',
+    'categoryJobName',
+    'categoryUnit',
+    "categoryLesson",
   ];
 
   export const flashcardSearchableFields = [

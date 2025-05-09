@@ -26,4 +26,8 @@ export type IFlashcardFilters = {
     categoryUniversityName?: string;
     categoryChapter?: string;
     categorySubject?: string;
+    categoryJobType?: string;
+    categoryJobName?: string;
+    categoryUnit?: string;
+    categoryLesson?: string;
   };

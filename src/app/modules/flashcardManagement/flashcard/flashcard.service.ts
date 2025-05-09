@@ -96,6 +96,10 @@ const getAllFlashcards = async (
         categoryUniversityName,
         categoryChapter,
         categorySubject,
+        categoryJobType,
+        categoryJobName,
+        categoryUnit,
+        categoryLesson,
         ...filtersData
     } = filters;
 
@@ -131,7 +135,11 @@ const getAllFlashcards = async (
         categoryUniversityType ||
         categoryUniversityName ||
         categoryChapter ||
-        categorySubject
+        categorySubject||
+        categoryJobType ||
+        categoryJobName ||
+        categoryUnit||
+        categoryLesson
     ) {
         const categoryFilter: any = {};
         if (categoryType) categoryFilter.type = categoryType;
@@ -142,6 +150,10 @@ const getAllFlashcards = async (
             categoryFilter.universityName = categoryUniversityName;
         if (categoryChapter) categoryFilter.chapter = categoryChapter;
         if (categorySubject) categoryFilter.subject = categorySubject;
+        if (categoryJobType) categoryFilter.jobType = categoryJobType;
+        if (categoryJobName) categoryFilter.jobName = categoryJobName;
+        if (categoryUnit) categoryFilter.unit = categoryUnit;
+        if (categoryLesson) categoryFilter.lesson = categoryLesson;
 
         const matchingCategories =
             await Category.find(categoryFilter).select('_id');
