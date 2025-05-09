@@ -33,19 +33,28 @@ const createCategory = async (
             type: payload.type,
             division: payload.division,
             subject: payload.subject,
-            chapter: payload.chapter ,
+            ...(payload.chapter && { chapter: payload.chapter }),
+            ...(payload.lesson && { lesson: payload.lesson }),
+            
         };
     } else if (payload.type === 'Admission') {
         newCategory = {
             type: payload.type,
             universityType: payload.universityType,
             universityName: payload.universityName,
+            ...(payload.unit && { unit: payload.unit }),
             subject: payload.subject,
+            ...(payload.chapter && { chapter: payload.chapter }),
+            ...(payload.lesson && { lesson: payload.lesson }),
         };
     } else {
         newCategory = {
             type: payload.type,
+            jobType: payload.jobType,
+            jobName: payload.jobName,
             subject: payload.subject,
+            ...(payload.chapter && { chapter: payload.chapter }),
+            ...(payload.lesson && { lesson: payload.lesson }),
         };
     }
 
@@ -386,7 +395,110 @@ const getAllCategoriesUnit = async (
         data: result,
     };
 };
+const getAllCategoriesJobType = async (
+    filters: ICategoryFilters,
+    paginationOptions: IPaginationOptions,
+    userInfo: TJWTDecodedUser,
+): Promise<{ meta: any; data: any[] }> => {
+    const { searchTerm, ...filtersData } = filters;
 
+    const { sortBy, sortOrder } = calculatePagination(paginationOptions);
+
+    const andConditions = [];
+
+    // searching data
+    if (searchTerm) {
+        andConditions.push({
+            $or: [
+                {
+                    ['jobType']: {
+                        $regex: searchTerm,
+                        $options: 'i',
+                    },
+                },
+            ],
+        });
+    }
+
+    // filtering data
+    if (Object.keys(filtersData).length) {
+        andConditions.push({
+            $and: Object.entries(filtersData).map(([field, value]) => ({
+                [field]: value,
+            })),
+        });
+    }
+    const sortConditions: { [key: string]: SortOrder } = {};
+
+    if (sortBy && sortOrder) {
+        sortConditions[sortBy] = sortOrder;
+    }
+
+    const whereConditions =
+        andConditions.length > 0 ? { $and: andConditions } : {};
+
+    const result = await Category.distinct('jobType', whereConditions).sort(
+        sortConditions,
+    );
+    return {
+        meta: {
+            count: result.length,
+        },
+        data: result,
+    };
+};
+const getAllCategoriesJobName = async (
+    filters: ICategoryFilters,
+    paginationOptions: IPaginationOptions,
+    userInfo: TJWTDecodedUser,
+): Promise<{ meta: any; data: any[] }> => {
+    const { searchTerm, ...filtersData } = filters;
+
+    const { sortBy, sortOrder } = calculatePagination(paginationOptions);
+
+    const andConditions = [];
+
+    // searching data
+    if (searchTerm) {
+        andConditions.push({
+            $or: [
+                {
+                    ['jobName']: {
+                        $regex: searchTerm,
+                        $options: 'i',
+                    },
+                },
+            ],
+        });
+    }
+
+    // filtering data
+    if (Object.keys(filtersData).length) {
+        andConditions.push({
+            $and: Object.entries(filtersData).map(([field, value]) => ({
+                [field]: value,
+            })),
+        });
+    }
+    const sortConditions: { [key: string]: SortOrder } = {};
+
+    if (sortBy && sortOrder) {
+        sortConditions[sortBy] = sortOrder;
+    }
+
+    const whereConditions =
+        andConditions.length > 0 ? { $and: andConditions } : {};
+
+    const result = await Category.distinct('jobName', whereConditions).sort(
+        sortConditions,
+    );
+    return {
+        meta: {
+            count: result.length,
+        },
+        data: result,
+    };
+};
 const getAllCategoriesSubject = async (
     filters: ICategoryFilters,
     paginationOptions: IPaginationOptions,
@@ -492,6 +604,58 @@ const getAllCategoriesChapter = async (
         data: result,
     };
 };
+const getAllCategoriesLesson = async (
+    filters: ICategoryFilters,
+    paginationOptions: IPaginationOptions,
+    userInfo: TJWTDecodedUser,
+): Promise<{ meta: any; data: any[] }> => {
+    const { searchTerm, ...filtersData } = filters;
+
+    const { sortBy, sortOrder } = calculatePagination(paginationOptions);
+
+    const andConditions = [];
+
+    // searching data
+    if (searchTerm) {
+        andConditions.push({
+            $or: [
+                {
+                    ['lesson']: {
+                        $regex: searchTerm,
+                        $options: 'i',
+                    },
+                },
+            ],
+        });
+    }
+
+    // filtering data
+    if (Object.keys(filtersData).length) {
+        andConditions.push({
+            $and: Object.entries(filtersData).map(([field, value]) => ({
+                [field]: value,
+            })),
+        });
+    }
+    const sortConditions: { [key: string]: SortOrder } = {};
+
+    if (sortBy && sortOrder) {
+        sortConditions[sortBy] = sortOrder;
+    }
+
+    const whereConditions =
+        andConditions.length > 0 ? { $and: andConditions } : {};
+
+    const result = await Category.distinct('lesson', whereConditions).sort(
+        sortConditions,
+    );
+    return {
+        meta: {
+            count: result.length,
+        },
+        data: result,
+    };
+};
 
 const getCategoryByID = async (
     id: string,
@@ -528,8 +692,12 @@ const updateCategory = async (
         division,
         subject,
         chapter,
+        lesson,
         universityType,
         universityName,
+        unit,
+        jobType,
+        jobName
     } = payload;
 
     //check user
@@ -558,8 +726,12 @@ const updateCategory = async (
     if (division) updateData.division = division;
     if (subject) updateData.subject = subject;
     if (chapter) updateData.chapter = chapter;
+    if (lesson) updateData.lesson = lesson;
     if (universityType) updateData.universityType = universityType;
     if (universityName) updateData.universityName = universityName;
+    if (unit) updateData.unit = unit;
+    if (jobType) updateData.jobType = jobType;
+    if (jobName) updateData.jobName = jobName;
 
     const updatedCategory = await Category.findByIdAndUpdate(id, updateData, {
         new: true,
@@ -600,8 +772,11 @@ export const CategoryService = {
     getAllCategoriesUniversityType,
     getAllCategoriesUniversityName,
     getAllCategoriesUnit,
+    getAllCategoriesJobType,
+    getAllCategoriesJobName,
     getAllCategoriesSubject,
     getAllCategoriesChapter,
+    getAllCategoriesLesson,
     getCategoryByID,
     updateCategory,
     deleteCategoryByID,

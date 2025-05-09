@@ -27,3 +27,21 @@ export interface ICourse {
     totalAssignments?: number;
     totalTests?: number;
 }
+
+export type ICourseFilters = {
+    searchTerm?: string;
+    name?: string;
+    teacher_id?: string;
+    isPending?: string;
+    isPublished?: string;
+    categoryType?: string
+    categoryDivision?: string
+    categoryUniversityType?: string;
+    categoryUniversityName?: string;
+    categoryChapter?: string;
+    categorySubject?: string;
+    categoryJobType?: string;
+    categoryJobName?: string;
+    categoryUnit?: string;
+    categoryLesson?: string;
+  };

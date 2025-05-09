@@ -10,8 +10,9 @@ import { Test } from '../courseManagement/test/test.model';
 import { Teacher } from '../teacher/teacher.model';
 import { User } from '../user/user.model';
 import { IPaginationOptions } from '../../interfaces/common';
+import { Flashcard } from '../flashcardManagement/flashcard/flashcard.model';
 
-const validResourceTypes = ['Course', 'Assignment', 'RecodedClass', 'Resource', 'Test'];
+const validResourceTypes = ['Course', 'Assignment', 'RecodedClass', 'Resource', 'Test', 'Flashcard'];
 
 const getModelForResource = (resourceType: string) => {
     switch (resourceType) {
@@ -25,6 +26,8 @@ const getModelForResource = (resourceType: string) => {
             return Resource;
         case 'Test':
             return Test;
+        case 'Flashcard':
+            return Flashcard;
         default:
             throw new Error(`Invalid resource type: ${resourceType}`);
     }

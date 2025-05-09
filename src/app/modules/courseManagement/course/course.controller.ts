@@ -3,6 +3,8 @@ import { StatusCodes } from 'http-status-codes';
 import catchAsync from '../../../utils/catchAsync';
 import sendSuccessResponse from '../../../utils/sendSuccessResponse';
 import { courseService } from './course.service';
+import { courseFilterableFields } from './course.constant';
+import pick from '../../../helpers/pick';
 
 // Create Course
 const createCourse = catchAsync(async (req: Request, res: Response) => {
@@ -35,8 +37,9 @@ const getCoursePreview = catchAsync(async (req: Request, res: Response) => {
 const getPublishedCoursesForStudent = catchAsync(
     async (req: Request, res: Response) => {
         const user = req.user;
+        const filters = pick(req.query, courseFilterableFields);
 
-        const result = await courseService.getPublishedCoursesForStudent(user);
+        const result = await courseService.getPublishedCoursesForStudent(user,filters);
 
         sendSuccessResponse(res, {
             statusCode: StatusCodes.OK,
