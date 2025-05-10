@@ -21,5 +21,8 @@ declare namespace NodeJS {
         BACKBLAZE_KEY_ID: string;
         BACKBLAZE_ALL_USERS_BUCKET_ID: string;
         BACKBLAZE_ALL_USERS_BUCKET_NAME: string;
+        SSLCOMMERZ_STORE_ID: string;
+        SSLCOMMERZ_STORE_PASSWORD: string;
+        SSLCOMMERZ_IS_LIVE: boolean;
     };
 }
