@@ -19,9 +19,10 @@ import { IPaymentFilters } from './payment.interface';
 import { Payment } from './payment.model';
 import { StudentNotification } from '../studentNotification/studentNotification.modal';
 
-const store_id = 'bakin62b84b547d1c3';
-const store_passwd = 'bakin62b84b547d1c3@ssl';
-const is_live = false;
+const store_id = config.sslcommerz_store_id; 
+
+const store_passwd = config.sslcommerz_store_password; 
+const is_live = config.sslcommerz_isLive; 
 
 const createSubscriptionPayment = async (
     userInfo: TJWTDecodedUser,

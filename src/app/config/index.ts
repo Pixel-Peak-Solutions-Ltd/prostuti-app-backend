@@ -7,8 +7,8 @@ export default {
     NODE_ENV: process.env.NODE_ENV,
     port: process.env.PORT,
     database_url: process.env.DATABASE_URL,
-    backend_url:process.env.BACKEND_URL,
-    frontend_url:process.env.FRONTEND_URL,
+    backend_url: process.env.BACKEND_URL,
+    frontend_url: process.env.FRONTEND_URL,
     bcrypt_salt: process.env.BCRYPT_SALT,
     jwt_access_token_secret: process.env.JWT_ACCESS_TOKEN_SECRET,
     jwt_refresh_token_secret: process.env.JWT_REFRESH_TOKEN_SECRET,
@@ -29,4 +29,7 @@ export default {
     backblaze_all_users_bucket_id: process.env.BACKBLAZE_ALL_USERS_BUCKET_ID,
     backblaze_all_users_bucket_name:
         process.env.BACKBLAZE_ALL_USERS_BUCKET_NAME,
+    sslcommerz_store_id: process.env.SSLCOMMERZ_STORE_ID,
+    sslcommerz_store_password: process.env.SSLCOMMERZ_STORE_PASSWORD,
+    sslcommerz_isLive: process.env.SSLCOMMERZ_IS_LIVE,
 };
