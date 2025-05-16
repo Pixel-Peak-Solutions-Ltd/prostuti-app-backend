@@ -35,6 +35,7 @@ import { teacherManagementRoute } from '../modules/teacherManagement/teacherMana
 import { userRoute } from '../modules/user/user.route';
 import { VoucherRoute } from '../modules/voucher/voucher.route';
 import { analyticsRoute } from '../modules/analytics/analytics.route';
+import { TeacherLogRoute } from '../modules/teacherLog/teacherLog.route';
 
 const globalRoute = Router();
 
@@ -74,6 +75,7 @@ const routes = [
     { path: '/quiz', route: quizRoute },
     { path: '/question-pattern', route: questionPatternRoute },
     { path: '/analytics', route: analyticsRoute },
+    { path: '/teacher-log', route: TeacherLogRoute },
 ];
 
 routes.forEach((route) => globalRoute.use(route.path, route.route));

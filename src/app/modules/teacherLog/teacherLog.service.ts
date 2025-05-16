@@ -14,7 +14,7 @@ const getAllTeacherLogs = async (
     paginationOptions: IPaginationOptions,
     userInfo: TJWTDecodedUser,
 ) => {
-    const { searchTerm, ...filtersData } = filters;
+    const { searchTerm,created_at, ...filtersData } = filters;
     const { page, limit, skip, sortBy, sortOrder } =
         calculatePagination(paginationOptions);
 
@@ -49,6 +49,25 @@ const getAllTeacherLogs = async (
         // Teachers can only see their own logs
         andConditions.push({ teacher_id: checkTeacher.id });
     }
+
+    if (created_at) {
+        const checkDate = new Date(created_at);
+        if (isNaN(checkDate.getTime())) {
+          throw new AppError(StatusCodes.NOT_ACCEPTABLE, 'Invalid date format!!!');
+        }
+        checkDate.setHours(0, 0, 0, 0);
+    
+        andConditions.push({
+          createdAt: {
+            $gte: checkDate,
+            $lt: new Date(
+              checkDate.getFullYear(),
+              checkDate.getMonth(),
+              checkDate.getDate() + 1,
+            ),
+          },
+        });
+      }
 
     // filtering data
     if (Object.keys(filtersData).length) {

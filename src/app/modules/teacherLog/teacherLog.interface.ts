@@ -19,5 +19,6 @@ export type ITeacherLog={
 export type ITeacherLogFilters = {
   searchTerm?: string;
   teacher_id?:string
+  created_at?:string
  
 };
