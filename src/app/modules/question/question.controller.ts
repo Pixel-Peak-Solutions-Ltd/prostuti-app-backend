@@ -1,17 +1,27 @@
 import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import catchAsync from '../../utils/catchAsync';
-import sendSuccessResponse from '../../utils/sendSuccessResponse';
-import { QuestionService } from './question.service';
-import { QuestionFilterableFields } from './question.constant';
+import AppError from '../../classes/errorClasses/AppError';
 import { paginationFields } from '../../constant';
 import pick from '../../helpers/pick';
 import { TJWTDecodedUser } from '../../interfaces/jwt/jwt.type';
+import catchAsync from '../../utils/catchAsync';
+import sendSuccessResponse from '../../utils/sendSuccessResponse';
+import { Teacher } from '../teacher/teacher.model';
+import { createTeacherLog } from '../teacherLog/teacherLog.utils';
+import { QuestionFilterableFields } from './question.constant';
+import { QuestionService } from './question.service';
 
 
 
 const createQuestion = catchAsync(async (req: Request, res: Response) => {
     const result = await QuestionService.createQuestion(req.user,req.body,req.files as  Express.Multer.File[]);
+    //check teacher
+    const checkTeacher=await Teacher.findOne({user_id:req.user.userId})
+    if(!checkTeacher){
+        throw new AppError(StatusCodes.NOT_FOUND, 'Teacher is not found');
+    }
+    const questionIds = result.map((q: any) => q._id).join(', ');
+    await createTeacherLog(req,checkTeacher._id.toString(),"Create_Question",`Created a question with IDs ${questionIds}`)
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
@@ -46,6 +56,11 @@ const getQuestionByID = catchAsync(async (req: Request, res: Response) => {
 
 const updateQuestion = catchAsync(async (req: Request, res: Response) => {
     const result = await QuestionService.updateQuestion(req.user,req.params.id,req.body,req.file as  Express.Multer.File);
+    const checkTeacher=await Teacher.findOne({user_id:req.user.userId})
+    if(!checkTeacher){
+        throw new AppError(StatusCodes.NOT_FOUND, 'Teacher is not found');
+    }
+    await createTeacherLog(req,checkTeacher._id.toString(),"Update_Question",`Updated a question with ID ${result._id}`)
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
