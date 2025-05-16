@@ -5,6 +5,7 @@ import sendSuccessResponse from '../../../utils/sendSuccessResponse';
 import { courseService } from './course.service';
 import { courseFilterableFields } from './course.constant';
 import pick from '../../../helpers/pick';
+import { createTeacherLog } from '../../teacherLog/teacherLog.utils';
 
 // Create Course
 const createCourse = catchAsync(async (req: Request, res: Response) => {
@@ -13,6 +14,7 @@ const createCourse = catchAsync(async (req: Request, res: Response) => {
         req.body,
         req.file,
     );
+    await createTeacherLog(req,result.teacher_id.toString(),"Create_Course",`Created a course with ID ${result._id }`)
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
@@ -93,6 +95,11 @@ const updateCourse = catchAsync(async (req: Request, res: Response) => {
         req.user,
         req.file,
     );
+    if(result){
+
+        await createTeacherLog(req,result.teacher_id.toString(),"Update_Course",`Updated a course with ID ${result._id }`)
+    }
+
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
