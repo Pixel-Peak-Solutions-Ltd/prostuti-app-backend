@@ -6,6 +6,7 @@ import { FlashcardService } from './flashcard.service';
 import pick from '../../../helpers/pick';
 import { flashcardFilterableFields } from './flashcard.constant';
 import { paginationFields } from '../../../constant';
+import { createTeacherLog } from '../../teacherLog/teacherLog.utils';
 
 
 
@@ -62,6 +63,7 @@ const deleteFlashcardByID = catchAsync(async (req: Request, res: Response) => {
 });
 const approveFlashcardByID = catchAsync(async (req: Request, res: Response) => {
     const result = await FlashcardService.approveFlashcardByID(req.params.id,req.user);
+    await createTeacherLog(req,result.approvedBy.toString(),`Approve_Flashcard","Approved a flashcard with  ID ${result._id}`)
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
