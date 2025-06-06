@@ -18,7 +18,7 @@ router.patch('/submit-quizzer-quiz/:id',auth("student"),validateRequest(quizVali
 
 //segment quiz
 router.post('/create-segment-quiz',auth("student"),validateRequest(quizValidation.createSegmentQuiz), QuizController.createSegmentQuiz) 
-router.post('/submit-segment-quiz',auth("student"),validateRequest(quizValidation.submitSegmentQuiz), QuizController.submitSegmentQuiz) 
+router.patch('/submit-segment-quiz/:id',auth("student"),validateRequest(quizValidation.submitSegmentQuiz), QuizController.submitSegmentQuiz)
 
 
 router.get('/all-quiz',auth(), QuizController.getAllQuizzes)
