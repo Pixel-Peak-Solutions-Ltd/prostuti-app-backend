@@ -281,7 +281,222 @@ const SalesVsCostStats = async (
 
 
 
+const GrossSubscriptionCourseStats = async ( 
+) => {
+
+   
+    const currentDate = new Date(); 
+
+    // Dynamic date ranges for current and previous month
+    const currentMonthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    const currentMonthEnd = currentDate;
+    const previousMonthStart = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+    const previousMonthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth(), 0, 23, 59, 59, 999);
+
+    // Aggregate for both current and previous months
+    const stats = await Payment.aggregate([
+      {
+        $match: {
+          status: 'Success',
+          createdAt: {
+            $gte: previousMonthStart,
+            $lte: currentMonthEnd,
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: 'enrolledcourses',
+          localField: '_id',
+          foreignField: 'payment_id',
+          as: 'enrolledCourse',
+        },
+      },
+      {
+        $lookup: {
+          from: 'subscriptions',
+          localField: '_id',
+          foreignField: 'payment_id',
+          as: 'subscription',
+        },
+      },
+      {
+        $facet: {
+          currentMonth: [
+            {
+              $match: {
+                createdAt: {
+                  $gte: currentMonthStart,
+                  $lte: currentMonthEnd,
+                },
+              },
+            },
+            {
+              $group: {
+                _id: null,
+                grossRevenue: { $sum: '$amount' },
+                subscriptionPayments: {
+                  $push: {
+                    $cond: [
+                      {
+                        $or: [
+                          { $eq: ['$paymentType', 'Subscription'] },
+                          { $eq: ['$enrolledCourse.enrollmentType', 'Subscription'] },
+                          { $ne: ['$subscription', []] },
+                        ],
+                      },
+                      '$amount',
+                      null,
+                    ],
+                  },
+                },
+                courseSales: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $or: [
+                          { $eq: ['$paymentType', 'Paid'] },
+                          { $eq: ['$enrolledCourse.enrollmentType', 'Paid'] },
+                        ],
+                      },
+                      1,
+                      0,
+                    ],
+                  },
+                },
+              },
+            },
+            {
+              $project: {
+                grossRevenue: 1,
+                averageSubscription: {
+                  $avg: {
+                    $filter: {
+                      input: '$subscriptionPayments',
+                      as: 'amount',
+                      cond: { $ne: ['$$amount', null] },
+                    },
+                  },
+                },
+                courseSales: 1,
+                _id: 0,
+              },
+            },
+          ],
+          previousMonth: [
+            {
+              $match: {
+                createdAt: {
+                  $gte: previousMonthStart,
+                  $lte: previousMonthEnd,
+                },
+              },
+            },
+            {
+              $group: {
+                _id: null,
+                grossRevenue: { $sum: '$amount' },
+                subscriptionPayments: {
+                  $push: {
+                    $cond: [
+                      {
+                        $or: [
+                          { $eq: ['$paymentType', 'Subscription'] },
+                          { $eq: ['$enrolledCourse.enrollmentType', 'Subscription'] },
+                          { $ne: ['$subscription', []] },
+                        ],
+                      },
+                      '$amount',
+                      null,
+                    ],
+                  },
+                },
+                courseSales: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $or: [
+                          { $eq: ['$paymentType', 'Paid'] },
+                          { $eq: ['$enrolledCourse.enrollmentType', 'Paid'] },
+                        ],
+                      },
+                      1,
+                      0,
+                    ],
+                  },
+                },
+              },
+            },
+            {
+              $project: {
+                grossRevenue: 1,
+                averageSubscription: {
+                  $avg: {
+                    $filter: {
+                      input: '$subscriptionPayments',
+                      as: 'amount',
+                      cond: { $ne: ['$$amount', null] },
+                    },
+                  },
+                },
+                courseSales: 1,
+                _id: 0,
+              },
+            },
+          ],
+        },
+      },
+    ]);
+
+    // Extract results
+    const current = stats[0].currentMonth[0] || {
+      grossRevenue: 0,
+      averageSubscription: 0,
+      courseSales: 0,
+    };
+    const previous = stats[0].previousMonth[0] || {
+      grossRevenue: 0,
+      averageSubscription: 0,
+      courseSales: 0,
+    };
+
+    // Handle null averageSubscription
+    current.averageSubscription = current.averageSubscription || 0;
+    previous.averageSubscription = previous.averageSubscription || 0;
+
+    // Calculate percentage changes
+    const grossRevenuePercentChange = previous.grossRevenue === 0
+      ? current.grossRevenue === 0 ? 0 : 100
+      : ((current.grossRevenue - previous.grossRevenue) / previous.grossRevenue) * 100;
+    const averageSubscriptionPercentChange = previous.averageSubscription === 0
+      ? current.averageSubscription === 0 ? 0 : 100
+      : ((current.averageSubscription - previous.averageSubscription) / previous.averageSubscription) * 100;
+    const courseSalesPercentChange = previous.courseSales === 0
+      ? current.courseSales === 0 ? 0 : 100
+      : ((current.courseSales - previous.courseSales) / previous.courseSales) * 100;
+
+    // Format percentage changes with + or - signs
+    const formatPercent = (value:any) => {
+      const rounded = Number(value.toFixed(2));
+      return rounded >= 0 ? `+${rounded}` : `${rounded}`;
+    };
+
+    // Return result
+    return{
+      grossRevenue: current.grossRevenue,
+      averageSubscription: current.averageSubscription,
+      courseSales: current.courseSales,
+      grossRevenuePercentChange: formatPercent(grossRevenuePercentChange),
+      averageSubscriptionPercentChange: formatPercent(averageSubscriptionPercentChange),
+      courseSalesPercentChange: formatPercent(courseSalesPercentChange),
+    }
+
+}
+
+
+
 
 export const RevenueService = {
     SalesVsCostStats,
+    GrossSubscriptionCourseStats,
 }

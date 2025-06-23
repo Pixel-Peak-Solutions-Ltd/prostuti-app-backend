@@ -16,6 +16,18 @@ const SalesVsCostStats = catchAsync(
     },
 );
 
+const GrossSubscriptionCourseStats = catchAsync(
+    async (req: Request, res: Response) => {
+        const result = await RevenueService.GrossSubscriptionCourseStats();
+        sendSuccessResponse(res, {
+            statusCode: StatusCodes.OK,
+            message: 'Gross Subscription Course Statistics',
+            data: result,
+        });
+    },
+);
+
 export const RevenueController = {
     SalesVsCostStats,
+    GrossSubscriptionCourseStats,
 };
