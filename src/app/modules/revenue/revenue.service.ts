@@ -493,10 +493,131 @@ const GrossSubscriptionCourseStats = async (
 
 }
 
+const TransactionStats = async ( 
+) => {
+    const transactions = await Payment.aggregate([
+      {
+        $match: {
+          status: 'Success',
+        },
+      },
+      {
+        $lookup: {
+          from: 'students',
+          localField: 'student_id',
+          foreignField: '_id',
+          as: 'student',
+        },
+      },
+      {
+        $unwind: {
+          path: '$student',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
+          from: 'enrolledcourses',
+          localField: '_id',
+          foreignField: 'payment_id',
+          as: 'enrolledCourse',
+        },
+      },
+      {
+        $unwind: {
+          path: '$enrolledCourse',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
+          from: 'courses',
+          localField: 'enrolledCourse.course_id',
+          foreignField: '_id',
+          as: 'course',
+        },
+      },
+      {
+        $unwind: {
+          path: '$course',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
+          from: 'vouchers',
+          let: { payment_student_id: '$student_id', payment_course_id: '$enrolledCourse.course_id', payment_date: '$createdAt' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$isActive', true] },
+                    { $eq: ['$isExpired', false] },
+                    { $lte: ['$startDate', '$$payment_date'] },
+                    { $gte: ['$endDate', '$$payment_date'] },
+                    {
+                      $or: [
+                        { $eq: ['$voucherType', 'All'] },
+                        { $eq: ['$student_id', '$$payment_student_id'] },
+                        { $eq: ['$course_id', '$$payment_course_id'] },
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+            { $limit: 1 },
+          ],
+          as: 'voucher',
+        },
+      },
+      {
+        $addFields: {
+          discountedAmount: {
+            $cond: [
+              { $gt: [{ $size: '$voucher' }, 0] },
+              {
+                $cond: [
+                  { $eq: [{ $arrayElemAt: ['$voucher.discountType', 0] }, 'Percentage'] },
+                  { $multiply: ['$amount', { $subtract: [1, { $divide: [{ $arrayElemAt: ['$voucher.discountValue', 0] }, 100] }] }] },
+                  { $subtract: ['$amount', { $arrayElemAt: ['$voucher.discountValue', 0] }] },
+                ],
+              },
+              '$amount',
+            ],
+          },
+          voucherName: {
+            $ifNull: [{ $arrayElemAt: ['$voucher.title', 0] }, 'N/A'],
+          },
+        },
+      },
+      {
+        $sort: { createdAt: -1 },
+      },
+      { $limit: 10 },
+      {
+        $project: {
+          id: '$_id',
+          transactionId: '$transactionId',
+          userName: '$student.name',
+          paymentDate: '$createdAt',
+          courseName: { $ifNull: ['$course.name', 'N/A'] },
+          voucherName: { $ifNull: ['$voucherName', 'N/A'] },
+          coursePrice: '$amount',
+          paidAmount: '$discountedAmount',
+          _id: 0,
+        },
+      },
+    ]);
+
+    return transactions;
+}
 
 
 
 export const RevenueService = {
     SalesVsCostStats,
     GrossSubscriptionCourseStats,
+    TransactionStats,
 }

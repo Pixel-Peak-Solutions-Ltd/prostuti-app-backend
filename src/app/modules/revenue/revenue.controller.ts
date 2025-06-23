@@ -27,7 +27,19 @@ const GrossSubscriptionCourseStats = catchAsync(
     },
 );
 
+const TransactionStats = catchAsync(
+    async (req: Request, res: Response) => {
+        const result = await RevenueService.TransactionStats();
+        sendSuccessResponse(res, {
+            statusCode: StatusCodes.OK,
+            message: 'Transaction Statistics',
+            data: result,
+        });
+    },
+);
+
 export const RevenueController = {
     SalesVsCostStats,
     GrossSubscriptionCourseStats,
+    TransactionStats,
 };
