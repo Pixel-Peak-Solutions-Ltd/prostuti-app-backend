@@ -1,4 +1,6 @@
+import { Course } from "../courseManagement/course/course.model";
 import { Payment } from "../payment/payment.model";
+import { Student } from "../student/student.model";
 
 const SalesVsCostStats = async ( 
 ) => {
@@ -614,10 +616,376 @@ const TransactionStats = async (
     return transactions;
 }
 
+const ReportStats = async ( 
+
+) => { 
+   const currentDate = new Date(); // June 23, 2025, 05:28 PM +06:00
+
+    // Date ranges
+    const last12MonthsStart = new Date(currentDate.getFullYear() - 1, currentDate.getMonth() + 1, 1); // July 1, 2024
+    const last10WeeksStart = new Date(currentDate);
+    last10WeeksStart.setDate(currentDate.getDate() - 70); // April 14, 2025
+    const last10DaysStart = new Date(currentDate);
+    last10DaysStart.setDate(currentDate.getDate() - 9); // June 14, 2025
+
+    // Helper to format percentage changes
+    const formatPercent = (current:any, previous:any) => {
+      if (previous === 0) return current === 0 ? '+0.00' : '+100.00';
+      const value = ((current - previous) / previous) * 100;
+      const rounded = Number(value.toFixed(2));
+      return rounded >= 0 ? `+${rounded}` : `${rounded}`;
+    };
+
+    // Aggregate total students
+    const totalStudents = await Student.countDocuments();
+
+    // Aggregate total courses (from Course model)
+    const totalCourses = await Course.countDocuments();
+
+    // Aggregate total revenue with voucher discounts
+    const totalRevenueResult = await Payment.aggregate([
+      {
+        $match: { status: 'Success' },
+      },
+      {
+        $lookup: {
+          from: 'vouchers',
+          let: { payment_student_id: '$student_id', payment_course_id: '$course_id', payment_date: '$createdAt' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$isActive', true] },
+                    { $eq: ['$isExpired', false] },
+                    { $lte: ['$startDate', '$$payment_date'] },
+                    { $gte: ['$endDate', '$$payment_date'] },
+                    {
+                      $or: [
+                        { $eq: ['$voucherType', 'All'] },
+                        { $eq: ['$student_id', '$$payment_student_id'] },
+                        { $eq: ['$course_id', '$$payment_course_id'] },
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+            { $limit: 1 },
+          ],
+          as: 'voucher',
+        },
+      },
+      {
+        $addFields: {
+          discountedAmount: {
+            $cond: [
+              { $ne: ['$voucher', []] },
+              {
+                $cond: [
+                  { $eq: ['$voucher.discountType', 'Percentage'] },
+                  { $multiply: ['$amount', { $subtract: [1, { $divide: ['$voucher.discountValue', 100] }] }] },
+                  { $subtract: ['$amount', '$voucher.discountValue'] },
+                ],
+              },
+              '$amount',
+            ],
+          },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: '$discountedAmount' },
+        },
+      },
+    ]);
+    const totalRevenue = totalRevenueResult[0]?.totalRevenue || 0;
+
+    // Aggregate new students
+    const studentStats = await Student.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: last12MonthsStart, $lte: currentDate },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            daily: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+            weekly: { year: { $year: '$createdAt' }, week: { $isoWeek: '$createdAt' } },
+            monthly: { $dateToString: { format: '%Y-%b', date: '$createdAt' } },
+          },
+          newStudents: { $sum: 1 },
+        },
+      },
+      {
+        $facet: {
+          daily: [
+            { $group: { _id: '$_id.daily', newStudents: { $sum: '$newStudents' } } },
+            { $sort: { _id: -1 } },
+            { $limit: 10 },
+            { $project: { date: '$_id', newStudents: 1, _id: 0 } },
+          ],
+          weekly: [
+            {
+              $group: {
+                _id: { year: '$_id.weekly.year', week: '$_id.weekly.week' },
+                newStudents: { $sum: '$newStudents' },
+              },
+            },
+            {
+              $project: {
+                week: { $concat: [{ $toString: '$_id.year' }, '-W', { $toString: '$_id.week' }] },
+                newStudents: 1,
+                _id: 0,
+              },
+            },
+            { $sort: { '_id.year': -1, '_id.week': -1 } },
+            { $limit: 10 },
+          ],
+          monthly: [
+            { $group: { _id: '$_id.monthly', newStudents: { $sum: '$newStudents' } } },
+            { $sort: { _id: -1 } },
+            { $project: { month: '$_id', newStudents: 1, _id: 0 } },
+          ],
+        },
+      },
+    ]);
+
+    // Aggregate new courses (from Course model)
+    const courseStats = await Course.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: last12MonthsStart, $lte: currentDate },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            daily: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+            weekly: { year: { $year: '$createdAt' }, week: { $isoWeek: '$createdAt' } },
+            monthly: { $dateToString: { format: '%Y-%b', date: '$createdAt' } },
+          },
+          newCourses: { $sum: 1 },
+        },
+      },
+      {
+        $facet: {
+          daily: [
+            { $group: { _id: '$_id.daily', newCourses: { $sum: '$newCourses' } } },
+            { $sort: { _id: -1 } },
+            { $limit: 10 },
+            { $project: { date: '$_id', newCourses: 1, _id: 0 } },
+          ],
+          weekly: [
+            {
+              $group: {
+                _id: { year: '$_id.weekly.year', week: '$_id.weekly.week' },
+                newCourses: { $sum: '$newCourses' },
+              },
+            },
+            {
+              $project: {
+                week: { $concat: [{ $toString: '$_id.year' }, '-W', { $toString: '$_id.week' }] },
+                newCourses: 1,
+                _id: 0,
+              },
+            },
+            { $sort: { '_id.year': -1, '_id.week': -1 } },
+            { $limit: 10 },
+          ],
+          monthly: [
+            { $group: { _id: '$_id.monthly', newCourses: { $sum: '$newCourses' } } },
+            { $sort: { _id: -1 } },
+            { $project: { month: '$_id', newCourses: 1, _id: 0 } },
+          ],
+        },
+      },
+    ]);
+
+    // Aggregate revenue with voucher discounts
+    const revenueStats = await Payment.aggregate([
+      {
+        $match: {
+          status: 'Success',
+          createdAt: { $gte: last12MonthsStart, $lte: currentDate },
+        },
+      },
+      {
+        $lookup: {
+          from: 'vouchers',
+          let: { payment_student_id: '$student_id', payment_course_id: '$course_id', payment_date: '$createdAt' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$isActive', true] },
+                    { $eq: ['$isExpired', false] },
+                    { $lte: ['$startDate', '$$payment_date'] },
+                    { $gte: ['$endDate', '$$payment_date'] },
+                    {
+                      $or: [
+                        { $eq: ['$voucherType', 'All'] },
+                        { $eq: ['$student_id', '$$payment_student_id'] },
+                        { $eq: ['$course_id', '$$payment_course_id'] },
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+            { $limit: 1 },
+          ],
+          as: 'voucher',
+        },
+      },
+      {
+        $addFields: {
+          discountedAmount: {
+            $cond: [
+              { $ne: ['$voucher', []] },
+              {
+                $cond: [
+                  { $eq: ['$voucher.discountType', 'Percentage'] },
+                  { $multiply: ['$amount', { $subtract: [1, { $divide: ['$voucher.discountValue', 100] }] }] },
+                  { $subtract: ['$amount', '$voucher.discountValue'] },
+                ],
+              },
+              '$amount',
+            ],
+          },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            daily: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+            weekly: { year: { $year: '$createdAt' }, week: { $isoWeek: '$createdAt' } },
+            monthly: { $dateToString: { format: '%Y-%b', date: '$createdAt' } },
+          },
+          revenue: { $sum: '$discountedAmount' },
+        },
+      },
+      {
+        $facet: {
+          daily: [
+            { $group: { _id: '$_id.daily', revenue: { $sum: '$revenue' } } },
+            { $sort: { _id: -1 } },
+            { $limit: 10 },
+            { $project: { date: '$_id', revenue: 1, _id: 0 } },
+          ],
+          weekly: [
+            {
+              $group: {
+                _id: { year: '$_id.weekly.year', week: '$_id.weekly.week' },
+                revenue: { $sum: '$revenue' },
+              },
+            },
+            {
+              $project: {
+                week: { $concat: [{ $toString: '$_id.year' }, '-W', { $toString: '$_id.week' }] },
+                revenue: 1,
+                _id: 0,
+              },
+            },
+            { $sort: { '_id.year': -1, '_id.week': -1 } },
+            { $limit: 10 },
+          ],
+          monthly: [
+            { $group: { _id: '$_id.monthly', revenue: { $sum: '$revenue' } } },
+            { $sort: { _id: -1 } },
+            { $project: { month: '$_id', revenue: 1, _id: 0 } },
+          ],
+        },
+      },
+    ]);
+
+    // Pad daily stats
+    const paddedDailyStats = [];
+    for (let i = 0; i < 10; i++) {
+      const date = new Date(currentDate);
+      date.setDate(currentDate.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      const student = studentStats[0].daily.find((s) => s.date === dateStr) || { newStudents: 0 };
+      const course = courseStats[0].daily.find((c) => c.date === dateStr) || { newCourses: 0 };
+      const revenue = revenueStats[0].daily.find((r) => r.date === dateStr) || { revenue: 0 };
+      const prevDate = new Date(date);
+      prevDate.setDate(date.getDate() - 1);
+      const prevDateStr = prevDate.toISOString().split('T')[0];
+      const prevStudent = studentStats[0].daily.find((s) => s.date === prevDateStr) || { newStudents: 0 };
+      const prevCourse = courseStats[0].daily.find((c) => c.date === prevDateStr) || { newCourses: 0 };
+      const prevRevenue = revenueStats[0].daily.find((r) => r.date === prevDateStr) || { revenue: 0 };
+      paddedDailyStats.push({
+        date: dateStr,
+        revenue: revenue.revenue,
+        newStudents: student.newStudents,
+        newCourses: course.newCourses,
+        revenuePercentChange: formatPercent(revenue.revenue, prevRevenue.revenue),
+        newStudentsPercentChange: formatPercent(student.newStudents, prevStudent.newStudents),
+        newCoursesPercentChange: formatPercent(course.newCourses, prevCourse.newCourses),
+      });
+    }
+
+    // Weekly stats
+    const weeklyStats = revenueStats[0].weekly.map((r, i) => {
+      const student = studentStats[0].weekly[i] || { newStudents: 0 };
+      const course = courseStats[0].weekly[i] || { newCourses: 0 };
+      const prevRevenue = revenueStats[0].weekly[i + 1] || { revenue: 0 };
+      const prevStudent = studentStats[0].weekly[i + 1] || { newStudents: 0 };
+      const prevCourse = courseStats[0].weekly[i + 1] || { newCourses: 0 };
+      return {
+        week: r.week,
+        revenue: r.revenue,
+        newStudents: student.newStudents,
+        newCourses: course.newCourses,
+        revenuePercentChange: formatPercent(r.revenue, prevRevenue.revenue),
+        newStudentsPercentChange: formatPercent(student.newStudents, prevStudent.newStudents),
+        newCoursesPercentChange: formatPercent(course.newCourses, prevCourse.newCourses),
+      };
+    });
+
+    // Pad monthly stats
+    const paddedMonthlyStats = [];
+    for (let i = 0; i < 12; i++) {
+      const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+      const monthStr = date.toLocaleString('en-US', { year: 'numeric', month: 'short' });
+      const student = studentStats[0].monthly.find((s) => s.month === monthStr) || { newStudents: 0 };
+      const course = courseStats[0].monthly.find((c) => c.month === monthStr) || { newCourses: 0 };
+      const revenue = revenueStats[0].monthly.find((r) => r.month === monthStr) || { revenue: 0 };
+      const prevMonth = new Date(date.getFullYear(), date.getMonth() - 1, 1);
+      const prevMonthStr = prevMonth.toLocaleString('en-US', { year: 'numeric', month: 'short' });
+      const prevStudent = studentStats[0].monthly.find((s) => s.month === prevMonthStr) || { newStudents: 0 };
+      const prevCourse = courseStats[0].monthly.find((c) => c.month === prevMonthStr) || { newCourses: 0 };
+      const prevRevenue = revenueStats[0].monthly.find((r) => r.month === prevMonthStr) || { revenue: 0 };
+      paddedMonthlyStats.push({
+        month: monthStr,
+        revenue: revenue.revenue,
+        newStudents: student.newStudents,
+        newCourses: course.newCourses,
+        revenuePercentChange: formatPercent(revenue.revenue, prevRevenue.revenue),
+        newStudentsPercentChange: formatPercent(student.newStudents, prevStudent.newStudents),
+        newCoursesPercentChange: formatPercent(course.newCourses, prevCourse.newCourses),
+      });
+    }
+
+    // Return result
+    return {
+      totalStudents,
+      totalCourses,
+      totalRevenue,
+      daily: paddedDailyStats.sort((a, b) => b.date.localeCompare(a.date)),
+      weekly: weeklyStats,
+      monthly: paddedMonthlyStats.sort((a, b) => b.month.localeCompare(a.month)),
+    }
+}
+
 
 
 export const RevenueService = {
     SalesVsCostStats,
     GrossSubscriptionCourseStats,
     TransactionStats,
+    ReportStats,
 }

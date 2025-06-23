@@ -7,6 +7,7 @@ const router = express.Router();
 router.get("/sales-cost",auth(USER_ROLE.admin),RevenueController.SalesVsCostStats )
 router.get("/gross-subscription-course",auth(USER_ROLE.admin),RevenueController.GrossSubscriptionCourseStats )
 router.get("/last-transaction",auth(USER_ROLE.admin),RevenueController.TransactionStats )
+router.get("/report",auth(USER_ROLE.admin),RevenueController.ReportStats )
 
 
 export const RevenueRoute = router;

@@ -38,8 +38,20 @@ const TransactionStats = catchAsync(
     },
 );
 
+const ReportStats = catchAsync(
+    async (req: Request, res: Response) => {
+        const result = await RevenueService.ReportStats();
+        sendSuccessResponse(res, {
+            statusCode: StatusCodes.OK,
+            message: 'Report Statistics',
+            data: result,
+        });  
+    },
+);
+
 export const RevenueController = {
     SalesVsCostStats,
     GrossSubscriptionCourseStats,
     TransactionStats,
+    ReportStats,
 };
