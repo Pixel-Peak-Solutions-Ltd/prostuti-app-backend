@@ -908,15 +908,15 @@ const ReportStats = async (
       const date = new Date(currentDate);
       date.setDate(currentDate.getDate() - i);
       const dateStr = date.toISOString().split('T')[0];
-      const student = studentStats[0].daily.find((s) => s.date === dateStr) || { newStudents: 0 };
-      const course = courseStats[0].daily.find((c) => c.date === dateStr) || { newCourses: 0 };
-      const revenue = revenueStats[0].daily.find((r) => r.date === dateStr) || { revenue: 0 };
+      const student = studentStats[0].daily.find((s:any) => s.date === dateStr) || { newStudents: 0 };
+      const course = courseStats[0].daily.find((c:any) => c.date === dateStr) || { newCourses: 0 };
+      const revenue = revenueStats[0].daily.find((r:any) => r.date === dateStr) || { revenue: 0 };
       const prevDate = new Date(date);
       prevDate.setDate(date.getDate() - 1);
       const prevDateStr = prevDate.toISOString().split('T')[0];
-      const prevStudent = studentStats[0].daily.find((s) => s.date === prevDateStr) || { newStudents: 0 };
-      const prevCourse = courseStats[0].daily.find((c) => c.date === prevDateStr) || { newCourses: 0 };
-      const prevRevenue = revenueStats[0].daily.find((r) => r.date === prevDateStr) || { revenue: 0 };
+      const prevStudent = studentStats[0].daily.find((s:any) => s.date === prevDateStr) || { newStudents: 0 };
+      const prevCourse = courseStats[0].daily.find((c:any) => c.date === prevDateStr) || { newCourses: 0 };
+      const prevRevenue = revenueStats[0].daily.find((r:any) => r.date === prevDateStr) || { revenue: 0 };
       paddedDailyStats.push({
         date: dateStr,
         revenue: revenue.revenue,
@@ -929,7 +929,7 @@ const ReportStats = async (
     }
 
     // Weekly stats
-    const weeklyStats = revenueStats[0].weekly.map((r, i) => {
+    const weeklyStats = revenueStats[0].weekly.map((r:any, i:any) => {
       const student = studentStats[0].weekly[i] || { newStudents: 0 };
       const course = courseStats[0].weekly[i] || { newCourses: 0 };
       const prevRevenue = revenueStats[0].weekly[i + 1] || { revenue: 0 };
@@ -951,14 +951,14 @@ const ReportStats = async (
     for (let i = 0; i < 12; i++) {
       const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
       const monthStr = date.toLocaleString('en-US', { year: 'numeric', month: 'short' });
-      const student = studentStats[0].monthly.find((s) => s.month === monthStr) || { newStudents: 0 };
-      const course = courseStats[0].monthly.find((c) => c.month === monthStr) || { newCourses: 0 };
-      const revenue = revenueStats[0].monthly.find((r) => r.month === monthStr) || { revenue: 0 };
+      const student = studentStats[0].monthly.find((s:any) => s.month === monthStr) || { newStudents: 0 };
+      const course = courseStats[0].monthly.find((c:any) => c.month === monthStr) || { newCourses: 0 };
+      const revenue = revenueStats[0].monthly.find((r:any) => r.month === monthStr) || { revenue: 0 };
       const prevMonth = new Date(date.getFullYear(), date.getMonth() - 1, 1);
       const prevMonthStr = prevMonth.toLocaleString('en-US', { year: 'numeric', month: 'short' });
-      const prevStudent = studentStats[0].monthly.find((s) => s.month === prevMonthStr) || { newStudents: 0 };
-      const prevCourse = courseStats[0].monthly.find((c) => c.month === prevMonthStr) || { newCourses: 0 };
-      const prevRevenue = revenueStats[0].monthly.find((r) => r.month === prevMonthStr) || { revenue: 0 };
+      const prevStudent = studentStats[0].monthly.find((s:any) => s.month === prevMonthStr) || { newStudents: 0 };
+      const prevCourse = courseStats[0].monthly.find((c:any) => c.month === prevMonthStr) || { newCourses: 0 };
+      const prevRevenue = revenueStats[0].monthly.find((r:any) => r.month === prevMonthStr) || { revenue: 0 };
       paddedMonthlyStats.push({
         month: monthStr,
         revenue: revenue.revenue,
