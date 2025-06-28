@@ -36,6 +36,7 @@ import { userRoute } from '../modules/user/user.route';
 import { VoucherRoute } from '../modules/voucher/voucher.route';
 import { analyticsRoute } from '../modules/analytics/analytics.route';
 import { TeacherLogRoute } from '../modules/teacherLog/teacherLog.route';
+import { RevenueRoute } from '../modules/revenue/revenue.route';
 
 const globalRoute = Router();
 
@@ -76,6 +77,7 @@ const routes = [
     { path: '/question-pattern', route: questionPatternRoute },
     { path: '/analytics', route: analyticsRoute },
     { path: '/teacher-log', route: TeacherLogRoute },
+    {path: '/revenue-management', route: RevenueRoute },
 ];
 
 routes.forEach((route) => globalRoute.use(route.path, route.route));
