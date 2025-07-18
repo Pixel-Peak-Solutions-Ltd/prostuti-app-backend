@@ -348,6 +348,7 @@ const reviewQuestion = async (
         {
             status: payload.isApproved ? 'APPROVED' : 'REJECTED',
             reviewedBy: userInfo.userId,
+            reviewedAt:new Date()
         },
         { new: true },
     );
