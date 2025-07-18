@@ -1,5 +1,5 @@
 import { Schema, model } from 'mongoose';
-import { QuestionTypes } from './question.constant';
+import { QuestionStatuses, QuestionTypes } from './question.constant';
 import { IQuestion, QuestionModel } from './question.interface';
 import { imageSchema } from '../../schema';
 
@@ -27,7 +27,7 @@ const QuestionSchema = new Schema<IQuestion, QuestionModel>(
             type: Boolean,
             default: false,
         },
-        image:{
+        image: {
             required: false,
             type: imageSchema,
         },
@@ -63,10 +63,27 @@ const QuestionSchema = new Schema<IQuestion, QuestionModel>(
                     "The 'correctOption' field is required for MCQ questions.",
             },
         },
+        status: {
+            type: String,
+            enum: QuestionStatuses,
+            required: [true, 'Question status is required.'],
+            default: 'NOT_REVIEWED',
+        },
         createdBy: {
             type: Schema.Types.ObjectId,
             ref: 'User',
             required: true,
+        },
+        reviewedBy: {
+            type: Schema.Types.ObjectId,
+            ref: 'User',
+            required: false,
+        },
+        reviewedAt: {
+            type: Date,
+            required: function () {
+                return !!this.reviewedBy;
+            },
         },
         updatedBy: {
             type: Schema.Types.ObjectId,

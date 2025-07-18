@@ -1,5 +1,5 @@
 import { Model, Types } from "mongoose";
-import { QuestionType } from "./question.constant";
+import { QuestionStatus, QuestionType } from "./question.constant";
 import { TImage } from "../../interfaces/common";
 
 
@@ -12,7 +12,10 @@ export type IQuestion={
     image?:TImage
     options?:string[],
     correctOption?:string,
+    status:QuestionStatus,
     createdBy:Types.ObjectId,
+    reviewedBy?:Types.ObjectId,
+    reviewedAt:Date,
     updatedBy:Types.ObjectId
   }
 
@@ -36,7 +39,8 @@ export type IQuestionFilters = {
   lesson?: string;
   type?:string,
   ownQuestion?: string;
-  hasImage?:string
+  hasImage?:string;
+  status?:string
 
 
 };

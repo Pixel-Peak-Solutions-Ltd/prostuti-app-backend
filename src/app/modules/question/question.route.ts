@@ -4,6 +4,7 @@ import auth from '../../middlewares/auth';
 import { QuestionValidation } from './question.validation';
 import validateRequest from '../../middlewares/validateRequest';
 import { upload } from '../../middlewares/multerConfig';
+import checkAssignedWork from '../../middlewares/checkAssignedWork ';
 
 const router = express.Router();
 
@@ -11,6 +12,7 @@ router
     .post(
         '/',
         auth('teacher'),
+        checkAssignedWork("Questions"),
         upload.any(),
         (req: Request, res: Response, next: NextFunction) => {
             req.body = JSON.parse(req.body.data);
@@ -25,13 +27,20 @@ router
     .patch(
         '/:id',
         auth('teacher'),
-        upload.single("image"),
+        upload.single('image'),
         (req: Request, res: Response, next: NextFunction) => {
             req.body = JSON.parse(req.body.data);
             next();
         },
         validateRequest(QuestionValidation.updateQuestion),
         QuestionController.updateQuestion,
+    )
+    .patch(
+        '/:id/review',
+        auth('teacher'),
+        checkAssignedWork('Proof_Check'),
+        validateRequest(QuestionValidation.reviewQuestion),
+        QuestionController.reviewQuestion,
     );
 
 export const QuestionRoute = router;
