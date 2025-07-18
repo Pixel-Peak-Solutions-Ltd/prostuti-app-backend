@@ -3,4 +3,5 @@ export const ASSIGNED_WORKS = {
     Questions: 'Questions',
     Course: 'Course',
     Messages: 'Messages',
+    Proof_Check:"Proof_Check"
 } as const;

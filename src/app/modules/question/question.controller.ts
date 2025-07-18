@@ -68,6 +68,20 @@ const updateQuestion = catchAsync(async (req: Request, res: Response) => {
         data: result,
     });
 });
+const reviewQuestion = catchAsync(async (req: Request, res: Response) => {
+    const result = await QuestionService.reviewQuestion(req.user,req.params.id,req.body);
+    const checkTeacher=await Teacher.findOne({user_id:req.user.userId})
+    if(!checkTeacher){
+        throw new AppError(StatusCodes.NOT_FOUND, 'Teacher is not found');
+    }
+    await createTeacherLog(req,checkTeacher._id.toString(),"Review_Question",`Reviewed a question with ID ${result._id}`)
+
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'Question is updated successfully',
+        data: result,
+    });
+});
 
 const deleteQuestionByID = catchAsync(async (req: Request, res: Response) => {
     const result = await QuestionService.deleteQuestionByID(req.user,req.params.id);
@@ -84,5 +98,6 @@ export const QuestionController = {
     getAllQuestions,
     getQuestionByID,
     updateQuestion,
+    reviewQuestion,
     deleteQuestionByID,
 };

@@ -44,12 +44,16 @@ const createQuestion = async (
             : [];
 
         // Create file mapping
-        const uploadedFileMap = files?.reduce((acc, file, index) => {
-            if (uploadedFiles[index]) {
-                acc[file.fieldname] = uploadedFiles[index];
-            }
-            return acc;
-        }, {} as Record<string, any>) ?? {};
+        const uploadedFileMap =
+            files?.reduce(
+                (acc, file, index) => {
+                    if (uploadedFiles[index]) {
+                        acc[file.fieldname] = uploadedFiles[index];
+                    }
+                    return acc;
+                },
+                {} as Record<string, any>,
+            ) ?? {};
 
         // Prepare questions
         const questionsToCreate = payload.map((question, index) => {
@@ -58,6 +62,7 @@ const createQuestion = async (
                 title: question.title,
                 description: question.description,
                 category_id: category._id,
+                status: 'NOT_REVIEWED',
                 createdBy: new Types.ObjectId(userInfo.userId),
             };
 
@@ -100,7 +105,7 @@ const getAllQuestions = async (
     paginationOptions: IPaginationOptions,
     userInfo: TJWTDecodedUser,
 ): Promise<any> => {
-    const { searchTerm, ownQuestion, ...filtersData } = filters;
+    const { searchTerm, ownQuestion, status, ...filtersData } = filters;
     const { page, limit, skip, sortBy, sortOrder } =
         calculatePagination(paginationOptions);
 
@@ -119,6 +124,11 @@ const getAllQuestions = async (
     if (ownQuestion === 'true') {
         andConditions.push({
             createdBy: new mongoose.Types.ObjectId(userInfo.userId),
+        });
+    }
+    if (status) {
+        andConditions.push({
+            status,
         });
     }
     // filtering data
@@ -169,13 +179,39 @@ const getAllQuestions = async (
         pipeline.push({ $limit: limit });
     }
 
+    const countPipeline: PipelineStage[] = [
+        {
+            $lookup: {
+                from: 'categories',
+                localField: 'category_id',
+                foreignField: '_id',
+                as: 'category',
+            },
+        },
+        {
+            $match: whereConditions,
+        },
+        {
+            $unwind: {
+                path: '$category',
+                preserveNullAndEmptyArrays: true,
+            },
+        },
+        {
+            $count: 'total',
+        },
+    ];
+
+    const countResult = await Question.aggregate(countPipeline);
+    const total = countResult[0]?.total || 0;
+
     const result = await Question.aggregate(pipeline);
 
     return {
         meta: {
             page,
             limit: limit === 0 ? result.length : limit,
-            count: result.length,
+            count: total,
         },
         data: result,
     };
@@ -185,7 +221,8 @@ const getQuestionByID = async (id: string): Promise<any> => {
     const data = await Question.findById(id)
         .populate('category_id')
         .populate('createdBy')
-        .populate('updatedBy');
+        .populate('updatedBy')
+        .populate('reviewedBy');
     if (!data) {
         throw new AppError(StatusCodes.NOT_FOUND, 'Question not found');
     }
@@ -224,7 +261,7 @@ const updateQuestion = async (
             'questionImages',
         );
     }
-    
+
     // Find and update the question
     const updatedQuestion = await Question.findByIdAndUpdate(
         id,
@@ -283,10 +320,44 @@ const deleteQuestionByID = async (
     return data;
 };
 
+const reviewQuestion = async (
+    userInfo: TJWTDecodedUser,
+    id: string,
+    payload: any,
+): Promise<any> => {
+    const checkUser = await User.findById(userInfo.userId);
+    if (!checkUser) {
+        throw new AppError(StatusCodes.BAD_REQUEST, 'User nnot found');
+    }
+
+    const checkQuestion = await Question.findById(id);
+    if (!checkQuestion) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Question not found.');
+    }
+    if (
+        checkQuestion.status === 'APPROVED' ||
+        checkQuestion.status === 'REJECTED'
+    ) {
+        throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            'The Question is already reviewed',
+        );
+    }
+    const data = await Question.findByIdAndUpdate(
+        id,
+        {
+            status: payload.isApproved ? 'APPROVED' : 'REJECTED',
+            reviewedBy: userInfo.userId,
+        },
+        { new: true },
+    );
+    return data;
+};
 export const QuestionService = {
     createQuestion,
     getAllQuestions,
     getQuestionByID,
     updateQuestion,
     deleteQuestionByID,
+    reviewQuestion,
 };

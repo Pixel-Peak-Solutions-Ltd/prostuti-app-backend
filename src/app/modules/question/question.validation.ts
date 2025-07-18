@@ -76,5 +76,10 @@ const updateQuestion = z.object({
         },
     ),
 });
+const reviewQuestion=z.object({
+    body: z
+    .object({
+        isApproved:z.boolean()
+    })})
 
-export const QuestionValidation = { createQuestion,updateQuestion };
+export const QuestionValidation = { createQuestion,updateQuestion,reviewQuestion };
