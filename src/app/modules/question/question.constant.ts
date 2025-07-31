@@ -1,7 +1,9 @@
 export type QuestionType = 'MCQ' | 'Written'
+export type QuestionStatus="NOT_REVIEWED"|"APPROVED"|"REJECTED"
 
 
 export const QuestionTypes: QuestionType[] = ["MCQ","Written"];
+export const QuestionStatuses:QuestionStatus[]=["NOT_REVIEWED","APPROVED","REJECTED"]
 
 
 //filter
@@ -18,7 +20,8 @@ export const QuestionFilterableFields = [
     'unit',
     'type',
     "ownQuestion",
-    "hasImage"
+    "hasImage",
+    "status"
 ];
 
 //searchTerm

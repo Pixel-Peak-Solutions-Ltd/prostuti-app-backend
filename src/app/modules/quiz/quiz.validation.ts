@@ -9,7 +9,10 @@ const createMockQuiz = z.object({
             required_error: 'Question type is required.',
         }),
         subjects: z
-            .array(z.string().min(1, 'Subject cannot be an empty string'))
+            .array(z.object({
+                subject:z.string().min(1, 'Subject cannot be an empty string'),
+                chapter:z.string().min(1, 'Chapter cannot be an empty string')
+            }))
             .min(1, 'At least one subject is required'),
         questionCount: z
             .number({
@@ -56,7 +59,12 @@ const createQuizzerQuiz = z.object({
             required_error: 'Question type is required.',
         }),
         subjects: z
-            .array(z.string().min(1, 'Subject cannot be an empty string'))
+            .array(
+                z.object({
+                subject:z.string().min(1, 'Subject cannot be an empty string'),
+                chapter:z.string().min(1, 'Chapter cannot be an empty string')
+            })
+            )
             .min(1, 'At least one subject is required'),
         questionFilters: z
             .array(

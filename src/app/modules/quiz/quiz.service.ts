@@ -20,7 +20,10 @@ const createMockQuiz = async (
     userInfo: TJWTDecodedUser,
     payload: {
         questionType: QuestionType;
-        subjects: string[];
+        subjects: {
+            subject:string,
+            chapter:string
+        }[],
         questionCount: number;
         isNegativeMarking: boolean;
         time: number;
@@ -35,7 +38,8 @@ const createMockQuiz = async (
     //subject
     const categoryFilter = {
         $or: payload.subjects.map((subject) => ({
-            subject: { $regex: subject, $options: 'i' },
+            subject: { $regex: subject.subject, $options: 'i' },
+            chapter: { $regex: subject.chapter, $options: 'i' },
         })),
     };
 
@@ -320,7 +324,10 @@ const createQuizzerQuiz = async (
     userInfo: TJWTDecodedUser,
     payload: {
         questionType: QuestionType;
-        subjects: string[];
+        subjects: {
+            subject:string,
+            chapter:string
+        }[],
         questionFilters: QuizzerFilter[];
         questionCount: number;
         isNegativeMarking: boolean;
@@ -336,7 +343,8 @@ const createQuizzerQuiz = async (
     //subject
     const categoryFilter = {
         $or: payload.subjects.map((subject) => ({
-            subject: { $regex: subject, $options: 'i' },
+            subject: { $regex: subject.subject, $options: 'i' },
+        chapter: { $regex: subject.chapter, $options: 'i' },
         })),
     };
 
