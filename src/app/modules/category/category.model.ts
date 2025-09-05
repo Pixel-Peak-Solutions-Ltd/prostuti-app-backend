@@ -99,16 +99,20 @@ CategorySchema.pre('validate', function (next) {
 
 // Create unique compound indexes based on the `type`
 CategorySchema.index(
-    { type: 1, division: 1, subject: 1, chapter: 1, lesson: 1 },
-    { unique: true, partialFilterExpression: { type: 'Academic' } },
+  { type: 1, division: 1, subject: 1, chapter: 1, lesson: 1 },
+  { unique: true, partialFilterExpression: { type: 'Academic' } },
 );
+
+// Admission
 CategorySchema.index(
-    { type: 1, universityType: 1, universityName: 1,unit:1, subject: 1 },
-    { unique: true, partialFilterExpression: { type: 'Admission' } },
+  { type: 1, universityType: 1, universityName: 1, unit: 1, subject: 1, chapter: 1, lesson: 1 },
+  { unique: true, partialFilterExpression: { type: 'Admission' } },
 );
+
+// Job
 CategorySchema.index(
-    { type: 1,jobType:1,jobName:1, subject: 1 },
-    { unique: true, partialFilterExpression: { type: 'Job' } },
+  { type: 1, jobType: 1, jobName: 1, subject: 1, chapter: 1, lesson: 1 },
+  { unique: true, partialFilterExpression: { type: 'Job' } },
 );
 
 export const Category = model<ICategory, CategoryModel>(
