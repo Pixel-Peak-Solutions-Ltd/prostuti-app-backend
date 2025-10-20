@@ -30,6 +30,12 @@ router
         auth(USER_ROLE.student), // Only students can access this route
         validateRequest(studentValidator.updateStudentCategoryValidationSchema),
         studentController.updateStudentCategory
+    )
+    // Route for students to delete their own account
+    .delete(
+        '/delete-account',
+        auth(USER_ROLE.student), 
+        studentController.deleteStudentAccount
     );
 
 export const studentRoute = router;

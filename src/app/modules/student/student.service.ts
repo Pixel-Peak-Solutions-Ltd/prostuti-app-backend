@@ -3,6 +3,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { StatusCodes } from 'http-status-codes';
 import fs from 'fs';
+import mongoose from 'mongoose';
 import { TJWTDecodedUser } from '../../interfaces/jwt/jwt.type';
 import { User } from '../user/user.model';
 import { IStudent, TUpdatePayloadType } from './student.interface';
@@ -12,6 +13,23 @@ import { Student } from './student.model';
 import { deleteFromB2, uploadToB2 } from '../../utils/backBlaze';
 import config from '../../config';
 import { getValidSubCategories, MainCategory } from '../auth/category/category.constant';
+
+// Import all models at the top for better performance
+import { EnrolledCourse } from '../enrolledCourse/enrolledCourse.model';
+import { Quiz } from '../quiz/quiz.model';
+import { TestHistory } from '../courseManagement/test-history/testHistory.model';
+import { LeaderBoard } from '../leaderboard/leaderboard.model';
+import { FavouriteQuestion } from '../favouriteQuestion/favouriteQuestion.model';
+import { SkippedQuestion } from '../skippedQuestion/skippedQuestion.model';
+import { WrongQuestion } from '../wrongQuestion/wrongQuestion.model';
+import { AssignmentSubmission } from '../assignmentSubmission/assignmentSubmission.model';
+import { CourseReview } from '../courseReview/courseReview.model';
+import { StudentNotification } from '../studentNotification/studentNotification.modal';
+import { FlashcardHistory } from '../flashcardManagement/flashcardHistory/flashcardHistory.model';
+import { Subscription } from '../subscription/subscription.model';
+import { Payment } from '../payment/payment.model';
+import { PhoneVerification } from '../phoneVerification/phoneVerification.model';
+import { StudentProgress } from '../progress/progress.model';
 
 const createStudent = async () => {
     return 'createStudent service';
@@ -187,6 +205,89 @@ const updateStudentCategory = async (userId: string, payload: { mainCategory: st
     return updatedStudent;
 };
 
+const deleteStudentAccount = async (userId: string) => {
+    
+    const session = await mongoose.startSession();
+
+    try {
+        
+        session.startTransaction();
+
+        
+        const student = await Student.findOne({ user_id: userId }).session(session);
+        if (!student) {
+            throw new AppError(StatusCodes.NOT_FOUND, 'Student not found');
+        }
+
+        const parallelDeletesGroup1 = [
+            Quiz.deleteMany({ student_id: student._id }).session(session),
+            TestHistory.deleteMany({ student_id: student._id }).session(session),
+            LeaderBoard.deleteMany({ student_id: student._id }).session(session),
+            FavouriteQuestion.deleteMany({ student_id: student._id }).session(session),
+            SkippedQuestion.deleteMany({ student_id: student._id }).session(session),
+            WrongQuestion.deleteMany({ student_id: student._id }).session(session),
+            StudentNotification.deleteMany({ student_id: student._id }).session(session),
+            FlashcardHistory.deleteMany({ studentId: student._id }).session(session),
+            Subscription.deleteMany({ student_id: student._id }).session(session),
+            Payment.deleteMany({ student_id: student._id }).session(session),
+        ];
+
+        const sequentialDeletesGroup2 = [
+            EnrolledCourse.deleteMany({ student_id: student._id }).session(session),
+            AssignmentSubmission.deleteMany({ studentProfile_id: student._id }).session(session),
+            CourseReview.deleteMany({ student_id: student._id }).session(session),
+            StudentProgress.deleteMany({ user_id: userId }).session(session),
+        ];
+
+        
+        await Promise.all(parallelDeletesGroup1);
+
+        
+        for (const deleteOperation of sequentialDeletesGroup2) {
+            await deleteOperation;
+        }
+
+        // Delete phone verification records (depends on student.phone)
+        if (student.phone) {
+            await PhoneVerification.deleteMany({ phoneNumber: student.phone }).session(session);
+        }
+
+        // Delete the student record
+        await Student.findByIdAndDelete(student._id).session(session);
+
+        // Finally, delete the user record
+        const deletedUser = await User.findByIdAndDelete(userId).session(session);
+        if (!deletedUser) {
+            throw new AppError(StatusCodes.INTERNAL_SERVER_ERROR, 'Failed to delete user account');
+        }
+
+        // Commit the transaction
+        await session.commitTransaction();
+
+        return {
+            studentId:student.id,
+            deletedAt: new Date(),
+        };
+
+    } catch (error) {
+        // Abort transaction on error
+        await session.abortTransaction();
+
+        // Re-throw the error with appropriate message
+        if (error instanceof AppError) {
+            throw error;
+        }
+
+        throw new AppError(
+            StatusCodes.INTERNAL_SERVER_ERROR,
+            'Failed to delete account. All changes have been rolled back.'
+        );
+    } finally {
+        // End the session
+        session.endSession();
+    }
+};
+
 // Add to exports
 export const studentService = {
     createStudent,
@@ -194,5 +295,6 @@ export const studentService = {
     getStudentByID,
     updateStudent,
     updateStudentCategory, // New method
+    deleteStudentAccount, // New method
     deleteUserByID,
 };
