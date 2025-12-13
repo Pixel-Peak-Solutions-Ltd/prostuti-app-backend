@@ -77,12 +77,27 @@ const updateStudentCategory = catchAsync(async (req: Request, res: Response) => 
     });
 });
 
+const deleteStudentAccount = catchAsync(async (req: Request, res: Response) => {
+    // Get the userId from the authenticated user (from JWT)
+    const { userId } = req.user;
+
+    // Call the service to delete the student's account
+    const result = await studentService.deleteStudentAccount(userId);
+
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'Your account has been successfully deleted',
+        data: result,
+    });
+});
+
 // Add to exports
 export const studentController = {
     createStudents,
     getAllStudents,
     getStudentByID,
     updateStudent,
-    updateStudentCategory, // New method
+    updateStudentCategory,
+    deleteStudentAccount, 
     deleteUserByID,
 };
