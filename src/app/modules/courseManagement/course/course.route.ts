@@ -5,6 +5,8 @@ import validateRequest from '../../../middlewares/validateRequest';
 import { USER_ROLE } from './../../user/user.constant';
 import { courseController } from './course.controller';
 import { courseValidator } from './course.validation';
+import checkTeacherAccess from '../../../middlewares/checkTeacherAccess';
+import { ASSIGNED_WORKS } from '../../teacher/teacher.constant';
 
 const router = express.Router();
 
@@ -12,6 +14,7 @@ router
     .post(
         '/',
         auth(USER_ROLE.teacher),
+        checkTeacherAccess(ASSIGNED_WORKS.Course),
         upload.single('coverImage'),
         (req: Request, res: Response, next: NextFunction) => {
             req.body = JSON.parse(req.body.courseData);
@@ -29,6 +32,7 @@ router
     .get(
         '/course-by-me',
         auth(USER_ROLE.teacher),
+        checkTeacherAccess(ASSIGNED_WORKS.Course),
         courseController.getCourseByTeacherID,
     )
     .get('/preview/:courseId', auth(), courseController.getCoursePreview)
@@ -38,10 +42,16 @@ router
         courseController.getPublishedCoursesForStudent,
     )
     .get('/:courseId', courseController.getCourseByID)
-    .delete('/:courseId', courseController.deleteCourseByID)
+    .delete(
+        '/:courseId',
+        auth(USER_ROLE.teacher, USER_ROLE.admin),
+        checkTeacherAccess(ASSIGNED_WORKS.Course),
+        courseController.deleteCourseByID,
+    )
     .patch(
         '/:courseId',
         auth(USER_ROLE.teacher, USER_ROLE.admin),
+        checkTeacherAccess(ASSIGNED_WORKS.Course),
         upload.single('coverImage'),
         (req: Request, res: Response, next: NextFunction) => {
             req.body = JSON.parse(req.body.courseData);
