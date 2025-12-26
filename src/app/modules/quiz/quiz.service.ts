@@ -240,45 +240,46 @@ const submitMockQuiz = async (
 
         // Calculate scores for MCQ
         const negativeMarkingValue = checkQuiz.isNegativeMarking ? 0.5 : 0;
-        formattedAnswers.push(
-            ...payload.answers.map(async(answer) => {
-                const question = questionMap.get(answer.question_id);
-                // Skip answer
-                if (answer.selectedOption === 'null') {
-                    await SkippedQuestion.findOneAndUpdate(
-                        { student_id: checkStudent._id },
-                        { $addToSet: { question_id: answer.question_id } },
-                        { upsert: true }
-                    );
-                    return {
-                        question_id: new mongoose.Types.ObjectId(
-                            answer.question_id,
-                        ),
-                        selectedOption: answer.selectedOption,
-                        mark: 0, // Default mark for null answers
-                    };
-                }
-                const isCorrect =
-                    question?.correctOption === answer.selectedOption;
-                if (isCorrect) {
-                    rightScore++;
-                } else {
-                    await WrongQuestion.findOneAndUpdate(
-                        { student_id: checkStudent._id },
-                        { $addToSet: { question_id: answer.question_id } },
-                        { upsert: true }
-                    );
-                    wrongScore++;
-                }
-                return {
+        
+        // Process answers sequentially to correctly track scores
+        for (const answer of payload.answers) {
+            const question = questionMap.get(answer.question_id);
+            // Skip answer
+            if (answer.selectedOption === 'null') {
+                await SkippedQuestion.findOneAndUpdate(
+                    { student_id: checkStudent._id },
+                    { $addToSet: { question_id: answer.question_id } },
+                    { upsert: true }
+                );
+                formattedAnswers.push({
                     question_id: new mongoose.Types.ObjectId(
                         answer.question_id,
                     ),
                     selectedOption: answer.selectedOption,
-                    mark: isCorrect ? 1 : 0,
-                };
-            }),
-        );
+                    mark: 0, // Default mark for null answers
+                });
+                continue;
+            }
+            const isCorrect =
+                question?.correctOption === answer.selectedOption;
+            if (isCorrect) {
+                rightScore++;
+            } else {
+                await WrongQuestion.findOneAndUpdate(
+                    { student_id: checkStudent._id },
+                    { $addToSet: { question_id: answer.question_id } },
+                    { upsert: true }
+                );
+                wrongScore++;
+            }
+            formattedAnswers.push({
+                question_id: new mongoose.Types.ObjectId(
+                    answer.question_id,
+                ),
+                selectedOption: answer.selectedOption,
+                mark: isCorrect ? 1 : 0,
+            });
+        }
 
         // Calculate final score
         score = rightScore - wrongScore * negativeMarkingValue;
@@ -302,7 +303,7 @@ const submitMockQuiz = async (
     }
 
     // Update quiz
-    checkQuiz.answers = await Promise.all(formattedAnswers);
+    checkQuiz.answers = formattedAnswers;
     checkQuiz.score = score < 0 ? 0 : score;
     checkQuiz.rightScore = rightScore;
     checkQuiz.wrongScore = wrongScore;
@@ -627,45 +628,46 @@ const submitQuizzerQuiz = async (
 
         // Calculate scores for MCQ
         const negativeMarkingValue = checkQuiz.isNegativeMarking ? 0.5 : 0;
-        formattedAnswers.push(
-            ...payload.answers.map(async(answer) => {
-                const question = questionMap.get(answer.question_id);
-                // Skip answer
-                if (answer.selectedOption === 'null') {
-                    await SkippedQuestion.findOneAndUpdate(
-                        { student_id: checkStudent._id },
-                        { $addToSet: { question_id: answer.question_id } },
-                        { upsert: true }
-                    );
-                    return {
-                        question_id: new mongoose.Types.ObjectId(
-                            answer.question_id,
-                        ),
-                        selectedOption: answer.selectedOption,
-                        mark: 0, // Default mark for null answers
-                    };
-                }
-                const isCorrect =
-                    question?.correctOption === answer.selectedOption;
-                if (isCorrect) {
-                    rightScore++;
-                } else {
-                    await WrongQuestion.findOneAndUpdate(
-                        { student_id: checkStudent._id },
-                        { $addToSet: { question_id: answer.question_id } },
-                        { upsert: true }
-                    );
-                    wrongScore++;
-                }
-                return {
+        
+        // Process answers sequentially to correctly track scores
+        for (const answer of payload.answers) {
+            const question = questionMap.get(answer.question_id);
+            // Skip answer
+            if (answer.selectedOption === 'null') {
+                await SkippedQuestion.findOneAndUpdate(
+                    { student_id: checkStudent._id },
+                    { $addToSet: { question_id: answer.question_id } },
+                    { upsert: true }
+                );
+                formattedAnswers.push({
                     question_id: new mongoose.Types.ObjectId(
                         answer.question_id,
                     ),
                     selectedOption: answer.selectedOption,
-                    mark: isCorrect ? 1 : 0,
-                };
-            }),
-        );
+                    mark: 0, // Default mark for null answers
+                });
+                continue;
+            }
+            const isCorrect =
+                question?.correctOption === answer.selectedOption;
+            if (isCorrect) {
+                rightScore++;
+            } else {
+                await WrongQuestion.findOneAndUpdate(
+                    { student_id: checkStudent._id },
+                    { $addToSet: { question_id: answer.question_id } },
+                    { upsert: true }
+                );
+                wrongScore++;
+            }
+            formattedAnswers.push({
+                question_id: new mongoose.Types.ObjectId(
+                    answer.question_id,
+                ),
+                selectedOption: answer.selectedOption,
+                mark: isCorrect ? 1 : 0,
+            });
+        }
 
         // Calculate final score
         score = rightScore - wrongScore * negativeMarkingValue;
@@ -689,7 +691,7 @@ const submitQuizzerQuiz = async (
     }
 
     // Update quiz
-    checkQuiz.answers = await Promise.all(formattedAnswers);
+    checkQuiz.answers = formattedAnswers;
     checkQuiz.score = score < 0 ? 0 : score;
     checkQuiz.rightScore = rightScore;
     checkQuiz.wrongScore = wrongScore;
@@ -960,45 +962,46 @@ const submitSegmentQuiz = async (
 
         // Calculate scores for MCQ
         const negativeMarkingValue = checkQuiz.isNegativeMarking ? 0.5 : 0;
-        formattedAnswers.push(
-            ...payload.answers.map(async(answer) => {
-                const question = questionMap.get(answer.question_id);
-                // Skip answer
-                if (answer.selectedOption === 'null') {
-                    await SkippedQuestion.findOneAndUpdate(
-                        { student_id: checkStudent._id },
-                        { $addToSet: { question_id: answer.question_id } },
-                        { upsert: true }
-                    );
-                    return {
-                        question_id: new mongoose.Types.ObjectId(
-                            answer.question_id,
-                        ),
-                        selectedOption: answer.selectedOption,
-                        mark: 0, // Default mark for null answers
-                    };
-                }
-                const isCorrect =
-                    question?.correctOption === answer.selectedOption;
-                if (isCorrect) {
-                    rightScore++;
-                } else {
-                    await WrongQuestion.findOneAndUpdate(
-                        { student_id: checkStudent._id },
-                        { $addToSet: { question_id: answer.question_id } },
-                        { upsert: true }
-                    );
-                    wrongScore++;
-                }
-                return {
+        
+        // Process answers sequentially to correctly track scores
+        for (const answer of payload.answers) {
+            const question = questionMap.get(answer.question_id);
+            // Skip answer
+            if (answer.selectedOption === 'null') {
+                await SkippedQuestion.findOneAndUpdate(
+                    { student_id: checkStudent._id },
+                    { $addToSet: { question_id: answer.question_id } },
+                    { upsert: true }
+                );
+                formattedAnswers.push({
                     question_id: new mongoose.Types.ObjectId(
                         answer.question_id,
                     ),
                     selectedOption: answer.selectedOption,
-                    mark: isCorrect ? 1 : 0,
-                };
-            }),
-        );
+                    mark: 0, // Default mark for null answers
+                });
+                continue;
+            }
+            const isCorrect =
+                question?.correctOption === answer.selectedOption;
+            if (isCorrect) {
+                rightScore++;
+            } else {
+                await WrongQuestion.findOneAndUpdate(
+                    { student_id: checkStudent._id },
+                    { $addToSet: { question_id: answer.question_id } },
+                    { upsert: true }
+                );
+                wrongScore++;
+            }
+            formattedAnswers.push({
+                question_id: new mongoose.Types.ObjectId(
+                    answer.question_id,
+                ),
+                selectedOption: answer.selectedOption,
+                mark: isCorrect ? 1 : 0,
+            });
+        }
 
         // Calculate final score
         score = rightScore - wrongScore * negativeMarkingValue;
@@ -1022,7 +1025,7 @@ const submitSegmentQuiz = async (
     }
 
     // Update quiz
-    checkQuiz.answers = await Promise.all(formattedAnswers);
+    checkQuiz.answers = formattedAnswers;
     checkQuiz.score = score < 0 ? 0 : score;
     checkQuiz.rightScore = rightScore;
     checkQuiz.wrongScore = wrongScore;
