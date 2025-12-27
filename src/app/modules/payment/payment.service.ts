@@ -102,6 +102,7 @@ const createSubscriptionPayment = async (
     const apiResponse = await sslcz.init(paymentData);
 
     if (!apiResponse || !apiResponse.GatewayPageURL) {
+        console.log('SSLCommerz Init Response:', apiResponse);
         throw new AppError(
             StatusCodes.BAD_REQUEST,
             'Failed to initialize payment gateway',
