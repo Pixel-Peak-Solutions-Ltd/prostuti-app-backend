@@ -22,7 +22,7 @@ import { StudentNotification } from '../studentNotification/studentNotification.
 const store_id = config.sslcommerz_store_id; 
 
 const store_passwd = config.sslcommerz_store_password; 
-const is_live = false; 
+const is_live = config.sslcommerz_isLive; 
 
 const createSubscriptionPayment = async (
     userInfo: TJWTDecodedUser,
@@ -99,9 +99,7 @@ const createSubscriptionPayment = async (
     };
 
     const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live);
-    console.log(`[PAYMENT_DEBUG] Initializing SSLCommerz with: StoreID=${store_id}, is_live=${is_live}`);
     const apiResponse = await sslcz.init(paymentData);
-    console.log('[PAYMENT_DEBUG] SSLCommerz Response:', JSON.stringify(apiResponse, null, 2));
 
     if (!apiResponse || !apiResponse.GatewayPageURL) {
         throw new AppError(
