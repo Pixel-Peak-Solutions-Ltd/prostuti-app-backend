@@ -38,7 +38,7 @@ export default {
     process.env.BACKBLAZE_ALL_USERS_BUCKET_NAME,
     sslcommerz_store_id: process.env.SSLCOMMERZ_STORE_ID,
     sslcommerz_store_password: process.env.SSLCOMMERZ_STORE_PASSWORD,
-    sslcommerz_isLive: process.env.SSLCOMMERZ_IS_LIVE,
+    sslcommerz_isLive: false,
 
     // Add a helper method to check current environment
     isDevelopment: () => env === 'development',
