@@ -22,7 +22,7 @@ import { StudentNotification } from '../studentNotification/studentNotification.
 const store_id = config.sslcommerz_store_id; 
 
 const store_passwd = config.sslcommerz_store_password; 
-const is_live = config.sslcommerz_isLive; 
+const is_live = false; // Hardcoded to sandbox mode 
 
 const createSubscriptionPayment = async (
     userInfo: TJWTDecodedUser,
