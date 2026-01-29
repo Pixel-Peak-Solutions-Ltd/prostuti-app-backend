@@ -220,9 +220,19 @@ const getPublishedCoursesForStudent = async (user: TJWTDecodedUser,filters:ICour
         throw new AppError(StatusCodes.NOT_FOUND, 'Student not found')
     }
 
+    // Get the student's category type - support both new and old field structures
+    // New structure uses category.mainCategory, old structure uses categoryType directly
+    const studentCategoryType = studentProfile.category?.mainCategory || studentProfile.categoryType;
+    
+    if (!studentCategoryType) {
+        // If no category is set, return empty array (student needs to set their category)
+        console.warn(`Student ${user.userId} has no category set`);
+        return [];
+    }
+
     // Build filter criteria for categories
     const categoryFilters: any = {
-        'category.type': studentProfile.categoryType, 
+        'category.type': studentCategoryType, 
     };
 
      // Add optional filters based on what's provided
