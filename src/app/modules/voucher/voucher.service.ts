@@ -222,10 +222,62 @@ const deleteVoucherByID = async (id:string,userInfo: TJWTDecodedUser) => {
 
 };
 
+// Get vouchers available for a specific student (for payment flow)
+const getStudentVouchers = async (
+    userInfo: TJWTDecodedUser,
+    courseId?: string,
+) => {
+    // Get student details
+    const studentDetails = await Student.findOne({ user_id: userInfo.userId });
+    if (!studentDetails) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Student not found');
+    }
+
+    const now = new Date();
+
+    // Build query to get:
+    // 1. All_Course vouchers that are active and not expired
+    // 2. Specific_Course vouchers for the given course (if courseId provided)
+    // 3. Specific_Student vouchers for this student only
+    const orConditions: any[] = [
+        { voucherType: 'All_Course' },
+    ];
+
+    // Add course-specific vouchers if courseId is provided
+    if (courseId) {
+        orConditions.push({
+            voucherType: 'Specific_Course',
+            course_id: new Types.ObjectId(courseId),
+        });
+    }
+
+    // Add student-specific vouchers for this student
+    orConditions.push({
+        voucherType: 'Specific_Student',
+        student_id: studentDetails._id,
+    });
+
+    const vouchers = await Voucher.find({
+        $or: orConditions,
+        isActive: true,
+        isExpired: false,
+        startDate: { $lte: now },
+        endDate: { $gte: now },
+    })
+        .populate({
+            path: 'course_id',
+            select: 'name',
+        })
+        .sort({ discountValue: -1 });
+
+    return vouchers;
+};
+
 export const VoucherService = {
     createVoucher,
     getAllVouchers,
     getVoucherByID,
     updateVoucher,
     deleteVoucherByID,
+    getStudentVouchers,
 };

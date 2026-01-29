@@ -61,10 +61,23 @@ const deleteVoucherByID = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+// Get vouchers available for the authenticated student (for payment flow)
+const getStudentVouchers = catchAsync(async (req: Request, res: Response) => {
+    const courseId = req.query.course_id as string | undefined;
+    const result = await VoucherService.getStudentVouchers(req.user, courseId);
+
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'Student vouchers retrieved successfully',
+        data: result,
+    });
+});
+
 export const VoucherController = {
     createVoucher,
     getAllVouchers,
     getVoucherByID,
     updateVoucher,
     deleteVoucherByID,
+    getStudentVouchers,
 };

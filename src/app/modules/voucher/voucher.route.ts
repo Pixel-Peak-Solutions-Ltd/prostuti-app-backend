@@ -9,6 +9,8 @@ const router = express.Router();
 
 router.post('/create-voucher',auth(USER_ROLE.admin),validateRequest(VoucherValidation.createVoucherSchema), VoucherController.createVoucher);
 router.get('/all-voucher', VoucherController.getAllVouchers);
+// New authenticated endpoint for students to get their available vouchers
+router.get('/my-vouchers', auth(USER_ROLE.student), VoucherController.getStudentVouchers);
 router.get('/:id', VoucherController.getVoucherByID);
 router.delete('/:id',auth(USER_ROLE.admin), VoucherController.deleteVoucherByID);
 router.patch('/:id',auth(USER_ROLE.admin),validateRequest(VoucherValidation.updateVoucherSchema), VoucherController.updateVoucher);
