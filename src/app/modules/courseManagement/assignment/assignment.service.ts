@@ -67,6 +67,13 @@ const createAssignment = async (
         );
     }
 
+    if (payload.assignmentNo === 'undefined' || payload.details === 'undefined') {
+        throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            'Invalid assignment data provided',
+        );
+    }
+
     // Upload all files to Backblaze
     const uploadPromises = files.map((file) =>
         uploadToB2(
