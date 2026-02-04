@@ -14,9 +14,9 @@ export const subscriptionPlansDetails: Record<
     string,
     { durationInMonths: number; price: number }
 > = {
-    '1 month': { durationInMonths: 1, price: 500 },
-    '6 months': { durationInMonths: 6, price: 3000 },
-    '1 year': { durationInMonths: 12, price: 6000 },
+    '1 month': { durationInMonths: 1, price: 10 },
+    '6 months': { durationInMonths: 6, price: 10 },
+    '1 year': { durationInMonths: 12, price: 10 },
 };
 
 //filter
