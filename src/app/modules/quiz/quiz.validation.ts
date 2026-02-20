@@ -19,6 +19,8 @@ const createMockQuiz = z.object({
                 required_error: 'Question count is required',
             })
             .min(1, 'Question count must be at least 1'),
+        mcqCount: z.number().min(0).optional(),
+        writtenCount: z.number().min(0).optional(),
         isNegativeMarking: z.boolean({
             required_error: 'Is negative marking is required',
         }),
@@ -78,6 +80,8 @@ const createQuizzerQuiz = z.object({
                 required_error: 'Question count is required',
             })
             .min(1, 'Question count must be at least 1'),
+        mcqCount: z.number().min(0).optional(),
+        writtenCount: z.number().min(0).optional(),
         isNegativeMarking: z.boolean({
             required_error: 'Is negative marking is required',
         }),
@@ -116,6 +120,8 @@ const createSegmentQuiz = z.object({
         questionType: z.enum([...QuestionTypes] as [string, ...string[]], {
             required_error: 'Question type is required.',
         }),
+        mcqCount: z.number().min(0).optional(),
+        writtenCount: z.number().min(0).optional(),
         mainSubjects: z
             .array(
                 z.object({

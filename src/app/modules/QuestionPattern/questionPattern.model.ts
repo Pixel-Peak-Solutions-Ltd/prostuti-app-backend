@@ -27,6 +27,14 @@ const QuestionPatternSchema = new Schema<
             enum: QuestionTypes,
             required: [true, 'Question type is required'],
         },
+        mcqCount: {
+            type: Number,
+            min: 0,
+        },
+        writtenCount: {
+            type: Number,
+            min: 0,
+        },
         mainSubjects: [
             {
                 subject: { type: String, required: true },

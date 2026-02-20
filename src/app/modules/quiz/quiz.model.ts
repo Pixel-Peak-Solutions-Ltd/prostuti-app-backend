@@ -33,6 +33,14 @@ const QuizSchema = new Schema<IQuiz, QuizModel>(
             required: true,
             min: 1,
         },
+        mcqCount: {
+            type: Number,
+            min: 0,
+        },
+        writtenCount: {
+            type: Number,
+            min: 0,
+        },
         isNegativeMarking: {
             type: Boolean,
             default: false,

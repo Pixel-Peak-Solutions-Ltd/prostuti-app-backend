@@ -5,6 +5,8 @@ export type IQuestionPattern = {
     category_id: Types.ObjectId[];
     time: number;
     questionType: QuestionType;   
+    mcqCount?: number;
+    writtenCount?: number;
     mainSubjects: [
         {
             subject: string;

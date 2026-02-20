@@ -9,6 +9,8 @@ export type IQuiz={
   type:QuizType;
   time: number;//minute
   questionCount: number;
+  mcqCount?: number;
+  writtenCount?: number;
   isNegativeMarking: boolean;
   questionType: QuestionType
   questions: Types.ObjectId[];

@@ -26,6 +26,8 @@ const createQuestionPatternSchema = z.object({
         questionType: z.enum([...QuestionTypes] as [string, ...string[]], {
             required_error: 'Question type is required.',
         }),
+        mcqCount: z.number().min(0).optional(),
+        writtenCount: z.number().min(0).optional(),
         mainSubjects: z
             .array(SubjectSchema)
             .min(1, 'At least one main subject is required'),
@@ -53,6 +55,8 @@ const updateQuestionPatternSchema = z.object({
                 required_error: 'Question type is required.',
             })
             .optional(),
+        mcqCount: z.number().min(0).optional(),
+        writtenCount: z.number().min(0).optional(),
         mainSubjects: z
             .array(SubjectSchema)
             .min(1, 'At least one main subject is required')

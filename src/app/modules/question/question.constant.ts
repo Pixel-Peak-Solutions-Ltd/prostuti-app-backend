@@ -1,8 +1,8 @@
-export type QuestionType = 'MCQ' | 'Written'
+export type QuestionType = 'MCQ' | 'Written' | 'Hybrid'
 export type QuestionStatus="NOT_REVIEWED"|"APPROVED"|"REJECTED"
 
 
-export const QuestionTypes: QuestionType[] = ["MCQ","Written"];
+export const QuestionTypes: QuestionType[] = ["MCQ","Written","Hybrid"];
 export const QuestionStatuses:QuestionStatus[]=["NOT_REVIEWED","APPROVED","REJECTED"]
 
 

@@ -25,6 +25,8 @@ const createMockQuiz = async (
             chapter:string
         }[],
         questionCount: number;
+        mcqCount?: number;
+        writtenCount?: number;
         isNegativeMarking: boolean;
         time: number;
     },
@@ -33,6 +35,22 @@ const createMockQuiz = async (
     const checkStudent = await Student.findOne({ user_id: userInfo.userId });
     if (!checkStudent) {
         throw new AppError(StatusCodes.NOT_FOUND, 'Student not found');
+    }
+
+    // Validate hybrid counts
+    if (payload.questionType === 'Hybrid') {
+        if (!payload.mcqCount || !payload.writtenCount) {
+            throw new AppError(
+                StatusCodes.BAD_REQUEST,
+                'MCQ count and Written count are required for Hybrid quiz',
+            );
+        }
+        if (payload.mcqCount + payload.writtenCount !== payload.questionCount) {
+            throw new AppError(
+                StatusCodes.BAD_REQUEST,
+                `MCQ count (${payload.mcqCount}) + Written count (${payload.writtenCount}) must equal total question count (${payload.questionCount})`,
+            );
+        }
     }
 
     //subject
@@ -54,42 +72,76 @@ const createMockQuiz = async (
     // Set default question count
     const questionCount = payload.questionCount || 10;
 
-    // Get random questions from the category
+    let questions: any[] = [];
 
-    // Create a $facet pipeline dynamically for each category
-    const facets = checkCategory.reduce((acc:any, category:any) => {
-        acc[category._id] = [
-            {
-                $match: {
-                    category_id: category._id,
-                    type: payload.questionType,
-                },
-            },
-            {
-                $sample: { size: questionCount },
-            },
-        ];
-        return acc;
-    }, {});
+    if (payload.questionType === 'Hybrid') {
+        // For Hybrid: fetch MCQ and Written questions separately
+        const mcqCount = payload.mcqCount!;
+        const writtenCount = payload.writtenCount!;
 
-    const result = await Question.aggregate([
-        {
-            $facet: facets,
-        },
-    ]).exec();
-
-    // Flatten the result if you want a single array of questions
-    const questionArray = Object.values(result[0]).flat();
-    // Filter out duplicates by question `_id`
-    const questions = Array.from(
-        new Map(questionArray.map((q: any) => [q._id.toString(), q])).values(),
-    );
-
-    if (questions.length < questionCount * payload.subjects.length) {
-        throw new AppError(
-            StatusCodes.BAD_REQUEST,
-            `Not enough questions available. Required: ${questionCount * payload.subjects.length}, Found: ${questions.length}`,
+        // Fetch MCQ questions
+        const mcqFacets = checkCategory.reduce((acc:any, category:any) => {
+            acc[category._id] = [
+                { $match: { category_id: category._id, type: 'MCQ' } },
+                { $sample: { size: mcqCount } },
+            ];
+            return acc;
+        }, {});
+        const mcqResult = await Question.aggregate([{ $facet: mcqFacets }]).exec();
+        const mcqQuestions = Array.from(
+            new Map(Object.values(mcqResult[0]).flat().map((q: any) => [q._id.toString(), q])).values(),
         );
+
+        // Fetch Written questions
+        const writtenFacets = checkCategory.reduce((acc:any, category:any) => {
+            acc[category._id] = [
+                { $match: { category_id: category._id, type: 'Written' } },
+                { $sample: { size: writtenCount } },
+            ];
+            return acc;
+        }, {});
+        const writtenResult = await Question.aggregate([{ $facet: writtenFacets }]).exec();
+        const writtenQuestions = Array.from(
+            new Map(Object.values(writtenResult[0]).flat().map((q: any) => [q._id.toString(), q])).values(),
+        );
+
+        if (mcqQuestions.length < mcqCount * payload.subjects.length) {
+            throw new AppError(
+                StatusCodes.BAD_REQUEST,
+                `Not enough MCQ questions available. Required: ${mcqCount * payload.subjects.length}, Found: ${mcqQuestions.length}`,
+            );
+        }
+        if (writtenQuestions.length < writtenCount * payload.subjects.length) {
+            throw new AppError(
+                StatusCodes.BAD_REQUEST,
+                `Not enough Written questions available. Required: ${writtenCount * payload.subjects.length}, Found: ${writtenQuestions.length}`,
+            );
+        }
+
+        // MCQ first, then Written
+        questions = [...mcqQuestions, ...writtenQuestions];
+    } else {
+        // Original logic for MCQ or Written only
+        const facets = checkCategory.reduce((acc:any, category:any) => {
+            acc[category._id] = [
+                { $match: { category_id: category._id, type: payload.questionType } },
+                { $sample: { size: questionCount } },
+            ];
+            return acc;
+        }, {});
+
+        const result = await Question.aggregate([{ $facet: facets }]).exec();
+        const questionArray = Object.values(result[0]).flat();
+        questions = Array.from(
+            new Map(questionArray.map((q: any) => [q._id.toString(), q])).values(),
+        );
+
+        if (questions.length < questionCount * payload.subjects.length) {
+            throw new AppError(
+                StatusCodes.BAD_REQUEST,
+                `Not enough questions available. Required: ${questionCount * payload.subjects.length}, Found: ${questions.length}`,
+            );
+        }
     }
 
     // Create quiz
@@ -99,6 +151,8 @@ const createMockQuiz = async (
         type: 'Mock',
         time: payload.time,
         questionCount,
+        mcqCount: payload.mcqCount,
+        writtenCount: payload.writtenCount,
         isNegativeMarking: payload.isNegativeMarking,
         questionType: payload.questionType,
         questions: questions.map((q) => q._id),
@@ -143,7 +197,7 @@ const submitMockQuiz = async (
     //check quiz
     const checkQuiz = await Quiz.findById(quiz_id).populate(
         'questions',
-        'correctOption',
+        'correctOption type options',
     );
     if (!checkQuiz) {
         throw new AppError(StatusCodes.NOT_FOUND, 'Quiz not found');
@@ -208,42 +262,27 @@ const submitMockQuiz = async (
         );
     }
 
+    // Build question map with type info for per-question scoring
+    const questionMap = new Map(
+        checkQuiz.questions.map((q: any) => [
+            q._id.toString(),
+            { correctOption: q.correctOption, options: q.options || [], type: q.type },
+        ]),
+    );
+
     // Initialize formatted answers
     const formattedAnswers = [];
     let score = 0;
     let rightScore = 0;
     let wrongScore = 0;
+    const negativeMarkingValue = checkQuiz.isNegativeMarking ? 0.5 : 0;
 
-    // Handle MCQ and Written quizzes differently
-    if (checkQuiz.questionType === 'MCQ') {
-        // Validate selectedOption for MCQ questions
-        const questionMap = new Map(
-            checkQuiz.questions.map((q: any) => [
-                q._id.toString(),
-                { correctOption: q.correctOption, options: q.options || [] },
-            ]),
-        );
-        const invalidOptions = payload.answers.filter((answer) => {
-            const question = questionMap.get(answer.question_id);
-            return question && question.options.length > 0
-                ? !question.options.includes(answer.selectedOption)
-                : false;
-        });
-        if (invalidOptions.length > 0) {
-            throw new AppError(
-                StatusCodes.BAD_REQUEST,
-                `Invalid selected options for question IDs: ${invalidOptions
-                    .map((a) => a.question_id)
-                    .join(', ')}`,
-            );
-        }
+    // Process each answer based on the question's individual type
+    for (const answer of payload.answers) {
+        const question = questionMap.get(answer.question_id);
+        const questionType = checkQuiz.questionType === 'Hybrid' ? question?.type : checkQuiz.questionType;
 
-        // Calculate scores for MCQ
-        const negativeMarkingValue = checkQuiz.isNegativeMarking ? 0.5 : 0;
-        
-        // Process answers sequentially to correctly track scores
-        for (const answer of payload.answers) {
-            const question = questionMap.get(answer.question_id);
+        if (questionType === 'MCQ') {
             // Skip answer
             if (answer.selectedOption === 'null') {
                 await SkippedQuestion.findOneAndUpdate(
@@ -252,16 +291,13 @@ const submitMockQuiz = async (
                     { upsert: true }
                 );
                 formattedAnswers.push({
-                    question_id: new mongoose.Types.ObjectId(
-                        answer.question_id,
-                    ),
+                    question_id: new mongoose.Types.ObjectId(answer.question_id),
                     selectedOption: answer.selectedOption,
-                    mark: 0, // Default mark for null answers
+                    mark: 0,
                 });
                 continue;
             }
-            const isCorrect =
-                question?.correctOption === answer.selectedOption;
+            const isCorrect = question?.correctOption === answer.selectedOption;
             if (isCorrect) {
                 rightScore++;
             } else {
@@ -273,34 +309,27 @@ const submitMockQuiz = async (
                 wrongScore++;
             }
             formattedAnswers.push({
-                question_id: new mongoose.Types.ObjectId(
-                    answer.question_id,
-                ),
+                question_id: new mongoose.Types.ObjectId(answer.question_id),
                 selectedOption: answer.selectedOption,
                 mark: isCorrect ? 1 : 0,
             });
-        }
-
-        // Calculate final score
-        score = rightScore - wrongScore * negativeMarkingValue;
-    } else if (checkQuiz.questionType === 'Written') {
-        // No scoring for written quizzes
-        score = 0;
-        rightScore = 0;
-        wrongScore = 0;
-
-        formattedAnswers.push(
-            ...payload.answers.map((answer) => ({
+        } else if (questionType === 'Written') {
+            // Written questions: just store the answer, no scoring
+            formattedAnswers.push({
                 question_id: new mongoose.Types.ObjectId(answer.question_id),
-                selectedOption: answer.selectedOption, // No mark for written
-            })),
-        );
-    } else {
-        throw new AppError(
-            StatusCodes.BAD_REQUEST,
-            `Unsupported question type: ${checkQuiz.questionType}`,
-        );
+                selectedOption: answer.selectedOption,
+                mark: 0,
+            });
+        } else {
+            throw new AppError(
+                StatusCodes.BAD_REQUEST,
+                `Unsupported question type: ${questionType}`,
+            );
+        }
     }
+
+    // Calculate final score (only MCQ portion contributes)
+    score = rightScore - wrongScore * negativeMarkingValue;
 
     // Update quiz
     checkQuiz.answers = formattedAnswers;
@@ -331,6 +360,8 @@ const createQuizzerQuiz = async (
         }[],
         questionFilters: QuizzerFilter[];
         questionCount: number;
+        mcqCount?: number;
+        writtenCount?: number;
         isNegativeMarking: boolean;
         time: number;
     },
@@ -365,6 +396,10 @@ const createQuizzerQuiz = async (
     const categoryIds = checkCategory.map((cat) => cat._id);
 
     for (const filter of payload.questionFilters) {
+        // For Hybrid, query both MCQ and Written types
+        const typeFilter = payload.questionType === 'Hybrid' 
+            ? { $in: ['MCQ', 'Written'] } 
+            : payload.questionType;
         switch (filter) {
             case 'Favorite':
                 const favorite = await FavouriteQuestion.findOne({
@@ -374,7 +409,7 @@ const createQuizzerQuiz = async (
                     const validFavorites = await Question.find({
                         _id: { $in: favorite.favourite_questions },
                         category_id: { $in: categoryIds },
-                        type: payload.questionType,
+                        type: typeFilter,
                     }).distinct('_id');
                     questionIds.push(
                         ...validFavorites.map(
@@ -392,7 +427,7 @@ const createQuizzerQuiz = async (
                     const validWrongs = await Question.find({
                         _id: { $in: wrong.question_id },
                         category_id: { $in: categoryIds },
-                        type: payload.questionType,
+                        type: typeFilter,
                     }).distinct('_id');
                     questionIds.push(
                         ...validWrongs.map(
@@ -411,7 +446,7 @@ const createQuizzerQuiz = async (
                     const validSkippeds = await Question.find({
                         _id: { $in: skipped.question_id },
                         category_id: { $in: categoryIds },
-                        type: payload.questionType,
+                        type: typeFilter,
                     }).distinct('_id');
                     questionIds.push(
                         ...validSkippeds.map(
@@ -440,13 +475,16 @@ const createQuizzerQuiz = async (
     }
 
     // Aggregate questions
+    const typeMatchFilter = payload.questionType === 'Hybrid'
+        ? { $in: ['MCQ', 'Written'] }
+        : payload.questionType;
     const facets = checkCategory.reduce((acc:any, category:any) => {
         acc[category._id] = [
             {
                 $match: {
                     _id: { $in: questionIds },
                     category_id: category._id,
-                    type: payload.questionType,
+                    type: typeMatchFilter,
                 },
             },
             {
@@ -487,6 +525,8 @@ const createQuizzerQuiz = async (
         type: 'Quizzer',
         time: payload.time,
         questionCount,
+        mcqCount: payload.mcqCount,
+        writtenCount: payload.writtenCount,
         isNegativeMarking: payload.isNegativeMarking,
         questionType: payload.questionType,
         questions: questions.map((q) => q._id),
@@ -531,7 +571,7 @@ const submitQuizzerQuiz = async (
     //check quiz
     const checkQuiz = await Quiz.findById(quiz_id).populate(
         'questions',
-        'correctOption',
+        'correctOption type options',
     );
     if (!checkQuiz) {
         throw new AppError(StatusCodes.NOT_FOUND, 'Quiz not found');
@@ -596,43 +636,27 @@ const submitQuizzerQuiz = async (
         );
     }
 
+    // Build question map with type info for per-question scoring
+    const questionMap = new Map(
+        checkQuiz.questions.map((q: any) => [
+            q._id.toString(),
+            { correctOption: q.correctOption, options: q.options || [], type: q.type },
+        ]),
+    );
+
     // Initialize formatted answers
     const formattedAnswers = [];
     let score = 0;
     let rightScore = 0;
     let wrongScore = 0;
+    const negativeMarkingValue = checkQuiz.isNegativeMarking ? 0.5 : 0;
 
-    // Handle MCQ and Written quizzes differently
-    if (checkQuiz.questionType === 'MCQ') {
-        // Validate selectedOption for MCQ questions
-        const questionMap = new Map(
-            checkQuiz.questions.map((q: any) => [
-                q._id.toString(),
-                { correctOption: q.correctOption, options: q.options || [] },
-            ]),
-        );
-        const invalidOptions = payload.answers.filter((answer) => {
-            const question = questionMap.get(answer.question_id);
-            return question && question.options.length > 0
-                ? !question.options.includes(answer.selectedOption)
-                : false;
-        });
-        if (invalidOptions.length > 0) {
-            throw new AppError(
-                StatusCodes.BAD_REQUEST,
-                `Invalid selected options for question IDs: ${invalidOptions
-                    .map((a) => a.question_id)
-                    .join(', ')}`,
-            );
-        }
+    // Process each answer based on the question's individual type
+    for (const answer of payload.answers) {
+        const question = questionMap.get(answer.question_id);
+        const questionType = checkQuiz.questionType === 'Hybrid' ? question?.type : checkQuiz.questionType;
 
-        // Calculate scores for MCQ
-        const negativeMarkingValue = checkQuiz.isNegativeMarking ? 0.5 : 0;
-        
-        // Process answers sequentially to correctly track scores
-        for (const answer of payload.answers) {
-            const question = questionMap.get(answer.question_id);
-            // Skip answer
+        if (questionType === 'MCQ') {
             if (answer.selectedOption === 'null') {
                 await SkippedQuestion.findOneAndUpdate(
                     { student_id: checkStudent._id },
@@ -640,16 +664,13 @@ const submitQuizzerQuiz = async (
                     { upsert: true }
                 );
                 formattedAnswers.push({
-                    question_id: new mongoose.Types.ObjectId(
-                        answer.question_id,
-                    ),
+                    question_id: new mongoose.Types.ObjectId(answer.question_id),
                     selectedOption: answer.selectedOption,
-                    mark: 0, // Default mark for null answers
+                    mark: 0,
                 });
                 continue;
             }
-            const isCorrect =
-                question?.correctOption === answer.selectedOption;
+            const isCorrect = question?.correctOption === answer.selectedOption;
             if (isCorrect) {
                 rightScore++;
             } else {
@@ -661,34 +682,26 @@ const submitQuizzerQuiz = async (
                 wrongScore++;
             }
             formattedAnswers.push({
-                question_id: new mongoose.Types.ObjectId(
-                    answer.question_id,
-                ),
+                question_id: new mongoose.Types.ObjectId(answer.question_id),
                 selectedOption: answer.selectedOption,
                 mark: isCorrect ? 1 : 0,
             });
-        }
-
-        // Calculate final score
-        score = rightScore - wrongScore * negativeMarkingValue;
-    } else if (checkQuiz.questionType === 'Written') {
-        // No scoring for written quizzes
-        score = 0;
-        rightScore = 0;
-        wrongScore = 0;
-
-        formattedAnswers.push(
-            ...payload.answers.map((answer) => ({
+        } else if (questionType === 'Written') {
+            formattedAnswers.push({
                 question_id: new mongoose.Types.ObjectId(answer.question_id),
-                selectedOption: answer.selectedOption, // No mark for written
-            })),
-        );
-    } else {
-        throw new AppError(
-            StatusCodes.BAD_REQUEST,
-            `Unsupported question type: ${checkQuiz.questionType}`,
-        );
+                selectedOption: answer.selectedOption,
+                mark: 0,
+            });
+        } else {
+            throw new AppError(
+                StatusCodes.BAD_REQUEST,
+                `Unsupported question type: ${questionType}`,
+            );
+        }
     }
+
+    // Calculate final score (only MCQ portion contributes)
+    score = rightScore - wrongScore * negativeMarkingValue;
 
     // Update quiz
     checkQuiz.answers = formattedAnswers;
@@ -713,6 +726,8 @@ const createSegmentQuiz = async (
     userInfo: TJWTDecodedUser,
     payload: {
         questionType: QuestionType;
+        mcqCount?: number;
+        writtenCount?: number;
         mainSubjects: { subject: string; questionCount: number }[];
         optionalSubjects?: { subject: string; questionCount: number }[];
         category_id: string[];
@@ -764,6 +779,9 @@ const createSegmentQuiz = async (
     }
 
     // Fetch questions for each subject and validate counts
+    const typeFilter = payload.questionType === 'Hybrid'
+        ? { $in: ['MCQ', 'Written'] }
+        : payload.questionType;
     const questionPromises = allSubjects.map(async (sub) => {
         const categoryForSubject = checkCategories.find(
             (cat) => cat.subject.toLowerCase() === sub.subject.toLowerCase(),
@@ -774,7 +792,7 @@ const createSegmentQuiz = async (
             {
                 $match: {
                     category_id: categoryForSubject._id,
-                    type: payload.questionType,
+                    type: typeFilter,
                 },
             },
             {
@@ -821,6 +839,8 @@ const createSegmentQuiz = async (
         type: 'Segment',
         time: payload.time,
         questionCount: totalQuestionCount,
+        mcqCount: payload.mcqCount,
+        writtenCount: payload.writtenCount,
         isNegativeMarking: payload.isNegativeMarking,
         questionType: payload.questionType,
         questions: uniqueQuestions.map((q) => q._id),
@@ -865,7 +885,7 @@ const submitSegmentQuiz = async (
     //check quiz
     const checkQuiz = await Quiz.findById(quiz_id).populate(
         'questions',
-        'correctOption',
+        'correctOption type options',
     );
     if (!checkQuiz) {
         throw new AppError(StatusCodes.NOT_FOUND, 'Quiz not found');
@@ -930,43 +950,27 @@ const submitSegmentQuiz = async (
         );
     }
 
+    // Build question map with type info for per-question scoring
+    const questionMap = new Map(
+        checkQuiz.questions.map((q: any) => [
+            q._id.toString(),
+            { correctOption: q.correctOption, options: q.options || [], type: q.type },
+        ]),
+    );
+
     // Initialize formatted answers
     const formattedAnswers = [];
     let score = 0;
     let rightScore = 0;
     let wrongScore = 0;
+    const negativeMarkingValue = checkQuiz.isNegativeMarking ? 0.5 : 0;
 
-    // Handle MCQ and Written quizzes differently
-    if (checkQuiz.questionType === 'MCQ') {
-        // Validate selectedOption for MCQ questions
-        const questionMap = new Map(
-            checkQuiz.questions.map((q: any) => [
-                q._id.toString(),
-                { correctOption: q.correctOption, options: q.options || [] },
-            ]),
-        );
-        const invalidOptions = payload.answers.filter((answer) => {
-            const question = questionMap.get(answer.question_id);
-            return question && question.options.length > 0
-                ? !question.options.includes(answer.selectedOption)
-                : false;
-        });
-        if (invalidOptions.length > 0) {
-            throw new AppError(
-                StatusCodes.BAD_REQUEST,
-                `Invalid selected options for question IDs: ${invalidOptions
-                    .map((a) => a.question_id)
-                    .join(', ')}`,
-            );
-        }
+    // Process each answer based on the question's individual type
+    for (const answer of payload.answers) {
+        const question = questionMap.get(answer.question_id);
+        const questionType = checkQuiz.questionType === 'Hybrid' ? question?.type : checkQuiz.questionType;
 
-        // Calculate scores for MCQ
-        const negativeMarkingValue = checkQuiz.isNegativeMarking ? 0.5 : 0;
-        
-        // Process answers sequentially to correctly track scores
-        for (const answer of payload.answers) {
-            const question = questionMap.get(answer.question_id);
-            // Skip answer
+        if (questionType === 'MCQ') {
             if (answer.selectedOption === 'null') {
                 await SkippedQuestion.findOneAndUpdate(
                     { student_id: checkStudent._id },
@@ -974,16 +978,13 @@ const submitSegmentQuiz = async (
                     { upsert: true }
                 );
                 formattedAnswers.push({
-                    question_id: new mongoose.Types.ObjectId(
-                        answer.question_id,
-                    ),
+                    question_id: new mongoose.Types.ObjectId(answer.question_id),
                     selectedOption: answer.selectedOption,
-                    mark: 0, // Default mark for null answers
+                    mark: 0,
                 });
                 continue;
             }
-            const isCorrect =
-                question?.correctOption === answer.selectedOption;
+            const isCorrect = question?.correctOption === answer.selectedOption;
             if (isCorrect) {
                 rightScore++;
             } else {
@@ -995,34 +996,26 @@ const submitSegmentQuiz = async (
                 wrongScore++;
             }
             formattedAnswers.push({
-                question_id: new mongoose.Types.ObjectId(
-                    answer.question_id,
-                ),
+                question_id: new mongoose.Types.ObjectId(answer.question_id),
                 selectedOption: answer.selectedOption,
                 mark: isCorrect ? 1 : 0,
             });
-        }
-
-        // Calculate final score
-        score = rightScore - wrongScore * negativeMarkingValue;
-    } else if (checkQuiz.questionType === 'Written') {
-        // No scoring for written quizzes
-        score = 0;
-        rightScore = 0;
-        wrongScore = 0;
-
-        formattedAnswers.push(
-            ...payload.answers.map((answer) => ({
+        } else if (questionType === 'Written') {
+            formattedAnswers.push({
                 question_id: new mongoose.Types.ObjectId(answer.question_id),
-                selectedOption: answer.selectedOption, // No mark for written
-            })),
-        );
-    } else {
-        throw new AppError(
-            StatusCodes.BAD_REQUEST,
-            `Unsupported question type: ${checkQuiz.questionType}`,
-        );
+                selectedOption: answer.selectedOption,
+                mark: 0,
+            });
+        } else {
+            throw new AppError(
+                StatusCodes.BAD_REQUEST,
+                `Unsupported question type: ${questionType}`,
+            );
+        }
     }
+
+    // Calculate final score (only MCQ portion contributes)
+    score = rightScore - wrongScore * negativeMarkingValue;
 
     // Update quiz
     checkQuiz.answers = formattedAnswers;
