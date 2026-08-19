@@ -12,9 +12,6 @@ import globalErrorHandler from './app/middlewares/globalErrorHandler';
 import notFound from './app/middlewares/notFound'; // Adjust import path as needed
 
 
-
-
-
 const app: Application = express();
 
 // Trust proxy
@@ -34,7 +31,16 @@ if (!config.isProduction()) {
 const corsOptions = {
     origin: config.isProduction()
         ? config.frontend_url // Strict in production
-        : [config.frontend_url, 'http://localhost:3000', 'http://localhost:3001'], // More permissive in dev/staging
+        : (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+            // In dev/staging: allow any localhost port + the configured frontend URL
+            const isLocalhost = !origin || /^http:\/\/localhost:\d+$/.test(origin);
+            const isAllowedOrigin = origin === config.frontend_url;
+            if (isLocalhost || isAllowedOrigin) {
+                callback(null, true);
+            } else {
+                callback(new Error('Not allowed by CORS'));
+            }
+        },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'x-language', 'x-api-key'],
