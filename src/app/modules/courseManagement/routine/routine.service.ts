@@ -134,8 +134,27 @@ const getRoutineByID = async (id: string): Promise<any> => {
     return data;
 };
 
-const updateRoutine = async () => {
-    return 'updateRoutine service';
+const publishRoutine = async (
+    id: string,
+    isPublished: boolean,
+    userInfo: TJWTDecodedUser,
+): Promise<any> => {
+    const checkRoutine = await Routine.findById(id);
+    if (!checkRoutine) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Routine not found.');
+    }
+    if (checkRoutine.createdBy.toString() !== userInfo.userId) {
+        throw new AppError(StatusCodes.UNAUTHORIZED, 'You are not allowed to update this routine.');
+    }
+    const data = await Routine.findByIdAndUpdate(
+        id,
+        { isPublished, updatedBy: userInfo.userId },
+        { new: true },
+    );
+    if (!data) {
+        throw new AppError(StatusCodes.BAD_REQUEST, 'Update failed.');
+    }
+    return data;
 };
 
 const deleteRoutineByID = async (
@@ -168,6 +187,6 @@ export const RoutineService = {
     createRoutine,
     getAllRoutines,
     getRoutineByID,
-    updateRoutine,
+    publishRoutine,
     deleteRoutineByID,
 };

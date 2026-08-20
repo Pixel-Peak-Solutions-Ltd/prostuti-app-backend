@@ -31,6 +31,10 @@ const RoutineSchema = new Schema<IRoutine, RoutineModel>(
                 return this.createdBy;
             },
         },
+        isPublished: {
+            type: Boolean,
+            default: false,
+        },
     },
     {
         timestamps: true,

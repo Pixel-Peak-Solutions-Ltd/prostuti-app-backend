@@ -43,12 +43,17 @@ const getRoutineByID = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
-const updateRoutine = catchAsync(async (req: Request, res: Response) => {
-    const result = await RoutineService.updateRoutine();
+const publishRoutine = catchAsync(async (req: Request, res: Response) => {
+    const { isPublished } = req.body;
+    const result = await RoutineService.publishRoutine(
+        req.params.id,
+        isPublished,
+        req.user as TJWTDecodedUser,
+    );
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
-        message: 'Routine is updated successfully',
+        message: `Routine ${isPublished ? 'published' : 'unpublished'} successfully`,
         data: result,
     });
 });
@@ -67,6 +72,6 @@ export const RoutineController = {
     createRoutine,
     getAllRoutines,
     getRoutineByID,
-    updateRoutine,
+    publishRoutine,
     deleteRoutineByID,
 };

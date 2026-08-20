@@ -6,6 +6,7 @@ export type IRoutine={
     course_id: Types.ObjectId;
     type: RoutineType
     date:Date,
+    isPublished?: boolean,
     createdBy:Types.ObjectId,
     updatedBy:Types.ObjectId
   }

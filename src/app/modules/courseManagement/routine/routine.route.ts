@@ -14,6 +14,6 @@ router
     .get('/',auth(), RoutineController.getAllRoutines)
     .get('/:id',auth(), RoutineController.getRoutineByID)
     .delete('/:id',auth(), RoutineController.deleteRoutineByID)
-    .patch('/:id', RoutineController.updateRoutine);
+    .patch('/:id', auth(USER_ROLE.teacher), RoutineController.publishRoutine);
 
 export const RoutineRoute = router;
