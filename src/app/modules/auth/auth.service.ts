@@ -119,9 +119,19 @@ const registerStudent = async (
 const loginUser = async (payload: ILoginStudent) => {
     const { rememberMe, email, phone, password } = payload;
 
-    const user = await User.findOne({
-        ...(email ? { email } : { phone: formatPhoneNumber(phone) }),
-    }).select('+password');
+    let query = {};
+    if (email) {
+        query = { email };
+    } else {
+        query = {
+            $or: [
+                { phone: formatPhoneNumber(phone) },
+                { phone: phone }
+            ]
+        };
+    }
+
+    const user = await User.findOne(query).select('+password');
 
     // Check if the user exist in database
     if (!user) {
@@ -384,7 +394,12 @@ const resetStudentPassword = async (
             otpCode,
         });
         // Check if the user is exist
-        const user = await User.findOne({ phone: formatPhoneNumber(phone) });
+        const user = await User.findOne({
+            $or: [
+                { phone: formatPhoneNumber(phone) },
+                { phone: phone }
+            ]
+        });
 
         if (!user) {
             throw new AppError(StatusCodes.NOT_FOUND, 'User not found!');

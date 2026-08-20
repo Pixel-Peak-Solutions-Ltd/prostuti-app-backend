@@ -16,7 +16,10 @@ const sendVerificationCode = async (
     // Check if the phone number exists in the database for PASSWORD_RESET
     if (phoneVerificationType === PHONE_VERIFICATION_TYPE.PASSWORD_RESET) {
         const userExists = await User.exists({
-            phone: formatPhoneNumber(phoneNumber),
+            $or: [
+                { phone: formatPhoneNumber(phoneNumber) },
+                { phone: phoneNumber }
+            ]
         });
 
         if (!userExists) {
@@ -27,7 +30,10 @@ const sendVerificationCode = async (
     // Check if the phone number exists in the database for account creation
     if (phoneVerificationType === PHONE_VERIFICATION_TYPE.ACCOUNT_CREATION) {
         const userExists = await User.exists({
-            phone: formatPhoneNumber(phoneNumber),
+            $or: [
+                { phone: formatPhoneNumber(phoneNumber) },
+                { phone: phoneNumber }
+            ]
         });
 
         if (userExists) {
