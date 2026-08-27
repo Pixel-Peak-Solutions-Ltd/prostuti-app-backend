@@ -19,6 +19,7 @@ import { EnrolledCourseSearchableFields } from './enrolledCourse.constant';
 import { IEnrolledCourseFilters } from './enrolledCourse.interface';
 import { studentNotificationService } from '../studentNotification/studentNotification.service';
 import { StudentNotification } from '../studentNotification/studentNotification.modal';
+import { socketHandler } from '../../../server';
 
 const store_id = config.sslcommerz_store_id; 
 const store_passwd = config.sslcommerz_store_password; 
@@ -121,6 +122,11 @@ const createFreeEnrolledCourse = async (
                         ? `${baseMessage} You have subscription till ${studentDetails.subscriptionEndDate.toDateString()}.`
                         : baseMessage,
                 });
+                
+                socketHandler.emitCourseEnrolledNotification(
+                    { user_id: userInfo.userId, subscriptionEndDate: studentDetails.subscriptionEndDate },
+                    { name: course.name }
+                );
             } catch (notificationError) {
                 console.error(
                     'Failed to create student free course notification:',
@@ -245,9 +251,14 @@ const createSubscriptionEnrolledCourse = async (
                         ? `${baseMessage} You have subscription till ${studentDetails.subscriptionEndDate.toDateString()}.`
                         : baseMessage,
                 });
+                
+                socketHandler.emitCourseEnrolledNotification(
+                    { user_id: userInfo.userId, subscriptionEndDate: studentDetails.subscriptionEndDate },
+                    { name: course.name }
+                );
             } catch (notificationError) {
                 console.error(
-                    'Failed to create student free course notification:',
+                    'Failed to create student subscription course notification:',
                     notificationError,
                 );
             }
@@ -506,6 +517,16 @@ const createPaidEnrolledCourseSuccess = async (
     if (notificationPayloads.length > 0) {
         try {
             await StudentNotification.insertMany(notificationPayloads);
+            
+            // Emit socket events
+            if (student) {
+                for (const course of allCourses) {
+                    socketHandler.emitCourseEnrolledNotification(
+                        { user_id: student.user_id.toString(), subscriptionEndDate: student.subscriptionEndDate },
+                        { name: course.name }
+                    );
+                }
+            }
         } catch (error) {
             console.error('Failed to create enrollment notifications:', error);
             // Continue execution - notifications aren't critical to the enrollment process

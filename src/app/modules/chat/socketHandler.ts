@@ -16,6 +16,8 @@ import config from '../../config';
 import { Types } from 'mongoose';
 import { USER_ROLE } from '../user/user.constant';
 import { Notification as NotificationModal } from '../notification/notification.model';
+import { StudentNotification } from '../studentNotification/studentNotification.modal';
+import { Student } from '../student/student.model';
 
 /**
  * Class to handle all Socket.IO operations
@@ -99,7 +101,7 @@ export class SocketHandler {
         socket.emit(SOCKET_EVENTS.AUTHENTICATED, { success: true });
 
         // Send pending notifications to user
-        // await this.sendPendingCourseNoticeNotifications(socket, user.userId);
+        await this.sendPendingCourseNoticeNotifications(socket, user.userId);
 
         // Handle disconnections
         socket.on(SOCKET_EVENTS.DISCONNECT, () =>
@@ -470,31 +472,13 @@ export class SocketHandler {
      * Emit course notice notification to the student
      */
 
-    // In the class, add a method to store offline notifications
-    public async storeOfflineCourseNoticeNotification(
-        user_id: string,
-        message: string,
-    ): Promise<void> {
-        try {
-            await NotificationModal.create({
-                recipient: user_id,
-                sender: user_id,
-                type: 'General',
-                title: 'Course Notice',
-                message,
-            });
-        } catch (error) {
-            console.error('Error storing offline notification:', error);
-        }
-    }
-
+    // In the class, add a method to emit notification immediately if online
     public async emitCourseNoticeNotification(
-        studentData: { user_id: string; subscriptionEndDate?: Date },
-        courseData: { name: string },
+        studentData: { user_id: string; },
+        title: string,
         notification: string,
     ): Promise<void> {
         const studentUser = this.connectedUsers.get(studentData.user_id);
-        const baseMessage = `New notification for "${courseData.name}": ${notification}`;
 
         if (studentUser) {
             const studentSocket = this.io.sockets.sockets.get(
@@ -502,47 +486,36 @@ export class SocketHandler {
             );
             if (studentSocket) {
                 studentSocket.emit(SOCKET_EVENTS.COURSE_NOTICE_NOTIFICATION, {
-                    message: baseMessage,
+                    title: title,
+                    message: notification,
                 });
-            } else {
-                // Student is offline — store for later
-                await this.storeOfflineCourseNoticeNotification(
-                    studentData.user_id,
-                    baseMessage,
-                );
             }
-        } else {
-            // Student is offline — store for later
-            await this.storeOfflineCourseNoticeNotification(
-                studentData.user_id,
-                baseMessage,
-            );
         }
     }
 
-    // Method to send pending notifications
+    // Method to send pending notifications when a user comes online
     private async sendPendingCourseNoticeNotifications(
         socket: Socket,
         userId: string,
     ): Promise<void> {
         try {
+            const student = await Student.findOne({ user_id: userId });
+            if (!student) return;
+
             // Find all unread notifications for this user
-            const pendingNotifications = await NotificationModal.find({
-                recipient: userId,
+            const pendingNotifications = await StudentNotification.find({
+                student_id: student._id,
                 isRead: false,
             }).sort({ createdAt: 1 }); // Oldest first
 
             // Send each notification
             for (const notification of pendingNotifications) {
                 socket.emit(SOCKET_EVENTS.COURSE_NOTICE_NOTIFICATION, {
+                    title: notification.title,
                     message: notification.message,
-                    created_at: notification.createdAt,
+                    created_at: (notification as any).createdAt,
                     notification_id: notification._id.toString(),
                 });
-
-                // Mark as read
-                notification.isRead = true;
-                await notification.save();
             }
         } catch (error) {
             console.error('Error sending pending notifications:', error);

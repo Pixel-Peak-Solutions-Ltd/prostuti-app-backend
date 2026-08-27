@@ -6,6 +6,7 @@ import { INotice, TCreateNoticePayload } from './notice.interface';
 import { Notice } from './notice.model';
 import { EnrolledCourse } from '../../enrolledCourse/enrolledCourse.model';
 import { StudentNotification } from '../../studentNotification/studentNotification.modal';
+import { socketHandler } from '../../../../server';
 
 // Create Notice
 const createNotice = async (payload: TCreateNoticePayload) => {
@@ -38,17 +39,35 @@ const createNotice = async (payload: TCreateNoticePayload) => {
     const enrolledStudents = await EnrolledCourse.find(
         { course_id },
         { student_id: 1, _id: 0 },
-    );
+    ).populate({
+        path: 'student_id',
+        select: 'user_id'
+    });
 
     // Create notifications in bulk with a single operation
-    const notificationPayloads = enrolledStudents.map((student) => ({
-        student_id: student.student_id,
-        title: `Notice for "${courseExists.name}"`,
-        message: notification,
-    }));
+    const notificationPayloads = enrolledStudents.map((enrolled) => {
+        const student = enrolled.student_id as any;
+        return {
+            student_id: student._id,
+            title: `Notice for "${courseExists.name}"`,
+            message: notification,
+        };
+    });
 
     try {
         await StudentNotification.insertMany(notificationPayloads);
+        
+        // Emit socket events for real-time notification
+        for (const enrolled of enrolledStudents) {
+            const student = enrolled.student_id as any;
+            if (student && student.user_id) {
+                socketHandler.emitCourseNoticeNotification(
+                    { user_id: student.user_id.toString() },
+                    `Notice for "${courseExists.name}"`,
+                    notification
+                );
+            }
+        }
     } catch (error) {
         console.error(
             'Failed to create student course notice notifications:',
