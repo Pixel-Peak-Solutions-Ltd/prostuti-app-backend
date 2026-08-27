@@ -93,9 +93,9 @@ const teacherSchema = new Schema<ITeacher>(
                     `${props.value} is not a valid date format! Use format: 'Month DD,YYYY'`,
             },
         },
-        subject: {
-            type: String,
-            trim: true,
+        subjects: {
+            type: [String],
+            default: [],
         },
         assignedWorks: {
             type: [String],

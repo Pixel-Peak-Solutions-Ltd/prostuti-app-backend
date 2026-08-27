@@ -53,14 +53,9 @@ const createTeacherValidationSchema = z.object({
                 /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?])(?=.*[a-zA-Z0-9!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/,
                 'Password must contain at least one uppercase letter, one number, and one special character',
             ),
-        subject: z
-            .string({
-                required_error: 'Subject is required',
-                invalid_type_error: 'Subject must be a string',
-            })
-            .trim()
-            .min(1, 'Subject must be at least 1 characters')
-            .max(20, 'Subject cannot be more than 20 characters')
+        subjects: z
+            .array(z.string())
+            .min(1, 'At least one subject is required')
             .optional(),
 
         assignedWorks: z

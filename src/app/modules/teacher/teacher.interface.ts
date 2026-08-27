@@ -16,7 +16,7 @@ export interface ITeacher {
     email: string;
     image?: TImage;
     joinedDate: string;
-    subject: string;
+    subjects: string[];
     assignedWorks: string[];
     jobType: string;
 }
@@ -24,7 +24,7 @@ export interface ITeacher {
 // Define allowed update fields type
 export type TAllowedTeacherUpdates = Pick<
     ITeacher,
-    'name' | 'phone' | 'subject' | 'jobType'
+    'name' | 'phone' | 'subjects' | 'jobType'
 >;
 
 export type TUpdatePayloadType = Partial<

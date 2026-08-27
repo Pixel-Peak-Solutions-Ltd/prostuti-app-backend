@@ -54,7 +54,7 @@ const updateTeacher = async (
     const updatedPayload: TUpdatePayloadType = {
         ...(payload.name && { name: payload.name }),
         ...(payload.phone && { phone: payload.phone }),
-        ...(payload.subject && { subject: payload.subject }),
+        ...(payload.subjects && { subjects: payload.subjects }),
         ...(payload.jobType && { jobType: payload.jobType }),
     };
 

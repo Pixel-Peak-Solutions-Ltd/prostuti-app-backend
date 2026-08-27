@@ -1,6 +1,6 @@
 export const teacherManagementSearchableFields = [
     'name',
-    'subject',
+    'subjects',
     'teacherId',
     'jobType',
 ];

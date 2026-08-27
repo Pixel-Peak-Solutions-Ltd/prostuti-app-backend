@@ -37,7 +37,7 @@ const createTeacher = async (payload: Record<string, any>) => {
             teacherId: newUser[0].registeredId,
             email: newUser[0].email,
             ...(payload.name && { name: payload.name }),
-            ...(payload.subject && { subject: payload.subject }),
+            ...(payload.subjects && { subjects: payload.subjects }),
             ...(payload.assignedWorks && {
                 assignedWorks: payload.assignedWorks,
             }),
