@@ -15,12 +15,8 @@ const createTeacherAdminValidationSchema = z.object({
                 required_error: 'Password is required',
                 invalid_type_error: 'Password must be a string',
             })
-            .min(8, 'Password must be at least 8 characters long')
-            .max(20, 'Password must not exceed 20 characters')
-            .regex(
-                /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?])(?=.*[a-zA-Z0-9!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/,
-                'Password must contain at least one uppercase letter, one number, and one special character',
-            ),
+            .min(6, 'Password must be at least 6 characters long')
+            .max(20, 'Password must not exceed 20 characters'),
     }),
 });
 
@@ -47,12 +43,8 @@ const createTeacherValidationSchema = z.object({
                 required_error: 'Password is required',
                 invalid_type_error: 'Password must be a string',
             })
-            .min(8, 'Password must be at least 8 characters long')
-            .max(20, 'Password must not exceed 20 characters')
-            .regex(
-                /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?])(?=.*[a-zA-Z0-9!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/,
-                'Password must contain at least one uppercase letter, one number, and one special character',
-            ),
+            .min(6, 'Password must be at least 6 characters long')
+            .max(20, 'Password must not exceed 20 characters'),
         subjects: z
             .array(z.string())
             .min(1, 'At least one subject is required')
