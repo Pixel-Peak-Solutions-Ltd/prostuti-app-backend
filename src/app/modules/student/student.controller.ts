@@ -15,11 +15,17 @@ const createStudents = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllStudents = catchAsync(async (req: Request, res: Response) => {
-    const result = await studentService.getAllStudents();
+    const { mainCategory, subCategory, isSubscribed, searchTerm } = req.query as {
+        mainCategory?: string;
+        subCategory?: string;
+        isSubscribed?: string;
+        searchTerm?: string;
+    };
+    const result = await studentService.getAllStudents({ mainCategory, subCategory, isSubscribed, searchTerm });
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
-        message: 'Students are retrieved successfully',
+        message: 'Students retrieved successfully',
         data: result,
     });
 });

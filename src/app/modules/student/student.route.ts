@@ -10,7 +10,7 @@ const router = express.Router();
 
 router
     .post('/', studentController.createStudents)
-    .get('/', studentController.getAllStudents)
+    .get('/', auth(USER_ROLE.admin, USER_ROLE.teacher), studentController.getAllStudents)
     .get('/:id', studentController.getStudentByID)
     .delete('/:id', studentController.deleteUserByID)
     .patch(

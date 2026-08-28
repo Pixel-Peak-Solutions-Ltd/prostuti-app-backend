@@ -35,8 +35,38 @@ const createStudent = async () => {
     return 'createStudent service';
 };
 
-const getAllStudents = async () => {
-    return 'getAllStudents service';
+const getAllStudents = async (filters: { mainCategory?: string; subCategory?: string; isSubscribed?: string; searchTerm?: string }) => {
+    const query: Record<string, unknown> = {};
+
+    // Filter by main category if provided
+    if (filters.mainCategory) {
+        query['category.mainCategory'] = filters.mainCategory;
+    }
+
+    // Filter by sub-category if provided
+    if (filters.subCategory) {
+        query['category.subCategory'] = filters.subCategory;
+    }
+
+    // Filter by subscription status if provided
+    if (filters.isSubscribed !== undefined && filters.isSubscribed !== '') {
+        query['isSubscribed'] = filters.isSubscribed === 'true';
+    }
+
+    // Filter by search term (name or studentId)
+    if (filters.searchTerm) {
+        query['$or'] = [
+            { name: { $regex: filters.searchTerm, $options: 'i' } },
+            { studentId: { $regex: filters.searchTerm, $options: 'i' } },
+        ];
+    }
+
+    const students = await Student.find(query)
+        .select('studentId name email phone category categoryType isSubscribed subscriptionEndDate createdAt')
+        .sort({ createdAt: -1 })
+        .lean();
+
+    return students;
 };
 
 const getStudentByID = async () => {
