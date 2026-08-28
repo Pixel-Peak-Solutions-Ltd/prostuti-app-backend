@@ -5,6 +5,8 @@ import { TJWTDecodedUser } from '../../interfaces/jwt/jwt.type';
 import { User } from '../user/user.model';
 import { INotification, INotificationFilters } from './notification.interface';
 import { Notification } from './notification.model';
+import { EnrolledCourse } from '../enrolledCourse/enrolledCourse.model';
+import { USER_ROLE } from '../user/user.constant';
 import { calculatePagination } from '../../helpers/pagenationHelper';
 import { IPaginationOptions } from '../../interfaces/common';
 import { NotificationSearchableFields } from './notification.constant';
@@ -177,8 +179,63 @@ const getUnreadCount = async (
     return { count };
 };
 
+// Send bulk notification based on criteria
+const sendBulkNotification = async (
+    userInfo: TJWTDecodedUser,
+    payload: {
+        title: string;
+        message: string;
+        targetType: 'All' | 'Course' | 'Subscription';
+        courseId?: string;
+    }
+): Promise<{ success: boolean; count: number }> => {
+    // Validate sender
+    const sender = await User.findById(userInfo.userId);
+    if (!sender) {
+        throw new AppError(StatusCodes.NOT_FOUND, 'Sender user not found');
+    }
+
+    let recipientIds: Types.ObjectId[] = [];
+
+    if (payload.targetType === 'All') {
+        const users = await User.find({ role: USER_ROLE.student }).select('_id');
+        recipientIds = users.map((u) => u._id);
+    } else if (payload.targetType === 'Course') {
+        if (!payload.courseId) {
+            throw new AppError(StatusCodes.BAD_REQUEST, 'courseId is required for Course target type');
+        }
+        const enrolled = await EnrolledCourse.find({ course_id: payload.courseId }).select('student_id');
+        recipientIds = enrolled.map((e) => e.student_id);
+    } else if (payload.targetType === 'Subscription') {
+        const enrolled = await EnrolledCourse.find({ enrollmentType: 'Subscription' }).select('student_id');
+        recipientIds = enrolled.map((e) => e.student_id);
+    }
+
+    // Deduplicate recipients
+    const uniqueRecipientIds = [...new Set(recipientIds.map((id) => id.toString()))];
+
+    if (uniqueRecipientIds.length === 0) {
+        return { success: true, count: 0 };
+    }
+
+    const notifications = uniqueRecipientIds.map((recipientId) => ({
+        recipient: new Types.ObjectId(recipientId),
+        sender: userInfo.userId,
+        type: 'General',
+        title: payload.title,
+        message: payload.message,
+        isRead: false,
+    }));
+
+    // Bulk insert
+    await Notification.insertMany(notifications);
+
+    return { success: true, count: uniqueRecipientIds.length };
+};
+
 export const notificationService = {
     createNotification,
+    sendBulkNotification,
     getMyNotifications,
     markAsRead,
     markAllAsRead,

@@ -6,6 +6,8 @@ import { notificationService } from './notification.service';
 import pick from '../../helpers/pick';
 import { paginationFields } from '../../constant';
 import { NotificationFilterableFields } from './notification.constant';
+import { notificationValidation } from './notification.validation';
+import { TJWTDecodedUser } from '../../interfaces/jwt/jwt.type';
 
 // Create a notification
 const createNotification = catchAsync(async (req: Request, res: Response) => {
@@ -14,6 +16,19 @@ const createNotification = catchAsync(async (req: Request, res: Response) => {
     sendSuccessResponse(res, {
         statusCode: StatusCodes.CREATED,
         message: 'Notification created successfully',
+        data: result,
+    });
+});
+
+const sendBulkNotification = catchAsync(async (req: Request, res: Response) => {
+    const result = await notificationService.sendBulkNotification(
+        req.user as TJWTDecodedUser,
+        req.body
+    );
+
+    sendSuccessResponse(res, {
+        statusCode: StatusCodes.OK,
+        message: 'Bulk notifications sent successfully',
         data: result,
     });
 });
@@ -74,6 +89,7 @@ const getUnreadCount = catchAsync(async (req: Request, res: Response) => {
 
 export const notificationController = {
     createNotification,
+    sendBulkNotification,
     getMyNotifications,
     markAsRead,
     markAllAsRead,

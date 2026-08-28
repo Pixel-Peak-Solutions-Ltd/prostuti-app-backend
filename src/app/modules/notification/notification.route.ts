@@ -3,6 +3,7 @@ import auth from '../../middlewares/auth';
 import validateRequest from '../../middlewares/validateRequest';
 import { notificationController } from './notification.controller';
 import { notificationValidation } from './notification.validation';
+import { USER_ROLE } from '../user/user.constant';
 
 const router = express.Router();
 
@@ -12,6 +13,11 @@ router
         auth(),
         validateRequest(notificationValidation.createNotificationSchema),
         notificationController.createNotification
+    )
+    .post(
+        '/send-bulk',
+        auth(USER_ROLE.admin),
+        notificationController.sendBulkNotification
     )
     .get(
         '/my-notifications',
