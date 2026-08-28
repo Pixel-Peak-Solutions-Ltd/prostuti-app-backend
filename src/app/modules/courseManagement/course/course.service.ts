@@ -235,9 +235,19 @@ const getPublishedCoursesForStudent = async (user: TJWTDecodedUser,filters:ICour
         'category.type': studentCategoryType, 
     };
 
-     // Add optional filters based on what's provided
-     if (categoryDivision) categoryFilters['category.division'] = categoryDivision;
-     if (categoryUniversityType) categoryFilters['category.universityType'] = categoryUniversityType;
+    // Strictly enforce sub-category access control (Bug 22)
+    const studentSubCategory = studentProfile.category?.subCategory;
+    if (studentSubCategory) {
+        if (studentCategoryType === 'Academic') {
+            categoryFilters['category.division'] = studentSubCategory;
+        } else if (studentCategoryType === 'Admission') {
+            categoryFilters['category.universityType'] = studentSubCategory;
+        }
+    }
+
+     // Add optional filters based on what's provided (only if they do not override the strict subCategory filter)
+     if (categoryDivision && !categoryFilters['category.division']) categoryFilters['category.division'] = categoryDivision;
+     if (categoryUniversityType && !categoryFilters['category.universityType']) categoryFilters['category.universityType'] = categoryUniversityType;
      if (categoryUniversityName) categoryFilters['category.universityName'] = categoryUniversityName;
      if (categoryChapter) categoryFilters['category.chapter'] = categoryChapter;
      if (categorySubject) categoryFilters['category.subject'] = categorySubject;

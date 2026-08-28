@@ -25,6 +25,28 @@ const store_id = config.sslcommerz_store_id;
 const store_passwd = config.sslcommerz_store_password; 
 const is_live = config.sslcommerz_isLive; 
 
+const validateCourseCategories = (courses: any[], studentDetails: any) => {
+    const studentCategoryType = studentDetails.category?.mainCategory || studentDetails.categoryType;
+    const studentSubCategory = studentDetails.category?.subCategory;
+
+    for (const course of courses) {
+        const courseCategory = course.category_id as any;
+        if (!courseCategory) continue;
+
+        if (courseCategory.type !== studentCategoryType) {
+            throw new AppError(StatusCodes.FORBIDDEN, `You can only enroll in ${studentCategoryType} courses.`);
+        }
+
+        if (studentSubCategory) {
+            if (studentCategoryType === 'Academic' && courseCategory.division && courseCategory.division !== studentSubCategory) {
+                throw new AppError(StatusCodes.FORBIDDEN, `You can only enroll in ${studentSubCategory} courses.`);
+            } else if (studentCategoryType === 'Admission' && courseCategory.universityType && courseCategory.universityType !== studentSubCategory) {
+                throw new AppError(StatusCodes.FORBIDDEN, `You can only enroll in ${studentSubCategory} courses.`);
+            }
+        }
+    }
+}; 
+
 const createFreeEnrolledCourse = async (
     userInfo: TJWTDecodedUser,
     payload: { course_id: string[] },
@@ -38,7 +60,7 @@ const createFreeEnrolledCourse = async (
     }
 
     // Check if all course IDs are valid
-    const courses = await Course.find({ _id: { $in: course_id } });
+    const courses = await Course.find({ _id: { $in: course_id } }).populate('category_id');
 
     // If courses not found
     if (courses.length !== course_id.length) {
@@ -47,6 +69,8 @@ const createFreeEnrolledCourse = async (
             'One or more courses are not found.',
         );
     }
+
+    validateCourseCategories(courses, studentDetails);
 
     // Check if all courses are free
     const nonFreeCourse = courses.find((course) => course.priceType !== 'Free');
@@ -165,7 +189,7 @@ const createSubscriptionEnrolledCourse = async (
         );
     }
     // Check if all course IDs are valid
-    const courses = await Course.find({ _id: { $in: course_id } });
+    const courses = await Course.find({ _id: { $in: course_id } }).populate('category_id');
 
     // If courses not found
     if (courses.length !== course_id.length) {
@@ -174,6 +198,8 @@ const createSubscriptionEnrolledCourse = async (
             'One or more courses are not found.',
         );
     }
+
+    validateCourseCategories(courses, studentDetails);
 
     // Check if all courses are subscription based
     const nonSubscriptionCourse = courses.find(
@@ -286,7 +312,7 @@ const createPaidEnrolledCourse = async (
     }
 
     // Get the courses
-    const courses = await Course.find({ _id: { $in: course_id } });
+    const courses = await Course.find({ _id: { $in: course_id } }).populate('category_id');
 
     // Validate courses
     if (courses.length !== course_id.length) {
@@ -295,6 +321,8 @@ const createPaidEnrolledCourse = async (
             'One or more courses are not found.',
         );
     }
+
+    validateCourseCategories(courses, studentDetails);
 
     // Ensure all courses are paid
     const nonPaidCourse = courses.find((course) => course.priceType !== 'Paid');
