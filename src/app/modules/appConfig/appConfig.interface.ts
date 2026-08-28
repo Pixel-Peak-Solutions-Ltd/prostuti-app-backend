@@ -5,6 +5,7 @@ export type IAppConfig = {
     freeTrialDays: number;
     freeAccessFeatures: string[];
     featureLimits: Record<string, number>;
+    supportMobileNumber: string;
 };
 
 export type AppConfigModel = Model<IAppConfig, Record<string, unknown>>;

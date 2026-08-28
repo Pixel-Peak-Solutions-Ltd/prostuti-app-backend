@@ -23,6 +23,10 @@ const AppConfigSchema = new Schema<IAppConfig, AppConfigModel>(
             required: true,
             default: {},
         },
+        supportMobileNumber: {
+            type: String,
+            default: '',
+        },
     },
     {
         timestamps: true,
