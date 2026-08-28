@@ -28,11 +28,11 @@ const registerStudentValidationSchema = z.object({
             subCategory: z.string().optional(),
             email: z
                 .string({
-                    required_error: 'Email is required',
                     invalid_type_error: 'Email must be a string',
                 })
                 .email('Invalid email format')
-                .optional(),
+                .optional()
+                .or(z.literal('')),
             phone: z
                 .string({
                     required_error: 'Phone number is required',

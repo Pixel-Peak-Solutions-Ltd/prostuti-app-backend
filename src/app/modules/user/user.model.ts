@@ -48,7 +48,7 @@ const userSchema = new Schema<IUser, IUserModel>(
         email: {
             type: String,
             unique: true,
-            required: true,
+            sparse: true,
             validate: {
                 validator: function (v: string) {
                     return /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(

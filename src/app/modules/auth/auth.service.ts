@@ -60,9 +60,12 @@ const registerStudent = async (
             registeredId: `SID${Date.now()}${Math.random().toString(36).slice(2, 7)}`,
             password,
             phone,
-            email,
             role: USER_ROLE.student,
         };
+
+        if (email && email.trim() !== '') {
+            user.email = email;
+        }
 
         // Crate a user to User model (Transaction 1)
         const newUser = await User.create([user], { session });
