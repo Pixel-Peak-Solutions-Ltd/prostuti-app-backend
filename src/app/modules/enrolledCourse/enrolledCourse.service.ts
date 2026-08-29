@@ -38,8 +38,8 @@ const validateCourseCategories = (courses: any[], studentDetails: any) => {
         }
 
         if (studentSubCategory) {
-            if (studentCategoryType === 'Academic' && courseCategory.division && courseCategory.division !== studentSubCategory) {
-                throw new AppError(StatusCodes.FORBIDDEN, `You can only enroll in ${studentSubCategory} courses.`);
+            if (studentCategoryType === 'Academic' && courseCategory.division && courseCategory.division !== studentSubCategory && courseCategory.division !== 'Common') {
+                throw new AppError(StatusCodes.FORBIDDEN, `You can only enroll in ${studentSubCategory} or Combined courses.`);
             } else if (studentCategoryType === 'Admission' && courseCategory.universityType && courseCategory.universityType !== studentSubCategory) {
                 throw new AppError(StatusCodes.FORBIDDEN, `You can only enroll in ${studentSubCategory} courses.`);
             }

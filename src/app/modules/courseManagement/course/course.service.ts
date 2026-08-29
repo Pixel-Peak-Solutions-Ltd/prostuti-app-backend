@@ -235,11 +235,11 @@ const getPublishedCoursesForStudent = async (user: TJWTDecodedUser,filters:ICour
         'category.type': studentCategoryType, 
     };
 
-    // Strictly enforce sub-category access control (Bug 22)
+    // Strictly enforce sub-category access control (Bug 22 & 23)
     const studentSubCategory = studentProfile.category?.subCategory;
     if (studentSubCategory) {
         if (studentCategoryType === 'Academic') {
-            categoryFilters['category.division'] = studentSubCategory;
+            categoryFilters['category.division'] = { $in: [studentSubCategory, 'Common'] };
         } else if (studentCategoryType === 'Admission') {
             categoryFilters['category.universityType'] = studentSubCategory;
         }
