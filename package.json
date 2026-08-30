@@ -5,7 +5,7 @@
     "description": "Backend server for the Prostuti application, built with TypeScript, Express, and MongoDB. This project provides a robust API structure with Zod validation, error handling, and follows best practices for a scalable Node.js backend",
     "main": "server.js",
     "scripts": {
-        "build": "tsc",
+        "build": "tsc && echo \"Build successful!\"",
         "start": "node ./dist/server.js",
         "dev": "cross-env NODE_ENV=development ts-node-dev --respawn --transpile-only ./src/server.ts",
         "staging": "cross-env NODE_ENV=staging ts-node-dev --respawn --transpile-only ./src/server.ts",
@@ -19,7 +19,7 @@
         "prettier:fix": "npx prettier --write src"
     },
     "engines": {
-        "node": ">=14.0.0"
+        "node": ">=18.0.0"
     },
     "keywords": [
         "TypeScript",
