@@ -45,7 +45,7 @@ const getAllQuestions = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getQuestionByID = catchAsync(async (req: Request, res: Response) => {
-    const result = await QuestionService.getQuestionByID(req.params.id);
+    const result = await QuestionService.getQuestionByID((req.params.id as string));
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
@@ -55,7 +55,7 @@ const getQuestionByID = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateQuestion = catchAsync(async (req: Request, res: Response) => {
-    const result = await QuestionService.updateQuestion(req.user,req.params.id,req.body,req.file as  Express.Multer.File);
+    const result = await QuestionService.updateQuestion(req.user,(req.params.id as string),req.body,req.file as  Express.Multer.File);
     const checkTeacher=await Teacher.findOne({user_id:req.user.userId})
     if(!checkTeacher){
         throw new AppError(StatusCodes.NOT_FOUND, 'Teacher is not found');
@@ -69,7 +69,7 @@ const updateQuestion = catchAsync(async (req: Request, res: Response) => {
     });
 });
 const reviewQuestion = catchAsync(async (req: Request, res: Response) => {
-    const result = await QuestionService.reviewQuestion(req.user,req.params.id,req.body);
+    const result = await QuestionService.reviewQuestion(req.user,(req.params.id as string),req.body);
     const checkTeacher=await Teacher.findOne({user_id:req.user.userId})
     if(!checkTeacher){
         throw new AppError(StatusCodes.NOT_FOUND, 'Teacher is not found');
@@ -84,7 +84,7 @@ const reviewQuestion = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteQuestionByID = catchAsync(async (req: Request, res: Response) => {
-    const result = await QuestionService.deleteQuestionByID(req.user,req.params.id);
+    const result = await QuestionService.deleteQuestionByID(req.user,(req.params.id as string));
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,

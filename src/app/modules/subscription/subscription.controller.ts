@@ -23,7 +23,7 @@ const getAllSubscriptions = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getSubscriptionByID = catchAsync(async (req: Request, res: Response) => {
-    const result = await SubscriptionService.getSubscriptionByID(req.params.id);
+    const result = await SubscriptionService.getSubscriptionByID((req.params.id as string));
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,

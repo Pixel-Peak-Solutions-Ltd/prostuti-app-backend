@@ -226,7 +226,7 @@ const getAllCategoriesLesson = catchAsync(
 
 const getCategoryByID = catchAsync(async (req: Request, res: Response) => {
     const result = await CategoryService.getCategoryByID(
-        req.params.id,
+        (req.params.id as string),
         req.user as TJWTDecodedUser,
     );
 
@@ -239,7 +239,7 @@ const getCategoryByID = catchAsync(async (req: Request, res: Response) => {
 
 const updateCategory = catchAsync(async (req: Request, res: Response) => {
     const result = await CategoryService.updateCategory(
-        req.params.id,
+        (req.params.id as string),
         req.user as TJWTDecodedUser,
         req.body,
     );
@@ -253,7 +253,7 @@ const updateCategory = catchAsync(async (req: Request, res: Response) => {
 
 const deleteCategoryByID = catchAsync(async (req: Request, res: Response) => {
     const result = await CategoryService.deleteCategoryByID(
-        req.params.id,
+        (req.params.id as string),
         req.user as TJWTDecodedUser,
     );
 

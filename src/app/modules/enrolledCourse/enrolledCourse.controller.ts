@@ -86,7 +86,7 @@ const getAllEnrolledCourses = catchAsync(async (req: Request, res: Response) => 
       });
   });
   const getEnrolledCourseByID = catchAsync(async (req: Request, res: Response) => {
-    const result = await EnrolledCourseService.getEnrolledCourseByID(req.params.id,req.user as TJWTDecodedUser);
+    const result = await EnrolledCourseService.getEnrolledCourseByID((req.params.id as string),req.user as TJWTDecodedUser);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,

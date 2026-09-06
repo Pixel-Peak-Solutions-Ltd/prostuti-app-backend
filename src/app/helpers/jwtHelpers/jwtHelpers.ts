@@ -1,13 +1,13 @@
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import { TJWTDecodedUser, TJWTPayload } from '../../interfaces/jwt/jwt.type';
 
 const createToken = (
     jwtPayload: TJWTPayload,
     secret: string,
-    expiresIn: string,
+    expiresIn: string | number,
 ) => {
     return jwt.sign(jwtPayload, secret, {
-        expiresIn,
+        expiresIn: expiresIn as SignOptions['expiresIn'],
     });
 };
 

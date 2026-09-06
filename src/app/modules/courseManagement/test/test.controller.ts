@@ -34,7 +34,7 @@ const getAllTests = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getTestByID = catchAsync(async (req: Request, res: Response) => {
-    const result = await TestService.getTestByID(req.params.id);
+    const result = await TestService.getTestByID((req.params.id as string));
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
@@ -44,7 +44,7 @@ const getTestByID = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateTest = catchAsync(async (req: Request, res: Response) => {
-    const result = await TestService.updateTest(req.user,req.params.id,req.body,req.files as Express.Multer.File[]);
+    const result = await TestService.updateTest(req.user,(req.params.id as string),req.body,req.files as Express.Multer.File[]);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
@@ -65,7 +65,7 @@ const testCompletion = catchAsync(async (req: Request, res: Response) => {
 })
 
 const deleteTestByID = catchAsync(async (req: Request, res: Response) => {
-    const result = await TestService.deleteTestByID(req.params.id, req.user as TJWTDecodedUser);
+    const result = await TestService.deleteTestByID((req.params.id as string), req.user as TJWTDecodedUser);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,

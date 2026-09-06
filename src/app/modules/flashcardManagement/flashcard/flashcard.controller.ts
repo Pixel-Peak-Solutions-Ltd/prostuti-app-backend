@@ -33,7 +33,7 @@ const getAllFlashcards = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getFlashcardByID = catchAsync(async (req: Request, res: Response) => {
-    const result = await FlashcardService.getFlashcardByID(req.params.id,req.user);
+    const result = await FlashcardService.getFlashcardByID((req.params.id as string),req.user);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
@@ -43,7 +43,7 @@ const getFlashcardByID = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateFlashcard = catchAsync(async (req: Request, res: Response) => {
-    const result = await FlashcardService.updateFlashcard(req.params.id, req.body,req.user);
+    const result = await FlashcardService.updateFlashcard((req.params.id as string), req.body,req.user);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
@@ -53,7 +53,7 @@ const updateFlashcard = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteFlashcardByID = catchAsync(async (req: Request, res: Response) => {
-    const result = await FlashcardService.deleteFlashcardByID(req.params.id,req.user);
+    const result = await FlashcardService.deleteFlashcardByID((req.params.id as string),req.user);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
@@ -62,7 +62,7 @@ const deleteFlashcardByID = catchAsync(async (req: Request, res: Response) => {
     });
 });
 const approveFlashcardByID = catchAsync(async (req: Request, res: Response) => {
-    const result = await FlashcardService.approveFlashcardByID(req.params.id,req.user);
+    const result = await FlashcardService.approveFlashcardByID((req.params.id as string),req.user);
     await createTeacherLog(req,result.approvedBy.toString(),`Approve_Flashcard","Approved a flashcard with  ID ${result._id}`)
 
     sendSuccessResponse(res, {
@@ -72,7 +72,7 @@ const approveFlashcardByID = catchAsync(async (req: Request, res: Response) => {
     });
 });
 const SwipeFlashcardItemByID = catchAsync(async (req: Request, res: Response) => {
-    const result = await FlashcardService.SwipeFlashcardItemByID(req.params.id,req.body,req.user);
+    const result = await FlashcardService.SwipeFlashcardItemByID((req.params.id as string),req.body,req.user);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
@@ -82,7 +82,7 @@ const SwipeFlashcardItemByID = catchAsync(async (req: Request, res: Response) =>
 });
 
 const favoriteFlashcardByID = catchAsync(async (req: Request, res: Response) => {
-    const result = await FlashcardService.favoriteFlashcardByID(req.params.id,req.user);
+    const result = await FlashcardService.favoriteFlashcardByID((req.params.id as string),req.user);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,

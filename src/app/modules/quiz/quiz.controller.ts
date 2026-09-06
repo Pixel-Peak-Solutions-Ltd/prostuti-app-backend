@@ -18,7 +18,7 @@ const createMockQuiz = catchAsync(async (req: Request, res: Response) => {
 });
 
 const submitMockQuiz = catchAsync(async (req: Request, res: Response) => {
-    const result = await QuizService.submitMockQuiz(req.user, req.body,req.params.id);
+    const result = await QuizService.submitMockQuiz(req.user, req.body,(req.params.id as string));
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
@@ -38,7 +38,7 @@ const createQuizzerQuiz = catchAsync(async (req: Request, res: Response) => {
 });
 
 const submitQuizzerQuiz = catchAsync(async (req: Request, res: Response) => {
-    const result = await QuizService.submitQuizzerQuiz(req.user, req.body,req.params.id);
+    const result = await QuizService.submitQuizzerQuiz(req.user, req.body,(req.params.id as string));
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
@@ -59,7 +59,7 @@ const createSegmentQuiz = catchAsync(async (req: Request, res: Response) => {
 });
 
 const submitSegmentQuiz = catchAsync(async (req: Request, res: Response) => {
-    const result = await QuizService.submitSegmentQuiz(req.user, req.body,req.params.id);
+    const result = await QuizService.submitSegmentQuiz(req.user, req.body,(req.params.id as string));
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
@@ -81,7 +81,7 @@ const getAllQuizzes = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getSingleQuiz= catchAsync(async (req: Request, res: Response) => {
-    const result = await QuizService.getSingleQuiz(req.params.id,req.user);
+    const result = await QuizService.getSingleQuiz((req.params.id as string),req.user);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,

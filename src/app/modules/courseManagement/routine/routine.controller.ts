@@ -34,7 +34,7 @@ const getAllRoutines = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getRoutineByID = catchAsync(async (req: Request, res: Response) => {
-    const result = await RoutineService.getRoutineByID(req.params.id);
+    const result = await RoutineService.getRoutineByID((req.params.id as string));
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
@@ -46,7 +46,7 @@ const getRoutineByID = catchAsync(async (req: Request, res: Response) => {
 const publishRoutine = catchAsync(async (req: Request, res: Response) => {
     const { isPublished } = req.body;
     const result = await RoutineService.publishRoutine(
-        req.params.id,
+        (req.params.id as string),
         isPublished,
         req.user as TJWTDecodedUser,
     );
@@ -59,7 +59,7 @@ const publishRoutine = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteRoutineByID = catchAsync(async (req: Request, res: Response) => {
-    const result = await RoutineService.deleteRoutineByID(req.params.id,req.user as TJWTDecodedUser);
+    const result = await RoutineService.deleteRoutineByID((req.params.id as string),req.user as TJWTDecodedUser);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,

@@ -32,7 +32,7 @@ const getAllVouchers = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getVoucherByID = catchAsync(async (req: Request, res: Response) => {
-    const result = await VoucherService.getVoucherByID(req.params.id);
+    const result = await VoucherService.getVoucherByID((req.params.id as string));
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
@@ -42,7 +42,7 @@ const getVoucherByID = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateVoucher = catchAsync(async (req: Request, res: Response) => {
-    const result = await VoucherService.updateVoucher(req.params.id,req.user,req.body);
+    const result = await VoucherService.updateVoucher((req.params.id as string),req.user,req.body);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
@@ -52,7 +52,7 @@ const updateVoucher = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteVoucherByID = catchAsync(async (req: Request, res: Response) => {
-    const result = await VoucherService.deleteVoucherByID(req.params.id,req.user);
+    const result = await VoucherService.deleteVoucherByID((req.params.id as string),req.user);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,

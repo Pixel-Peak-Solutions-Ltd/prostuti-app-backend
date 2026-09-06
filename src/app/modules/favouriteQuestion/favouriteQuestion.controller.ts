@@ -42,7 +42,7 @@ const deleteFavouriteQuestions = catchAsync(async (req, res) => {
     const { userId } = req.user;
     const payload = {
         student_id: userId,
-        question_id: req.params.question_id
+        question_id: (req.params.question_id as string)
     }
     const result = await favouriteQuestionService.deleteFavouriteQuestionsFromDB(payload);
 

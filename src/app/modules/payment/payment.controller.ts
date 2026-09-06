@@ -88,7 +88,7 @@ const getAllPayments = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getPaymentByID = catchAsync(async (req: Request, res: Response) => {
-    const result = await PaymentService.getPaymentByID(req.params.id);
+    const result = await PaymentService.getPaymentByID((req.params.id as string));
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,

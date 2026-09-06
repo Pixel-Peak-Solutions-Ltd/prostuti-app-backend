@@ -57,7 +57,7 @@ const getAllTestHistories = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getTestHistoryByID = catchAsync(async (req: Request, res: Response) => {
-    const result = await TestHistoryService.getTestHistoryByID(req.params.id,req.user as TJWTDecodedUser,);
+    const result = await TestHistoryService.getTestHistoryByID((req.params.id as string),req.user as TJWTDecodedUser,);
 
     sendSuccessResponse(res, {
         statusCode: StatusCodes.OK,
@@ -77,7 +77,7 @@ const getTestHistoryByID = catchAsync(async (req: Request, res: Response) => {
 // });
 
 // const deleteTestHistoryByID = catchAsync(async (req: Request, res: Response) => {
-//     const result = await TestHistoryService.deleteTestHistoryByID(req.params.id,req.user as TJWTDecodedUser);
+//     const result = await TestHistoryService.deleteTestHistoryByID((req.params.id as string),req.user as TJWTDecodedUser);
 
 //     sendSuccessResponse(res, {
 //         statusCode: StatusCodes.OK,
